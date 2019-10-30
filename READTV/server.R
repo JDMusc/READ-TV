@@ -40,16 +40,18 @@ function(input, output, session){
     })
     
     output$metaQueryApplyOutput = renderUI({
-        qcc = column(actionButton("queryClear", "Clear Case Filter"),
-                     width = 2)
-        qac = column(actionButton("querySubmit", "Apply Case Filter"),
-                     width = 2)
-        if(input$queryInput != "")
-            fluidRow(
-                qcc
-            )
-        else
-            NULL
+      validate(need(input$queryInput, F))
+      
+      qcc = column(actionButton("queryClear", "Clear Case Filter"),
+                   width = 2)
+      qac = column(actionButton("querySubmit", "Apply Case Filter"),
+                   width = 2)
+      if(input$queryInput != "")
+          fluidRow(
+              qcc
+          )
+      else
+          NULL
     })
     
     
@@ -351,40 +353,10 @@ function(input, output, session){
     })
     
     observeEvent(input$showSource, {
-        showModal(modalDialog(
-            title = "Source Data",
-            renderDataTable(filteredData()[,
-                                           c("Case", "Phase", "Time", "FD.Type", "Notes")]
-            ),
-            easyClose = TRUE,
-            size = "m"
-        ))
+      showSource(filteredData)
     })
     
     observeEvent(input$calcCPA, {
-        fdata = filteredData()
-        start_time = fdata$Time[1]
-        end_time = max(fdata$Time)
-        methods = c("AMOC", "PELT", "SegNeigh", "BinSeg")
-        penalties = c( "None", "SIC", "BIC", "MBIC", 
-                       "AIC", "Hannan-Quinn", "Asymptotic", "CROPS")
-        showModal(modalDialog(
-            title = "Change Point Analysis",
-            fluidRow(
-            selectInput("cpaSelect", "Select N", 1:5, selected = 4),
-            selectInput("methodSelect", "Method", methods, selected = "AMOC"),
-            selectInput("penaltySelect", "Penalty", 
-                        penalties, selected = "MBIC"),
-            selectInput("qSelect", "# Change Pts", 1:6, selected = 2)),
-            renderPlot({
-                n = as.numeric(input$cpaSelect)
-                time_data = withinTimeSeries(fdata$RelativeTime, n = n)
-                plot(cpt.mean(time_data, 
-                              method = input$methodSelect,
-                              penalty = input$penaltySelect,
-                              Q = as.numeric(input$qSelect)), 
-                     ylab = paste("# Events per", n*2, "minutes"))
-            })
-        ))
+      callModule(showCpa, "", data=filteredData)
     })
 }
