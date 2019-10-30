@@ -12,8 +12,7 @@ source('utils.R')
 
 function(input, output, session){
     
-    serverState = reactiveValues(data_loaded = FALSE,
-        meta_cases = NULL)
+    serverState = reactiveValues(data_loaded = FALSE)
     
     dataFile = eventReactive(input$loadData, {
         "../data/tc_prepped_events.csv"
@@ -21,8 +20,8 @@ function(input, output, session){
     
     data <- reactive({
         tbl = loadEventsClean(dataFile())
-        if(!is.null(serverState$meta_cases)){
-            tbl = tbl %>% filter(Case %in% serverState$meta_cases)
+        if(metaDataLoaded()) {
+          tbl = tbl %>% filter(Case %in% filteredMetaData()$Case)
         }
         serverState$data_loaded = TRUE
         tbl
@@ -32,194 +31,22 @@ function(input, output, session){
         '../data/mockMetaData.csv'
     })
     
-    metaData <- reactive({
-        req(metaDataFile())
-        
-        mdf = metaDataFile()
-        read.csv(mdf, header = T, stringsAsFactors = F)
-    })
-    
-    output$metaQueryApplyOutput = renderUI({
-      validate(need(input$queryInput, F))
+    observe({
+      req(metaDataFile())
       
-      qcc = column(actionButton("queryClear", "Clear Case Filter"),
-                   width = 2)
-      qac = column(actionButton("querySubmit", "Apply Case Filter"),
-                   width = 2)
-      if(input$queryInput != "")
-          fluidRow(
-              qcc
-          )
-      else
-          NULL
-    })
+      callModule(metaQueryServer, "metaqueryui", metaDataFile)
+      })
     
     
-    output$metaPreview = renderUI({
-      actionButton("metaPreview", "Preview Cases")
+    filteredMetaData <- callModule(metaQueryServer, "metaqueryui", 
+                                   metaDataFile)
+    
+    metaDataLoaded = reactive({
+      fmd = try(filteredMetaData(), silent = T)
+      
+      return(!(class(fmd) == "try-error"))
     })
 
-    output$queryInput = renderUI({
-        textInput("queryInput", "Case Filter", placeholder = "")
-    })
-    
-    observe({
-      qc = queryCompiles()
-      hqi = hasQueryInput()
-      if(!qc & hqi) {
-        shinyjs::addClass("queryInput", "invalid_query",
-                          !queryCompiles())
-        shinyjs::disable("metaPreview")
-      } else {
-        shinyjs::removeClass("queryInput", "invalid_query")
-        shinyjs::enable("metaPreview")
-      }
-    })
-    
-    
-    output$metaQuery = renderUI({
-        mdf = metaDataFile()
-        wellPanel(
-            uiOutput("queryInput"),
-            actionButton("queryInclude", "Include Condition"),
-            uiOutput("metaQueryApplyOutput"),
-            fluidRow(
-                column(uiOutput("metaPreview"), width = 2),
-                column(renderText(paste("Meta Data File: ", mdf)),
-                       width = 8)
-            )
-        )
-    })
-    
-    observe({
-        req(metaData())
-        
-        fmd = filteredMetaData()
-        if(is.null(fmd)) fmd = metaData()
-        updateActionButton(session, "metaPreview", 
-                           paste("Preview", nrow(fmd),  "Cases"))
-    })
-    
-    filterMetaData = function(qry)
-        try(
-            qry %>%
-                {paste0('metaData() %>% filter(', ., ')')} %>%
-                {parse(text = .)} %>%
-                eval, 
-            silent = T)
-    
-    
-    hasQueryInput = reactive({
-        if(is.null(input$queryInput)) return(F)
-        if(input$queryInput == "") return(F)
-        
-        T
-    })
-    
-    
-    queryCompiles = reactive({
-        #req(hasQueryInput())
-        fmd = try(filterMetaData(input$queryInput), silent = T)
-        
-        return(!(class(fmd) == "try-error"))
-    })
-    
-    filteredMetaData = reactive({
-        qc = queryCompiles()
-        if(qc)
-            filterMetaData(input$queryInput)
-        else
-            NULL
-    })
-    
-    observeEvent(input$querySubmit, {
-        serverState$meta_cases = filterMetaData(input$queryInput)$Case
-    })
-    
-    observeEvent(input$queryClear, {
-        serverState$meta_cases = NULL
-        updateTextInput(session, "queryInput", value = "")
-    })
-    
-    observeEvent(input$metaPreview, {
-        meta_data = metaData()
-        if(queryCompiles()) 
-            meta_data = filteredMetaData()
-        
-        showModal(modalDialog(
-            title = "Cases",
-            renderDataTable(meta_data),
-            easyClose = TRUE,
-            size = "m"
-        ))
-    })
-    
-    observeEvent(input$queryInclude, {
-        meta_data = metaData()
-        
-        fieldClass = reactive({
-            class(meta_data[, input$metaField])
-        })
-        
-        output$fieldOptions = renderUI({
-            req(input$metaField)
-            
-            filter_choices = c(">", ">=", "<", "<=", "==", "!=")
-            choices = unique(meta_data[,input$metaField])
-            if(fieldClass() %in% c("character", "logical"))
-                filter_choices = c("==", "!=")
-            else
-              choices = sort(choices)
-            
-            fluidRow(
-                column(
-                    selectizeInput("fieldFilter", "",
-                                   choices = filter_choices),
-                    width = 2),
-                column(
-                    selectizeInput("fieldValue", "",
-                                   choices = choices),
-                    width = 2)
-            )
-        })
-        
-        output$appendQueryOptions = renderUI({
-            if(!hasQueryInput()) return(NULL)
-            selectizeInput("appendQueryOption", "How To Include",
-                           choices = c("&", "|"))
-        })
-        
-        showModal(modalDialog(
-            title = "Condition",
-            footer = fluidRow(
-                actionButton("modalSubmit", "Include"),
-                modalButton("Cancel")
-            ),
-            selectInput("metaField", "Field", 
-                        choices = colnames(meta_data)),
-            uiOutput("fieldOptions"),
-            uiOutput("appendQueryOptions")
-        ))
-        
-        observeEvent(input$modalSubmit, {
-            
-            field_value = input$fieldValue
-            if(fieldClass() == "character")
-                field_value = paste0("'", field_value, "'")
-            
-            new_qry = paste(input$metaField, input$fieldFilter, field_value)
-            
-            if(hasQueryInput()) {
-                new_qry = paste(input$queryInput, input$appendQueryOption,
-                                new_qry)
-            }
-            
-            updateTextInput(session, "queryInput", value = new_qry)
-            removeModal()
-        },
-        ignoreInit = TRUE
-        )
-    })
     
     filteredData <- reactive({
         req(serverState$data_loaded)
@@ -229,9 +56,6 @@ function(input, output, session){
         ph = phase()
         fd = flowDisruption()
         
-        if(!is.null(filteredMetaData())) {
-            d = d %>% filter(Case %in% filteredMetaData()$Case)
-        }
         if(isSelected(ca)) d = d %>% filter(Case == ca)
         if(isSelected(ph)) d = d %>% filter(Phase == ph)
         if(isSelected(fd)) d = d %>% filter(FD.Type %in% fd)

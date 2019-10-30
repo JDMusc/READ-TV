@@ -45,20 +45,21 @@ selectRows <- fluidRow(
 fluidPage(
   shinyjs::useShinyjs(),
   shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
-    fluidRow(
-        actionButton(inputId = "loadData", label = "Load Data"),
-        actionButton(inputId = "loadMetaData", label = "Load Meta Data")
-    ),
-    uiOutput("metaQuery"),
-    selectRows,
-    conditionalPanel(
-        condition = 'input.plotType == "timePlot"',
-        plotOutput("timePlot"),
-        verbatimTextOutput("eventStats")
-    ),
-    conditionalPanel(
-        condition = 'input.plotType == "hist"',
-        plotOutput("hist"),
-        verbatimTextOutput("fdStats")
-    )
+  fluidRow(
+      actionButton(inputId = "loadData", label = "Load Data"),
+      actionButton(inputId = "loadMetaData", label = "Load Meta Data")
+  ),
+  metaQueryUI("metaqueryui"),
+  #uiOutput("metaQuery2"),
+  selectRows,
+  conditionalPanel(
+    condition = 'input.plotType == "timePlot"',
+    plotOutput("timePlot"),
+    verbatimTextOutput("eventStats")
+  ),
+  conditionalPanel(
+    condition = 'input.plotType == "hist"',
+    plotOutput("hist"),
+    verbatimTextOutput("fdStats")
+  )
 )
