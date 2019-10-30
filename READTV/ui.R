@@ -43,6 +43,8 @@ selectRows <- fluidRow(
 )
 
 fluidPage(
+  shinyjs::useShinyjs(),
+  shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
     fluidRow(
         actionButton(inputId = "loadData", label = "Load Data"),
         actionButton(inputId = "loadMetaData", label = "Load Meta Data")

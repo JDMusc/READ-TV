@@ -1,3 +1,4 @@
+library(changepoint)
 library(dplyr)
 library(ggplot2)
 library(shiny)
@@ -32,27 +33,102 @@ function(input, output, session){
     })
     
     metaData <- reactive({
+        req(metaDataFile())
+        
         mdf = metaDataFile()
-        read.csv(mdf, header = T)
+        read.csv(mdf, header = T, stringsAsFactors = F)
     })
+    
+    output$metaQueryApplyOutput = renderUI({
+        qcc = column(actionButton("queryClear", "Clear Case Filter"),
+                     width = 2)
+        qac = column(actionButton("querySubmit", "Apply Case Filter"),
+                     width = 2)
+        if(input$queryInput != "")
+            fluidRow(
+                qcc
+            )
+        else
+            NULL
+    })
+    
+    
+    output$metaPreview = renderUI({
+      actionButton("metaPreview", "Preview Cases")
+    })
+
+    output$queryInput = renderUI({
+        textInput("queryInput", "Case Filter", placeholder = "")
+    })
+    
+    observe({
+      qc = queryCompiles()
+      hqi = hasQueryInput()
+      if(!qc & hqi) {
+        shinyjs::addClass("queryInput", "invalid_query",
+                          !queryCompiles())
+        shinyjs::disable("metaPreview")
+      } else {
+        shinyjs::removeClass("queryInput", "invalid_query")
+        shinyjs::enable("metaPreview")
+      }
+    })
+    
     
     output$metaQuery = renderUI({
         mdf = metaDataFile()
         wellPanel(
-            textInput("queryInput", "Enter Case Filter", placeholder = ""),
-            actionButton("querySubmit", "Submit Case Filter"), 
-            actionButton("queryClear", "Clear Clase Filter"),
-            actionButton("metaPreview", "Preview Cases"),
-            renderText(paste("Meta Data File: ", mdf))
+            uiOutput("queryInput"),
+            actionButton("queryInclude", "Include Condition"),
+            uiOutput("metaQueryApplyOutput"),
+            fluidRow(
+                column(uiOutput("metaPreview"), width = 2),
+                column(renderText(paste("Meta Data File: ", mdf)),
+                       width = 8)
+            )
         )
     })
     
-    filterMetaData = function(qry) {
-        qry %>%
-            {paste0('metaData() %>% filter(', ., ')')} %>%
-            {parse(text = .)} %>%
-            eval
-    }
+    observe({
+        req(metaData())
+        
+        fmd = filteredMetaData()
+        if(is.null(fmd)) fmd = metaData()
+        updateActionButton(session, "metaPreview", 
+                           paste("Preview", nrow(fmd),  "Cases"))
+    })
+    
+    filterMetaData = function(qry)
+        try(
+            qry %>%
+                {paste0('metaData() %>% filter(', ., ')')} %>%
+                {parse(text = .)} %>%
+                eval, 
+            silent = T)
+    
+    
+    hasQueryInput = reactive({
+        if(is.null(input$queryInput)) return(F)
+        if(input$queryInput == "") return(F)
+        
+        T
+    })
+    
+    
+    queryCompiles = reactive({
+        #req(hasQueryInput())
+        fmd = try(filterMetaData(input$queryInput), silent = T)
+        
+        return(!(class(fmd) == "try-error"))
+    })
+    
+    filteredMetaData = reactive({
+        qc = queryCompiles()
+        if(qc)
+            filterMetaData(input$queryInput)
+        else
+            NULL
+    })
     
     observeEvent(input$querySubmit, {
         serverState$meta_cases = filterMetaData(input$queryInput)$Case
@@ -65,8 +141,8 @@ function(input, output, session){
     
     observeEvent(input$metaPreview, {
         meta_data = metaData()
-        if(input$queryInput != "") 
-            meta_data = filterMetaData(input$queryInput)
+        if(queryCompiles()) 
+            meta_data = filteredMetaData()
         
         showModal(modalDialog(
             title = "Cases",
@@ -74,6 +150,73 @@ function(input, output, session){
             easyClose = TRUE,
             size = "m"
         ))
+    })
+    
+    observeEvent(input$queryInclude, {
+        meta_data = metaData()
+        
+        fieldClass = reactive({
+            class(meta_data[, input$metaField])
+        })
+        
+        output$fieldOptions = renderUI({
+            req(input$metaField)
+            
+            filter_choices = c(">", ">=", "<", "<=", "==", "!=")
+            choices = unique(meta_data[,input$metaField])
+            if(fieldClass() %in% c("character", "logical"))
+                filter_choices = c("==", "!=")
+            else
+              choices = sort(choices)
+            
+            fluidRow(
+                column(
+                    selectizeInput("fieldFilter", "",
+                                   choices = filter_choices),
+                    width = 2),
+                column(
+                    selectizeInput("fieldValue", "",
+                                   choices = choices),
+                    width = 2)
+            )
+        })
+        
+        output$appendQueryOptions = renderUI({
+            if(!hasQueryInput()) return(NULL)
+            selectizeInput("appendQueryOption", "How To Include",
+                           choices = c("&", "|"))
+        })
+        
+        showModal(modalDialog(
+            title = "Condition",
+            footer = fluidRow(
+                actionButton("modalSubmit", "Include"),
+                modalButton("Cancel")
+            ),
+            selectInput("metaField", "Field", 
+                        choices = colnames(meta_data)),
+            uiOutput("fieldOptions"),
+            uiOutput("appendQueryOptions")
+        ))
+        
+        observeEvent(input$modalSubmit, {
+            
+            field_value = input$fieldValue
+            if(fieldClass() == "character")
+                field_value = paste0("'", field_value, "'")
+            
+            new_qry = paste(input$metaField, input$fieldFilter, field_value)
+            
+            if(hasQueryInput()) {
+                new_qry = paste(input$queryInput, input$appendQueryOption,
+                                new_qry)
+            }
+            
+            updateTextInput(session, "queryInput", value = new_qry)
+            removeModal()
+        },
+        ignoreInit = TRUE
+        )
     })
     
     filteredData <- reactive({
@@ -84,8 +227,8 @@ function(input, output, session){
         ph = phase()
         fd = flowDisruption()
         
-        if(!is.null(serverState$meta_cases)) {
-            d = d %>% filter(Case %in% serverState$meta_cases)
+        if(!is.null(filteredMetaData())) {
+            d = d %>% filter(Case %in% filteredMetaData()$Case)
         }
         if(isSelected(ca)) d = d %>% filter(Case == ca)
         if(isSelected(ph)) d = d %>% filter(Phase == ph)
@@ -222,13 +365,25 @@ function(input, output, session){
         fdata = filteredData()
         start_time = fdata$Time[1]
         end_time = max(fdata$Time)
+        methods = c("AMOC", "PELT", "SegNeigh", "BinSeg")
+        penalties = c( "None", "SIC", "BIC", "MBIC", 
+                       "AIC", "Hannan-Quinn", "Asymptotic", "CROPS")
         showModal(modalDialog(
             title = "Change Point Analysis",
+            fluidRow(
             selectInput("cpaSelect", "Select N", 1:5, selected = 4),
+            selectInput("methodSelect", "Method", methods, selected = "AMOC"),
+            selectInput("penaltySelect", "Penalty", 
+                        penalties, selected = "MBIC"),
+            selectInput("qSelect", "# Change Pts", 1:6, selected = 2)),
             renderPlot({
                 n = as.numeric(input$cpaSelect)
                 time_data = withinTimeSeries(fdata$RelativeTime, n = n)
-                plot(time_data, ylab = paste("# Events per", n*2, "minutes"))
+                plot(cpt.mean(time_data, 
+                              method = input$methodSelect,
+                              penalty = input$penaltySelect,
+                              Q = as.numeric(input$qSelect)), 
+                     ylab = paste("# Events per", n*2, "minutes"))
             })
         ))
     })
