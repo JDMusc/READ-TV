@@ -130,14 +130,14 @@ function(input, output, session){
     output$timePlot <- renderPlot({
         if(!isSelected(case())) return
         p = filteredData() %>% mutate(Event = TRUE) %>%
-            ggplot(aes(x = Time)) + 
+            ggplot(aes(x = RelativeTime)) + 
             geom_point(aes(y = Event, colour = FD.Type, shape = factor(Phase) )) +
             theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
             labs(col = "FD Type", shape = "Phase") +
             scale_shape_manual(values = list("1" = 16, "2" = 17, "3" = 15, "4" = 3)) +
             scale_color_manual(values = fd_colors)
         if(input$doStemPlot){
-            p = p + geom_segment(aes(xend = Time, 
+            p = p + geom_segment(aes(xend = RelativeTime, 
                                      yend = Event - Event, 
                                      y = Event,
                                      colour = FD.Type))

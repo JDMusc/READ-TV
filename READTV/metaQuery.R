@@ -117,7 +117,7 @@ metaQueryServer = function(input, output, session, metaDataFile) {
     
     output$appendQueryOptions = renderUI({
       if(!hasQueryInput()) return(NULL)
-      selectizeInput("appendQueryOption", "How To Include",
+      selectizeInput(ns("appendQueryOption"), "How To Include",
                      choices = c("&", "|"))
     })
     
@@ -178,10 +178,6 @@ metaQueryServer = function(input, output, session, metaDataFile) {
         {parse(text = .)} %>%
         eval, 
       silent = T)
-  
-  observeEvent(input$querySubmit, {
-    serverState$meta_cases = filterMetaData(input$queryInput)$Case
-  })
   
   return(reactive({
     if(queryCompiles()) filteredMetaData()
