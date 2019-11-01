@@ -1,3 +1,4 @@
+library(changepoint)
 library(shiny)
 
 
@@ -9,6 +10,16 @@ showCpa = function(input, output, session, data) {
                  "AIC", "Hannan-Quinn", "Asymptotic", "CROPS")
   
   ns = session$ns
+  getCpt = function(class = T){
+    n = as.numeric(input$cpaSelect)
+    time_data = withinTimeSeries(data()$RelativeTime, n = n)
+    
+    cpt.mean(time_data, 
+             method = input$methodSelect,
+             penalty = input$penaltySelect,
+             Q = as.numeric(input$qSelect),
+             class = class)
+  }
   showModal(modalDialog(
     title = "Change Point Analysis",
     fluidRow(
@@ -19,12 +30,12 @@ showCpa = function(input, output, session, data) {
       selectInput(ns("qSelect"), "# Change Pts", 1:6, selected = 2)),
     renderPlot({
       n = as.numeric(input$cpaSelect)
-      time_data = withinTimeSeries(data()$RelativeTime, n = n)
-      plot(cpt.mean(time_data, 
-                    method = input$methodSelect,
-                    penalty = input$penaltySelect,
-                    Q = as.numeric(input$qSelect)), 
+      plot(getCpt(), 
            ylab = paste("# Events per", n*2, "time points"))
+    }),
+    renderText({
+      browser()
+      getCpt(class = F)
     })
   ))
 }

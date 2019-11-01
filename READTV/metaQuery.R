@@ -10,23 +10,46 @@ metaQueryUI = function(id){
 metaQueryServer = function(input, output, session, metaDataFile) {
   ns = session$ns
   
+  serverState = reactiveValues(is_minimized = FALSE, query_text = NULL)
+  
   output$metaQuery = renderUI({
     validate(need(metaDataFile(), F))
     mdf = metaDataFile()
     wellPanel(
-      textInput(ns("queryInput"), "Case Filter", placeholder = ""),
-      actionButton(ns("queryInclude"), "Include Condition"),
+      div(
+        actionButton(ns("minimize"), "Minimize")),#,
+        #style = "position:relative;left:60em;top:3em"),
+      uiOutput(ns("queryInput")),
+      uiOutput(ns("queryText")),
+      uiOutput(ns("queryInclude")),
       uiOutput(ns("metaQueryApplyOutput")),
       fluidRow(
         column(actionButton(ns("metaPreview"), "Preview Cases"), width = 2),
-        column(renderText(paste("Meta Data File: ", mdf)),
-               width = 8)
+        column(uiOutput(ns("metaDataFile")), width = 8)
       )
     )
   })
   
+  output$queryInput = renderUI({
+    req(!serverState$is_minimized)
+    
+    if(!is.null(serverState$query_text))
+      value = serverState$query_text
+    else
+      value = ""
+    textInput(ns("queryInput"), "Case Filter", placeholder = "", value = value)
+  })
+  
+  output$queryText = renderText({
+    req(serverState$is_minimized)
+    
+    serverState$query_text = input$queryInput
+    serverState$query_text
+  })
+  
   output$metaQueryApplyOutput = renderUI({
     validate(need(input$queryInput, F))
+    req(!serverState$is_minimized)
     
     qcc = column(actionButton(ns("queryClear"), "Clear Case Filter"),
                  width = 2)
@@ -38,6 +61,26 @@ metaQueryServer = function(input, output, session, metaDataFile) {
       )
     else
       NULL
+  })
+  
+  output$queryInclude = renderUI({
+    req(!serverState$is_minimized)
+    
+    actionButton(ns("queryInclude"), "Include Condition")
+  })
+  
+  output$metaDataFile = renderText({
+    req(!serverState$is_minimized)
+      
+    mdf = metaDataFile()
+    paste("Meta Data File: ", mdf$name)
+  })
+  
+  observeEvent(input$minimize, {
+    serverState$is_minimized = !serverState$is_minimized
+    label = ifelse(serverState$is_minimized, 
+                   "Edit Filter", "Minimize")
+    updateActionButton(session, "minimize", label)
   })
   
   observe({
@@ -78,7 +121,7 @@ metaQueryServer = function(input, output, session, metaDataFile) {
   metaData <- reactive({
     req(metaDataFile())
     
-    mdf = metaDataFile()
+    mdf = metaDataFile()$datapath
     read.csv(mdf, header = T, stringsAsFactors = F)
   })
   

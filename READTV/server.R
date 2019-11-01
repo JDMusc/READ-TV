@@ -1,4 +1,3 @@
-library(changepoint)
 library(dplyr)
 library(ggplot2)
 library(shiny)
@@ -14,12 +13,11 @@ function(input, output, session){
     
     serverState = reactiveValues(data_loaded = FALSE)
     
-    dataFile = eventReactive(input$loadData, {
-        "../data/tc_prepped_events.csv"
-        })
+    eventsData = callModule(eventsLoader, "loadData")
     
     data <- reactive({
-        tbl = loadEventsClean(dataFile())
+        #tbl = loadEventsClean(dataFile())
+        tbl = eventsData()#dataFile() %>% read.csv %>% relativeTimes
         if(metaDataLoaded()) {
           tbl = tbl %>% filter(Case %in% filteredMetaData()$Case)
         }
@@ -27,9 +25,7 @@ function(input, output, session){
         tbl
         })
     
-    metaDataFile <- eventReactive(input$loadMetaData, {
-        '../data/mockMetaData.csv'
-    })
+    metaDataFile <- callModule(metaQueryLoader, "loadMetaData")
     
     observe({
       req(metaDataFile())
@@ -143,16 +139,6 @@ function(input, output, session){
                                      colour = FD.Type))
         }
         return(p)
-    })
-    
-    output$countPlot <- renderPlot({
-        if(!isSelected(case())) return
-        filteredData() %>% mutate(Event = TRUE) %>%
-            ggplot(aes(x = Time)) + geom_point(aes(y = Event, 
-                                                   colour = FD.Type,
-                                                   shape = Phase))
-        filteredData() %>% eventCount(5) %>%
-            ggplot(aes(x = Time)) + geom_point(aes(y = WithinN))
     })
     
     output$fdStats <- renderPrint({

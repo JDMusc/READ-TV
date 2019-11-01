@@ -4,7 +4,7 @@ showSource = function(data)
   showModal(modalDialog(
     title = "Source Data",
     renderDataTable(data()[,
-                           c("Case", "Phase", "Time", "FD.Type", "Notes")]
+                           c("Case", "Phase", "RelativeTime", "FD.Type", "Notes")]
                     ),
     easyClose = TRUE,
     size = "m"

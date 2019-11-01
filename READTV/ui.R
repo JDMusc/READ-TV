@@ -46,11 +46,10 @@ fluidPage(
   shinyjs::useShinyjs(),
   shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
   fluidRow(
-      actionButton(inputId = "loadData", label = "Load Data"),
-      actionButton(inputId = "loadMetaData", label = "Load Meta Data")
+      eventsLoaderUI("loadData"),
+      metaQueryLoaderUI("loadMetaData")
   ),
   metaQueryUI("metaqueryui"),
-  #uiOutput("metaQuery2"),
   selectRows,
   conditionalPanel(
     condition = 'input.plotType == "timePlot"',
