@@ -3,8 +3,8 @@ library(shiny)
 
 
 showCpa = function(input, output, session, data) {
-  start_time = data()$Time[1]
-  end_time = max(data()$Time)
+  start_time = data()$RelativeTime[1]
+  end_time = max(data()$RelativeTime)
   methods = c("AMOC", "PELT", "SegNeigh", "BinSeg")
   penalties = c( "None", "SIC", "BIC", "MBIC", 
                  "AIC", "Hannan-Quinn", "Asymptotic", "CROPS")
@@ -32,10 +32,9 @@ showCpa = function(input, output, session, data) {
       n = as.numeric(input$cpaSelect)
       plot(getCpt(), 
            ylab = paste("# Events per", n*2, "time points"))
-    }),
-    renderText({
-      browser()
-      getCpt(class = F)
-    })
+    })#,
+    #renderText({
+    #  getCpt(class = F)
+    #})
   ))
 }
