@@ -45,11 +45,16 @@ selectRows <- fluidRow(
 fluidPage(
   shinyjs::useShinyjs(),
   shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
-  fluidRow(
+  actionButton("minimizeHeader", "Minimize Header"),
+  div(id = "loadDataHeader",
+      fluidRow(
       eventsLoaderUI("loadData"),
-      metaQueryLoaderUI("loadMetaData")
+      wellPanel(
+        metaQueryLoaderUI("loadMetaData"),
+        metaQueryUI("metaqueryui")
+      )
+    )
   ),
-  metaQueryUI("metaqueryui"),
   selectRows,
   conditionalPanel(
     condition = 'input.plotType == "timePlot"',

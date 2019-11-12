@@ -2,7 +2,7 @@ library(shiny)
 library(shinyjs)
 
 
-fileWellUI = function(id, fileType) {
+fileWellUI = function(id) {
   ns = NS(id)
   uiOutput(ns("loadData"))
 }
@@ -24,7 +24,8 @@ fileWellServer = function(input, output, session, fileType, testFile){
     else
       wellPanel(
         uiOutput(ns("minimize")),
-        fileInput(ns("loadF"), label, accept = '.csv'))
+        fileInput(ns("loadF"), label, accept = '.csv'),
+        uiOutput(ns("filename")))
   })
   
   minimizeLabel = reactive({
@@ -37,6 +38,13 @@ fileWellServer = function(input, output, session, fileType, testFile){
     }
     
     return(label)
+  })
+  
+  output$filename = renderText({
+    req(isMinimized())
+    req(input$loadF)
+    
+    input$loadF$name
   })
   
   output$minimize = renderUI({

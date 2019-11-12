@@ -11,6 +11,7 @@ source('utils.R')
 
 function(input, output, session){
     
+    isHeaderMinimized = reactiveVal(F)
     serverState = reactiveValues(data_loaded = FALSE)
     
     eventsData = callModule(eventsLoader, "loadData")
@@ -168,5 +169,19 @@ function(input, output, session){
     
     observeEvent(input$calcCPA, {
       callModule(showCpa, "", data=filteredData)
+    })
+    
+    observeEvent(input$minimizeHeader, {
+      isHeaderMinimized(!isHeaderMinimized())
+      }
+    )
+    
+    observe({
+      shinyjs::toggle("loadDataHeader", condition = !isHeaderMinimized())
+      updateActionButton(session, "minimizeHeader",
+                         label = ifelse(isHeaderMinimized(),
+                                        "Show Header",
+                                        "Minimize Header")
+                         )
     })
 }

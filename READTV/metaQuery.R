@@ -15,19 +15,17 @@ metaQueryServer = function(input, output, session, metaDataFile) {
   output$metaQuery = renderUI({
     validate(need(metaDataFile(), F))
     mdf = metaDataFile()
-    wellPanel(
-      div(
-        actionButton(ns("minimize"), "Minimize")),#,
-        #style = "position:relative;left:60em;top:3em"),
-      uiOutput(ns("queryInput")),
-      uiOutput(ns("queryText")),
-      uiOutput(ns("queryInclude")),
-      uiOutput(ns("metaQueryApplyOutput")),
-      fluidRow(
-        column(actionButton(ns("metaPreview"), "Preview Cases"), width = 2),
-        column(uiOutput(ns("metaDataFile")), width = 8)
-      )
-    )
+    div(
+      actionButton(ns("minimize"), "Minimize"),#,
+      #style = "position:relative;left:60em;top:3em"),
+    uiOutput(ns("queryInput")),
+    uiOutput(ns("queryText")),
+    uiOutput(ns("queryInclude")),
+    uiOutput(ns("metaQueryApplyOutput")),
+    fluidRow(
+      column(actionButton(ns("metaPreview"), "Preview Cases"), width = 2),
+      column(uiOutput(ns("metaDataFile")), width = 8)
+    ))
   })
   
   output$queryInput = renderUI({
@@ -79,7 +77,7 @@ metaQueryServer = function(input, output, session, metaDataFile) {
   observeEvent(input$minimize, {
     serverState$is_minimized = !serverState$is_minimized
     label = ifelse(serverState$is_minimized, 
-                   "Edit Filter", "Minimize")
+                   "Edit Meta Filter", "Minimize")
     updateActionButton(session, "minimize", label)
   })
   

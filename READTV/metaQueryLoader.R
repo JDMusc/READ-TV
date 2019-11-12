@@ -1,11 +1,8 @@
 library(shiny)
-library(shinyjs)
-
-testing = config.testing
 
 metaQueryLoaderUI = function(id) {
   ns = NS(id)
-  fileWellUI(ns("filewell"), "Meta Data")
+  fileWellUI(ns("filewell"))
 }
 
 metaQueryLoader = function(input, output, session) {
