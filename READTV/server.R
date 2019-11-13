@@ -4,7 +4,7 @@ library(shiny)
 library(shinyjs)
 
 source('analysis_helpers.R')
-source('dataMungers.r')
+source('dataMungers.R')
 
 source('utils.R')
 
