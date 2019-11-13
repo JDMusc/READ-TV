@@ -1,5 +1,7 @@
 library(shiny)
 library(shinyjs)
 
-
-eventsDisplayUI("eventsDisplay")
+fluidPage(
+  actionButton("addDisplay", "Add Display"),
+  uiOutput("eventDisplayer")
+)
