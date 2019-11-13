@@ -46,6 +46,7 @@ fluidPage(
   shinyjs::useShinyjs(),
   shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
   actionButton("minimizeHeader", "Minimize Header"),
+  uiOutput("headerInformation"),
   div(id = "loadDataHeader",
       fluidRow(
       eventsLoaderUI("loadData"),

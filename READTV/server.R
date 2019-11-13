@@ -3,8 +3,8 @@ library(ggplot2)
 library(shiny)
 library(shinyjs)
 
-source('../analysis_helpers.R')
-source('../dataMungers.r')
+source('analysis_helpers.R')
+source('dataMungers.r')
 
 source('utils.R')
 
@@ -183,5 +183,25 @@ function(input, output, session){
                                         "Show Header",
                                         "Minimize Header")
                          )
+    })
+    
+    
+    headerMinimalInformation = reactive({
+      parts = c()
+      if(!is.null(input$`loadData-filewell-loadF`))
+        parts = append(parts, input$`loadData-filewell-loadF`$name)
+      
+      if(!is.null(input$`loadMetaData-filewell-loadF`))
+        parts = append(parts, input$`loadMetaData-filewell-loadF`$name)
+      
+      if(!is.null(input$`metaqueryui-queryInput`))
+        parts = append(parts, input$`metaqueryui-queryInput`)
+      
+      return(toString(parts))
+    })
+    
+    output$headerInformation = renderText({
+      if(isHeaderMinimized()) headerMinimalInformation()
+      else NULL
     })
 }
