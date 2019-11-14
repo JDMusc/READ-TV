@@ -22,6 +22,7 @@ showCpa = function(input, output, session, data) {
   }
   showModal(modalDialog(
     title = "Change Point Analysis",
+    easyClose = T,
     fluidRow(
       selectInput(ns("cpaSelect"), "Select N", 1:5, selected = 4),
       selectInput(ns("methodSelect"), "Method", methods, selected = "AMOC"),

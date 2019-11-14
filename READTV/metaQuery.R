@@ -168,6 +168,7 @@ metaQueryServer = function(input, output, session, metaDataFile) {
         actionButton(ns("modalSubmit"), "Include"),
         modalButton("Cancel")
       ),
+      easyClose = T,
       selectInput(ns("metaField"), "Field", 
                   choices = colnames(meta_data)),
       uiOutput(ns("fieldOptions")),

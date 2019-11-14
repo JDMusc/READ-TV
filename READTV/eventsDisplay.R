@@ -4,8 +4,7 @@ library(shiny)
 library(shinyjs)
 
 
-selectRows <- function(id) {
-  ns = NS(id)
+selectRows <- function(ns) {
   fluidRow(
     column(
       width = 2,
@@ -28,11 +27,10 @@ selectRows <- function(id) {
     ),
     column(
       width = 2,
-      uiOutput(ns("showSource"))
-    ),
-    column(
-      width = 2,
-      uiOutput(ns("calcCPA"), label = "Show CPA")
+      wellPanel(uiOutput(ns("showSource")), 
+                uiOutput(ns("calcCPA"), label = "Show CPA"),
+                actionButton(ns("showEventStats"), "Basic Statistics")
+                )
     )
   )
 }
@@ -56,9 +54,8 @@ eventsDisplayUI <- function(id) {
           )
         )
     ),
-    selectRows(id),
-    plotOutput(ns("eventPlot")),
-    verbatimTextOutput(ns("eventStats"))
+    selectRows(ns),
+    plotOutput(ns("eventPlot"))
   )
 }
 
@@ -199,23 +196,6 @@ eventsDisplayServer = function(input, output, session){
     summary(filteredData()$deltaTime)
   })
   
-  eventStats <- reactive({
-    d = filteredData()
-    fd = flowDisruption()
-    totalTime = function(da) da %>% 
-      group_by(Case) %>%
-      summarise(TDiff = last(Time) - first(Time)) %>%
-      {sum(.$TDiff)}
-    
-    total_time = totalTime(d)
-    d %>% 
-      group_by(FD.Type) %>% 
-      summarise(n = n(), rate = n/total_time) %>% 
-      as.data.frame %>% 
-      add_row(FD.Type = "Combined", n = nrow(d), rate = n/total_time) %>%
-      rename(`Disruption Type` = FD.Type, Count = n, Rate = rate)
-  })
-  
   observeEvent(input$showSource, {
     showSource(filteredData)
   })
@@ -310,5 +290,9 @@ eventsDisplayServer = function(input, output, session){
   output$calcCPA = renderUI({
     if(input$plotType == "timePlot")
       actionButton(inputId = ns("calcCPA"), label = "Show CPA")
+  })
+  
+  observeEvent(input$showEventStats, {
+    callModule(showEventStats, "", data=filteredData)
   })
 }
