@@ -32,10 +32,7 @@ selectRows <- function(id) {
     ),
     column(
       width = 2,
-      conditionalPanel(
-        condition = 'input.plotType == "timePlot"',
-        actionButton(inputId = ns("calcCPA"), label = "Show CPA")
-      )
+      uiOutput(ns("calcCPA"), label = "Show CPA")
     )
   )
 }
@@ -47,6 +44,8 @@ eventsDisplayUI <- function(id) {
     shinyjs::useShinyjs(),
     shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
     actionButton(ns("minimizeHeader"), "Minimize Header"),
+    uiOutput(ns("downloadDataOutput")),
+    #downloadButton(ns("downloadData"), "Download Data"),
     uiOutput(ns("headerInformation")),
     div(id = ns("loadDataHeader"),
         fluidRow(
@@ -70,12 +69,12 @@ eventsDisplayServer = function(input, output, session){
   isHeaderMinimized = reactiveVal(F)
   isDataLoaded = reactiveVal(F)
   
-  eventsData = callModule(eventsLoader, "loadData")
+  eventsInformation = callModule(eventsLoader, "loadData")
   
   data <- reactive({
-    tbl = eventsData()
-    if(metaDataLoaded()) {
-      tbl = tbl %>% filter(Case %in% filteredMetaData()$Case)
+    tbl = eventsInformation()$data
+    if(isMetaDataLoaded()) {
+      tbl = tbl %>% filter(Case %in% filteredMetaData()$data$Case)
     }
     isDataLoaded(T)
     tbl
@@ -83,17 +82,10 @@ eventsDisplayServer = function(input, output, session){
   
   metaDataFile <- callModule(metaQueryLoader, "loadMetaData")
   
-  observe({
-    req(metaDataFile())
-    
-    callModule(metaQueryServer, "metaqueryui", metaDataFile)
-  })
-  
-  
   filteredMetaData <- callModule(metaQueryServer, "metaqueryui", 
                                  metaDataFile)
   
-  metaDataLoaded = reactive({
+  isMetaDataLoaded = reactive({
     fmd = try(filteredMetaData(), silent = T)
     
     return(!(class(fmd) == "try-error"))
@@ -250,14 +242,13 @@ eventsDisplayServer = function(input, output, session){
   headerMinimalInformation = reactive({
     parts = c()
     
-    if(!is.null(input$`loadData-filewell-loadF`))
-      parts = append(parts, input$`loadData-filewell-loadF`$name)
+    if(isDataLoaded())
+      parts = append(parts, eventsInformation()$name)
     
-    if(!is.null(input$`loadMetaData-filewell-loadF`))
-      parts = append(parts, input$`loadMetaData-filewell-loadF`$name)
-    
-    if(!is.null(input$`metaqueryui-queryInput`))
-      parts = append(parts, input$`metaqueryui-queryInput`)
+    if(isMetaDataLoaded()) {
+      parts = append(parts, metaDataFile()$name)
+      parts = append(parts, filteredMetaData()$query)
+    }
     
     return(toString(parts))
   })
@@ -269,7 +260,7 @@ eventsDisplayServer = function(input, output, session){
   
   output$doStemPlot = renderUI({
     if(input$plotType == "timePlot" & isDataLoaded())
-      checkboxInput(ns("doStemPlot"), "Stem Plot")
+      checkboxInput(ns("doStemPlot"), "Stem Plot", value = T)
     else
       NULL
   })
@@ -297,5 +288,27 @@ eventsDisplayServer = function(input, output, session){
       return(eventStats())
     if(input$plotType == "hist")
       return(fdStats())
+  })
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      hmi = headerMinimalInformation() %>% 
+        {gsub(', ?', '-', .)} %>%
+        {gsub('.csv','', .)}
+      paste0(hmi, "-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(filteredData(), file, row.names = F)
+    }
+  )
+  
+  output$downloadDataOutput = renderUI({
+    if(isDataLoaded())
+      downloadButton("downloadData")
+  })
+  
+  output$calcCPA = renderUI({
+    if(input$plotType == "timePlot")
+      actionButton(inputId = ns("calcCPA"), label = "Show CPA")
   })
 }

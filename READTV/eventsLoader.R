@@ -15,10 +15,12 @@ eventsLoader = function(input, output, session) {
     req(eventDataF())
     
     if(config.testing) {
-      eventDataF()$datapath %>% loadEventsClean
+      data = eventDataF()$datapath %>% loadEventsClean
     } else {
-      eventDataF()$datapath %>% read.csv %>% relativeTimes
+      data = eventDataF()$datapath %>% read.csv %>% relativeTimes
     }
+
+    return(list(name = eventDataF()$name, data = data))
   })
   )
 }

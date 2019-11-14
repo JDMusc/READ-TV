@@ -221,7 +221,11 @@ metaQueryServer = function(input, output, session, metaDataFile) {
       silent = T)
   
   return(reactive({
-    if(queryCompiles()) filteredMetaData()
-    else metaData()
+    qry = input$queryInput
+    
+    if(queryCompiles()) data = filteredMetaData()
+    else data = metaData()
+    
+    return(list(query = qry, data = data))
   }))
 }

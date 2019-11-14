@@ -14,13 +14,20 @@ function(input, output, session){
   
   observeEvent(input$addDisplay, {
     displayCount(displayCount() + 1)
-    callModule(eventsDisplayServer, currentEventId())
-    eventDisplays[[currentEventId()]] = eventsDisplayUI(currentEventId())
+    
+    id = currentEventId()
+    
+    callModule(eventsDisplayServer, id)
+    eventDisplays[[id]] = eventsDisplayUI(id)
+    
+    insertUI(selector = "#eventDisplayer",
+             where = "beforeEnd",
+             ui = eventDisplays[[id]]
+             )
   })
   
   output$eventDisplayer = renderUI({
     div(
-      reactiveValuesToList(eventDisplays)
     )
   })
 }
