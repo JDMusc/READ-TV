@@ -6,7 +6,7 @@ library(shinyjs)
 
 source('analysisHelpers.R')
 source('config.R')
-source('dataFilters.R')
+source('dataFilter.R')
 source('dataMungers.R')
 source('eventsDisplay.R')
 source('eventsLoader.R')
