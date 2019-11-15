@@ -1,5 +1,12 @@
+library(changepoint)
+library(dplyr)
+library(ggplot2)
+library(shiny)
+library(shinyjs)
+
 source('analysisHelpers.R')
 source('config.R')
+source('dataFilters.R')
 source('dataMungers.R')
 source('eventsDisplay.R')
 source('eventsLoader.R')

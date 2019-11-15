@@ -1,5 +1,3 @@
-library(shiny)
-library(shinyjs)
 
 fluidPage(
   actionButton("addDisplay", "Add Display"),

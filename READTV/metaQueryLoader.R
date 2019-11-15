@@ -1,4 +1,4 @@
-library(shiny)
+
 
 metaQueryLoaderUI = function(id) {
   ns = NS(id)

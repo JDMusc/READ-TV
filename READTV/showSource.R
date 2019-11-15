@@ -1,4 +1,4 @@
-library(shiny)
+
 
 showSource = function(data) 
   showModal(modalDialog(

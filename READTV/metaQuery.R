@@ -1,5 +1,4 @@
-library(shiny)
-library(shinyjs)
+
 
 metaQueryUI = function(id){
   ns <- NS(id)

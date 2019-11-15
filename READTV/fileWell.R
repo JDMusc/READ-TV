@@ -1,5 +1,3 @@
-library(shiny)
-library(shinyjs)
 
 
 fileWellUI = function(id) {

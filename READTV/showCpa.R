@@ -1,5 +1,3 @@
-library(changepoint)
-library(shiny)
 
 
 showCpa = function(input, output, session, data) {

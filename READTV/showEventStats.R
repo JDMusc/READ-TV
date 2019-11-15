@@ -1,4 +1,3 @@
-library(shiny)
 
 
 showEventStats = function(input, output, session, data) {

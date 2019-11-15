@@ -1,4 +1,4 @@
-library(shiny)
+
 
 eventsLoaderUI = function(id) {
   ns <- NS(id)

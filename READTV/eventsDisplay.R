@@ -1,7 +1,3 @@
-library(dplyr)
-library(ggplot2)
-library(shiny)
-library(shinyjs)
 
 
 selectRows <- function(ns) {
@@ -24,13 +20,6 @@ selectRows <- function(ns) {
     column(
       width = 2,
       uiOutput(ns("doStemPlot"))
-    ),
-    column(
-      width = 2,
-      wellPanel(uiOutput(ns("showSource")), 
-                uiOutput(ns("calcCPA"), label = "Show CPA"),
-                actionButton(ns("showEventStats"), "Basic Statistics")
-                )
     )
   )
 }
@@ -42,8 +31,6 @@ eventsDisplayUI <- function(id) {
     shinyjs::useShinyjs(),
     shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
     actionButton(ns("minimizeHeader"), "Minimize Header"),
-    uiOutput(ns("downloadDataOutput")),
-    #downloadButton(ns("downloadData"), "Download Data"),
     uiOutput(ns("headerInformation")),
     div(id = ns("loadDataHeader"),
         fluidRow(
@@ -55,7 +42,14 @@ eventsDisplayUI <- function(id) {
         )
     ),
     selectRows(ns),
-    plotOutput(ns("eventPlot"))
+    fluidRow(
+      column(plotOutput(ns("eventPlot")), width = 10),
+      column(wellPanel(uiOutput(ns("showSource")), 
+                uiOutput(ns("calcCPA"), label = "Show CPA"),
+                uiOutput(ns("showEventStats"), label = "Basic Statistics"),
+                uiOutput(ns("downloadDataOutput"))), 
+             width = 2)
+      )
   )
 }
 
@@ -288,8 +282,13 @@ eventsDisplayServer = function(input, output, session){
   })
   
   output$calcCPA = renderUI({
-    if(input$plotType == "timePlot")
+    if(input$plotType == "timePlot" & isDataLoaded())
       actionButton(inputId = ns("calcCPA"), label = "Show CPA")
+  })
+  
+  output$showEventStats = renderUI({
+    if(isDataLoaded())
+      actionButton(inputId = ns("showEventStats"), "Basic Statistics")
   })
   
   observeEvent(input$showEventStats, {
