@@ -19,16 +19,7 @@ eventsDisplayUI <- function(id) {
     uiOutput(ns("dataFilter")),
     fluidRow(
       column(plotOutput(ns("eventPlot")), width = 10),
-      column(wellPanel(
-        selectInput(ns("plotType"), "Plot Type", 
-                    c("Time Plot" = "timePlot", "Histogram" = "hist"),
-                    selected = "timePlot"),
-        uiOutput(ns("showSource")), 
-        uiOutput(ns("calcCPA"), label = "Show CPA"),
-        uiOutput(ns("showEventStats"), label = "Basic Statistics"),
-        uiOutput(ns("downloadDataOutput")),
-        uiOutput(ns("doStemPlot"))), 
-        width = 2)
+      column(uiOutput(ns("sidePanel")), width = 2)
       )
   )
 }
@@ -81,6 +72,7 @@ eventsDisplayServer = function(input, output, session){
   
   timePlot <- reactive({
     req(isDataLoaded())
+    req(!is.null(input$doStemPlot))
     
     p = filteredData() %>% mutate(Event = TRUE) %>%
       ggplot(aes(x = RelativeTime)) + 
@@ -162,11 +154,28 @@ eventsDisplayServer = function(input, output, session){
   
   output$eventPlot = renderPlot({
     req(isDataLoaded())
+    req(input$plotType)
     
     if(input$plotType == "timePlot")
       return(timePlot())
     if(input$plotType == "hist")
       return(hist())
+  })
+  
+  
+  output$sidePanel = renderUI({
+    req(isDataLoaded())
+    
+    wellPanel(
+      selectInput(ns("plotType"), "Plot Type", 
+                  c("Time Plot" = "timePlot", "Histogram" = "hist"),
+                  selected = "timePlot"),
+      uiOutput(ns("showSource")), 
+      uiOutput(ns("calcCPA"), label = "Show CPA"),
+      uiOutput(ns("showEventStats"), label = "Basic Statistics"),
+      uiOutput(ns("downloadDataOutput")),
+      uiOutput(ns("doStemPlot"))
+    )
   })
   
   output$eventStats = renderPrint({

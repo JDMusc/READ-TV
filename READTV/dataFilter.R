@@ -10,25 +10,29 @@ selectRows <- function(ns) {
   fluidRow(
     column(
       width = 2,
-      selectInput(ns("caseSelect"), "Select Case", selectableChoices(c()))),
+      multiSelectUI(ns("caseSelect"), "Case")
+      ),
     column(
       width = 2,
-      selectInput(ns("phaseSelect"), "Select Phase", selectableChoices(c()))),
+      multiSelectUI(ns("phaseSelect"), "Phase")
+      ),
     column(
       width = 2,
-      selectInput(ns("fdSelect"), "Select FD Type", selectableChoices(c()),
-                  multiple = TRUE))
+      multiSelectUI(ns("fdSelect"), "FD")
+      )
   )
 }
 
 
 dataFilterServer = function(input, output, session, data) {
+  ns = session$ns
+  
   filteredData <- reactive({
     
     d = data()
-    ca = case()
-    ph = phase()
-    fd = flowDisruption()
+    ca = case$selected()
+    ph = phase$selected()
+    fd = flowDisruption$selected()
     
     if(isSelected(ca)) d = d %>% filter(Case == ca)
     if(isSelected(ph)) d = d %>% filter(Phase == ph)
@@ -37,63 +41,37 @@ dataFilterServer = function(input, output, session, data) {
     d
   })
   
-  case <- eventReactive(input$caseSelect, {input$caseSelect})
+  case <- callModule(multiSelectServer, "caseSelect")
+  phase <- callModule(multiSelectServer, "phaseSelect")
+  flowDisruption <- callModule(multiSelectServer, "fdSelect")
+  
   
   observe({
     cases = data()$Case %>% unique
-    updateSelectInput(session, "caseSelect", 
-                      choices = selectableChoices(cases)
-    )
+    case$choices(cases)
   })
   
-  phase <- eventReactive(input$phaseSelect, {input$phaseSelect})
-  
   observe({
-    req(input$caseSelect)
-    
-    ca = input$caseSelect
+    ca = case$selected()
     d = data()
     
     if(isSelected(ca)) phases = d[d$Case== ca,]$Phase %>% unique
     else phases = unique(d$Phase)
     
-    updateSelectInput(session, "phaseSelect", 
-                      choices = selectableChoices(phases),
-                      selected = "All"
-    )
+    phase$choices(phases)
   })
   
   
   observe({
-    ca = case()
-    ph = phase()
+    ca = case$selected()
+    ph = phase$selected()
     d = data()
     
     if(isSelected(ca)) d = d %>% filter(Case == ca)
     if(isSelected(ph)) d = d %>% filter(Phase == ph)
     fds = d$FD.Type %>% unique %>% as.character
     
-    updateSelectInput(session, "fdSelect", 
-                      choices = selectableChoices(fds),
-                      selected = "All")
-  })
-  
-  flowDisruption = eventReactive(input$fdSelect, {input$fdSelect})
-  
-  observeEvent(input$fdSelect, {
-    fd = flowDisruption()
-    has_all = 'All' %in% fd
-    only_all = length(fd) == 1
-    
-    if(has_all & !only_all) {
-      was_all = fd[1] == 'All'
-      if(was_all) 
-        updateSelectInput(session, "fdSelect", 
-                          selected = fd[-1])
-      else
-        updateSelectInput(session, "fdSelect",
-                          selected = 'All')
-    }
+    flowDisruption$choices(fds)
   })
   
   return(filteredData)
