@@ -12,11 +12,11 @@ showEventStats = function(input, output, session, data) {
     
     total_time = totalTime(d)
     d %>% 
-      group_by(FD.Type) %>% 
+      group_by(Event.Type) %>% 
       summarise(n = n(), rate = n/total_time) %>% 
       as.data.frame %>% 
-      add_row(FD.Type = "Combined", n = nrow(d), rate = n/total_time) %>%
-      rename(`Disruption Type` = FD.Type, Count = n, Rate = rate)
+      add_row(Event.Type = "Combined", n = nrow(d), rate = n/total_time) %>%
+      rename(`Event Type` = Event.Type, Count = n, Rate = rate)
   })
   
   summaryStats <- reactive({

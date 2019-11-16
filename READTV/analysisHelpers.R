@@ -10,9 +10,9 @@ withinTimeSeries = function(time_data, n = 4){
   }
 
 
-interEventTime = function(data, fd_type, prev_fd_type){
+interEventTime = function(data, event_type, prev_event_type){
   data %>% 
-    filter(FD.Type == fd_type, Prev.FD.Type == prev_fd_type) %>%
+    filter(Event.Type == event_type, Prev.Event.Type == prev_event_type) %>%
     group_by(Case) %>%
     mutate(n_case = n()) %>%
     filter(n_case > 1) %>%

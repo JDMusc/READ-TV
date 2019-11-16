@@ -3,7 +3,7 @@ selectableChoices = function(choices) c("All" = "All", choices)
 
 
 #https://stackoverflow.com/questions/8197559/emulate-ggplot2-default-color-palette
-fdTypeColors <- function() {
+eventTypeColors <- function() {
   types = sort(validTypes())
   n_types = length(types)
   hues = seq(15, 375, length = n_types + 1)

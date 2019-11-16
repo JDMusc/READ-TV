@@ -68,7 +68,7 @@ eventsDisplayServer = function(input, output, session){
       ylab("Event Count")
   })
   
-  fd_colors = fdTypeColors()
+  event_colors = eventTypeColors()
   
   timePlot <- reactive({
     req(isDataLoaded())
@@ -76,23 +76,23 @@ eventsDisplayServer = function(input, output, session){
     
     p = filteredData() %>% mutate(Event = TRUE) %>%
       ggplot(aes(x = RelativeTime)) + 
-      geom_point(aes(y = Event, colour = FD.Type, shape = factor(Phase) )) +
+      geom_point(aes(y = Event, colour = Event.Type, shape = factor(Phase) )) +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
-      labs(col = "FD Type", shape = "Phase") +
+      labs(col = "Event Type", shape = "Phase") +
       scale_shape_manual(values = list("1" = 16, "2" = 17, "3" = 15, "4" = 3)) +
-      scale_color_manual(values = fd_colors)
+      scale_color_manual(values = event_colors)
     
     if(input$doStemPlot){
       p = p + geom_segment(aes(xend = RelativeTime, 
                                yend = Event - Event, 
                                y = Event,
-                               colour = FD.Type))
+                               colour = Event.Type))
     }
     
     return(p)
   })
   
-  fdStats <- reactive({
+  eventStats <- reactive({
     summary(filteredData()$deltaTime)
   })
   
@@ -184,7 +184,7 @@ eventsDisplayServer = function(input, output, session){
     if(input$plotType == "timePlot")
       return(eventStats())
     if(input$plotType == "hist")
-      return(fdStats())
+      return(eventStats())
   })
   
   output$downloadData <- downloadHandler(

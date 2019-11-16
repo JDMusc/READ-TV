@@ -16,26 +16,26 @@ loadEvents = function() {
 
 loadEventsClean = function(f = "data/tc_prepped_events.csv") f %>% 
   read.csv %>% 
-  filter(FD.Type %in% validTypes()) %>% 
+  filter(Event.Type %in% validTypes()) %>% 
   droplevels %>%
   resetDeltaTimes %>%
-  resetPrevFds %>%
+  resetPrevEvents %>%
   relativeTimes %>%
   select(Case, Phase, Code, Time, 
-         deltaTime, RelativeTime, FD.Type, Prev.FD.Type, 
+         deltaTime, RelativeTime, Event.Type, Prev.Event.Type, 
          Notes)
 
 
-resetPrevFds = function(events) {
-  events$Prev.FD.Type.Orig = events$Prev.FD.Type
+resetPrevEvents = function(events) {
+  events$Prev.Event.Type.Orig = events$Prev.Event.Type
   
-  events$Prev.FD.Type = events$FD.Type %>% 
+  events$Prev.Event.Type = events$Event.Type %>% 
     as.character %>% {.[1:nrow(events) - 1]} %>% {append('START', .)} %>% factor
   
   prev_cases = append(-1, events$Case[1:nrow(events) - 1])
   switches = events$Case != prev_cases
   
-  events$Prev.FD.Type[switches] = 'START'
+  events$Prev.Event.Type[switches] = 'START'
   
   return(events)
 }
