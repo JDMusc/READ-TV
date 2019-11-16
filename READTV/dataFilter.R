@@ -34,45 +34,19 @@ dataFilterServer = function(input, output, session, data) {
     ph = phase$selected()
     fd = flowDisruption$selected()
     
-    if(isSelected(ca)) d = d %>% filter(Case == ca)
-    if(isSelected(ph)) d = d %>% filter(Phase == ph)
+    if(isSelected(ca)) d = d %>% filter(Case %in% ca)
+    if(isSelected(ph)) d = d %>% filter(Phase %in% ph)
     if(isSelected(fd)) d = d %>% filter(FD.Type %in% fd)
     
     d
   })
   
-  case <- callModule(multiSelectServer, "caseSelect")
-  phase <- callModule(multiSelectServer, "phaseSelect")
-  flowDisruption <- callModule(multiSelectServer, "fdSelect")
+  case <- callModule(multiSelectServer, "caseSelect", data, 'Case')
+  phase <- callModule(multiSelectServer, "phaseSelect", data, 'Phase',
+                      parents = reactiveValues(Case = case))
+  flowDisruption <- callModule(multiSelectServer, "fdSelect", data, "FD.Type",
+                               parents = reactiveValues(Case = case, Phase = phase))
   
-  
-  observe({
-    cases = data()$Case %>% unique
-    case$choices(cases)
-  })
-  
-  observe({
-    ca = case$selected()
-    d = data()
-    
-    if(isSelected(ca)) phases = d[d$Case== ca,]$Phase %>% unique
-    else phases = unique(d$Phase)
-    
-    phase$choices(phases)
-  })
-  
-  
-  observe({
-    ca = case$selected()
-    ph = phase$selected()
-    d = data()
-    
-    if(isSelected(ca)) d = d %>% filter(Case == ca)
-    if(isSelected(ph)) d = d %>% filter(Phase == ph)
-    fds = d$FD.Type %>% unique %>% as.character
-    
-    flowDisruption$choices(fds)
-  })
   
   return(filteredData)
 }

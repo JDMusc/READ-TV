@@ -1,4 +1,4 @@
-isSelected = function(choice) choice != "All"
+isSelected = function(choice) any(choice != c("All"))
 selectableChoices = function(choices) c("All" = "All", choices)
 
 

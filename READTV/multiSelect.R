@@ -7,10 +7,11 @@ multiSelectUI = function(id, title) {
 }
 
 
-multiSelectServer = function(input, output, session) {
+multiSelectServer = function(input, output, session, 
+                             data = NULL, col = NULL, parents = NULL) {
   ns = session$ns
   
-  choices = reactiveVal()
+  #choices = reactiveVal()
   
   selected = eventReactive(input$select, {input$select})
   
@@ -35,6 +36,29 @@ multiSelectServer = function(input, output, session) {
     updateSelectInput(session, "select", 
                       choices = selectableChoices(choices()),
                       selected = "All")
+  })
+
+  
+  choices = reactive({
+    req(!is.null(data))
+    
+    d = data()
+    if(!is.null(parents)) {
+      parent_cols = names(parents)
+      for(i in 1:length(parent_cols)){
+        parent_col = parent_cols[i]
+        val = parents[[parent_col]]$selected()
+      
+        if(isSelected(val)) d = d %>% filter(.data[[parent_col]] %in% val)
+      }
+    }
+    
+    chs = d[[col]] %>% unique
+    
+    if(class(d[[col]]) == "factor")
+      chs = as.character(chs)
+    
+    return(chs)
   })
   
   return(list(choices = choices, selected = selected))
