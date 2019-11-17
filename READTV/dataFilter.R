@@ -14,11 +14,11 @@ selectRows <- function(ns) {
       ),
     column(
       width = 2,
-      multiSelectUI(ns("phaseSelect"), "Phase")
-      ),
+      multiSelectUI(ns("eventSelect"), "Event")
+    ),
     column(
       width = 2,
-      multiSelectUI(ns("eventSelect"), "Event")
+      multiSelectUI(ns("phaseSelect"), "Phase")
       )
   )
 }
@@ -28,13 +28,14 @@ dataFilterServer = function(input, output, session, data) {
   ns = session$ns
   
   filteredData <- reactive({
-    eventType()$filteredData()
+    phase()$filteredData()
   })
   
   case <- callModule(multiSelectServer, "caseSelect", data, 'Case')
-  phase <- callModule(multiSelectServer, "phaseSelect", case()$filteredData, 'Phase')
-  eventType <- callModule(multiSelectServer, "eventSelect", phase()$filteredData, 
-                               "Event.Type")
+  eventType <- callModule(multiSelectServer, "eventSelect", case()$filteredData, 
+                          "Event.Type")
+  phase <- callModule(multiSelectServer, "phaseSelect", eventType()$filteredData, 'Phase')
+  
   
   return(filteredData)
 }
