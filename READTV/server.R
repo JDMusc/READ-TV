@@ -1,4 +1,5 @@
 function(input, output, session){
+  
   displayCount = reactiveVal(0)
   currentEventId = reactive({
     paste0("eventsDisplay", displayCount())
@@ -21,7 +22,10 @@ function(input, output, session){
   })
   
   output$eventDisplayer = renderUI({
+    id = currentEventId()
+    callModule(eventsDisplayServer, id)
     div(
+      eventsDisplayUI(id)
     )
   })
 }
