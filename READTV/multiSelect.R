@@ -7,59 +7,57 @@ multiSelectUI = function(id, title) {
 }
 
 
-multiSelectServer = function(input, output, session, data, col) {
+multiSelectServer = function(input, output, session, choices) {
   ns = session$ns
   
-  selected = eventReactive(input$select, {input$select})
-  
-  observeEvent(input$select, {
-    sd = selected()
-    has_all = 'All' %in% sd
-    only_all = length(sd) == 1
+  selected = eventReactive(input$select,  {
+    sd = ifAllOnlyAll(input$select)
     
-    if(has_all & !only_all) {
-      was_all = sd[1] == 'All'
-      if(was_all) 
-        sd = sd[-1]
-      else
-        sd = "All"
-      
+    if(!all(sd == input$select)) {
       updateSelectInput(session, "select",
                         selected = sd)
     }
+    
+    sd
   })
   
-  observe({
-    updateSelectInput(session, "select", 
-                      choices = selectableChoices(choices()),
-                      selected = "All")
-  })
-
+  ifAllOnlyAll = function(selected_vals) {
+    has_all = 'All' %in% selected_vals
+    only_all = length(selected_vals) == 1
+    
+    if(has_all & !only_all) {
+      was_all = selected_vals[1] == 'All'
+      if(was_all) 
+        selected_vals = selected_vals[-1]
+      else
+        selected_vals = "All"
+    }
+    
+    return(selected_vals)
+  }
   
-  choices = reactive({
-    req(data())
-    
-    d = data()
-    chs = d[[col]] %>% unique
-    
-    if(class(chs) == "factor")
-      chs = as.character(chs)
-    
-    return(chs)
-  })
+  currentChoices = reactiveVal(selectableChoices(c()))
   
-  filteredData = reactive({
-    req(data())
+  updateChoices = function(choices) {
+    s_choices = selectableChoices(sort(choices))
     
-    d = data()
+    sd = selected()
+    new_choices_contain_selected = all(sd %in% s_choices)
+    if(!new_choices_contain_selected)
+      sd = 'All'
     
-    val = selected()
-    if(isSelected(val)) d = d %>% filter(.data[[col]] %in% val)
+    new_choices_same = all(s_choices %in% currentChoices()) &
+      all(currentChoices() %in% s_choices)
     
-    d
-  })
+    if (!new_choices_same) {
+      currentChoices(s_choices)
+      updateSelectInput(session, 'select', choices = s_choices,
+                        selected = sd)
+    }
+    
+  }
   
   return(reactive({
-    list(selected = selected, filteredData = filteredData)
+    list(selected = selected, updateChoices = updateChoices)
   }))
 }

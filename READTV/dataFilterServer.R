@@ -5,13 +5,40 @@ dataFilterServer = function(input, output, session, data) {
   
   selectMods <- reactiveValues()
   
+  selectedQuery = function(selected_values) {
+    selected_ixs = selected_values %>% names %>%
+      sapply(function(n) !('All' %in% selected_values[[n]]))
+    if(sum(selected_ixs) == 0)
+      return("")
+    
+    selected_values = selected_values[selected_ixs]
+    
+    selected_values %>% 
+      names %>% 
+      sapply(function(n) {
+        values = selected_values[[n]]
+        is_char = class(values) == 'character'
+        
+        values_str = values %>% sapply(function(v) 
+          if(is_char)  paste0("'", v, "'") else v) %>%
+          paste(collapse = ',')
+        
+        paste(n, '%in%', paste0('c(', values_str, ')'))
+        }) %>%
+      paste(collapse = '&')
+  }
+  
+  filteredDataCount = printWithCountGen("filtered data")
   filteredData <- reactive({
     req(data())
     
     d = data()
     
+    filteredDataCount()
+    
     if('Case' %in% names(selectMods)) {
-      for(col in c('Case', 'Event.Type', extraFilterName())){
+      cols = c('Case', 'Event.Type', extraFilterName())
+      for(col in cols){
         m = selectMods[[col]]()
         req(m$selected())
         val = m$selected()
@@ -23,21 +50,29 @@ dataFilterServer = function(input, output, session, data) {
     d
   })
   
-  updateChoicesCountDebug = printWithCount('update choices')
+  updateChoicesCountDebug = printWithCountGen('update choices')
   observe({
     req('Case' %in% names(selectMods))
     
-    updateChoicesCountDebug()
-    
-    d = filteredData()
-    for(col in c('Case', 'Event.Type', extraFilterName())) {
-      chs = columnValues(d, col)
+    d = data()
+    cols = c('Case', 'Event.Type', extraFilterName())
+    selected_vals = sapply(cols, 
+                           function(col) selectMods[[col]]()$selected())
+    for(col in cols) {
+      qry = selectedQuery(selected_vals[setdiff(cols, col)])
+      
+      df = filterData(qry, 'data')
+      
+      chs = columnValues(df, col)
+      
+      if(length(chs) == 1) browser()
       
       req(selectMods[[col]]())
       
       selectMods[[col]]()$updateChoices(chs)
       }
   })
+  
   
   columnValues = function(df, col) {
     chs = df[[col]] %>% unique
@@ -48,6 +83,7 @@ dataFilterServer = function(input, output, session, data) {
       chs
   }
   
+  
   observe({
     req(extraFilterName())
     
@@ -57,9 +93,11 @@ dataFilterServer = function(input, output, session, data) {
                                       columnValues(d, "Case"))
     selectMods[["Event.Type"]] = callModule(multiSelectServer, "eventTypeFilter",
                                             columnValues(d, "Event.Type"))
-    selectMods[[extraFilterName()]] = callModule(multiSelectServer, "extraFilter", 
-                                                 columnValues(d, extraFilterName()))
+    efn = extraFilterName()
+    selectMods[[efn]] = callModule(multiSelectServer, "extraFilter", 
+                                   columnValues(d, efn))
   })
+  
   
   extraFilterName = reactive({
     req(data())
@@ -67,12 +105,14 @@ dataFilterServer = function(input, output, session, data) {
     colnames(data())[3]
   })
   
+  
   output$extraFilter <- renderUI({
     req(extraFilterName())
     
     multiSelectUI(ns("extraFilter"), extraFilterName())
   })
     
+  
   output$customQuery = renderUI({
     div(
       textInput(ns("queryInput"), "Custom Filter", placeholder = ""),
@@ -162,10 +202,10 @@ dataFilterServer = function(input, output, session, data) {
     T
   })
   
-  filterData = function(qry)
+  filterData = function(qry, data_str = 'filteredData')
     try(
       qry %>%
-        {paste0('filteredData() %>% filter(', ., ')')} %>%
+        {paste0(data_str, '() %>% filter(', ., ')')} %>%
         {parse(text = .)} %>%
         eval, 
       silent = T)

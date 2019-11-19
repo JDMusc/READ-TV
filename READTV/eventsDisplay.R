@@ -70,6 +70,8 @@ eventsDisplayServer = function(input, output, session){
   
   event_colors = eventTypeColors()
   
+  updateTimePlotCountDebug = printWithCountGen('time plot')
+  
   timePlot <- reactive({
     req(isDataLoaded())
     req(!is.null(input$doStemPlot))

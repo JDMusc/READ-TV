@@ -16,3 +16,18 @@ eventTypeColors <- function() {
   }
   return(ret)
 }
+
+
+printWithCountGen <- function(msg) {
+  count = reactiveVal(0)
+  
+  printWithCount <- function(){
+    if(config.debug) {
+      isolate(count(count() + 1))
+      
+      print(paste(msg, count()))
+    }
+  }
+  
+  return(printWithCount)
+}
