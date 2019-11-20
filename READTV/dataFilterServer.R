@@ -61,7 +61,7 @@ dataFilterServer = function(input, output, session, data) {
     for(col in cols) {
       qry = selectedQuery(selected_vals[setdiff(cols, col)])
       
-      df = filterData(qry, 'data')
+      df = applyQuery(qry, data())
       
       chs = columnValues(df, col)
       
@@ -75,7 +75,8 @@ dataFilterServer = function(input, output, session, data) {
   
   
   columnValues = function(df, col) {
-    chs = df[[col]] %>% unique
+    chs = tryCatch({df[[col]] %>% unique},
+                   error = function(e) browser())
     
     if(class(chs) == "factor")
       as.character(chs)
@@ -111,115 +112,13 @@ dataFilterServer = function(input, output, session, data) {
     
     multiSelectUI(ns("extraFilter"), extraFilterName())
   })
-    
   
-  output$customQuery = renderUI({
-    div(
-      textInput(ns("queryInput"), "Custom Filter", placeholder = ""),
-      actionButton(ns("queryInclude"), "Include Condition")
-    )
-  })
+  customQuery = callModule(customEventsQueryServer, "customQuery", filteredData)
   
-  observeEvent(input$queryInclude, {
-    req(filteredData())
-    fd = filteredData()
-    
-    fieldClass = reactive({
-      class(fd[, input$field])
-    })
-    
-    output$fieldOptions = renderUI({
-      req(input$field)
-      
-      filter_choices = c(">", ">=", "<", "<=", "==", "!=")
-      choices = unique(fd[,input$field])
-      if(fieldClass() %in% c("character", "logical"))
-        filter_choices = c("==", "!=")
-      else
-        choices = sort(choices)
-      
-      fluidRow(
-        column(
-          selectizeInput(ns("fieldFilter"), "",
-                         choices = filter_choices),
-          width = 2),
-        column(
-          selectizeInput(ns("fieldValue"), "",
-                         choices = choices),
-          width = 2)
-      )
-    })
-    
-    output$appendQueryOptions = renderUI({
-      if(!hasQueryInput()) return(NULL)
-      selectizeInput(ns("appendQueryOption"), "How To Include",
-                     choices = c("&", "|"))
-    })
-    
-    showModal(modalDialog(
-      title = "Condition",
-      footer = fluidRow(
-        actionButton(ns("modalSubmit"), "Include"),
-        modalButton("Cancel")
-      ),
-      easyClose = T,
-      selectInput(ns("field"), "Field", 
-                  choices = colnames(fd)),
-      uiOutput(ns("fieldOptions")),
-      uiOutput(ns("appendQueryOptions"))
-    ))
-    
-    observeEvent(input$modalSubmit, {
-      
-      field_value = input$fieldValue
-      if(fieldClass() == "character")
-        field_value = paste0("'", field_value, "'")
-      
-      new_qry = paste(input$field, input$fieldFilter, field_value)
-      
-      if(hasQueryInput()) {
-        new_qry = paste(input$queryInput, input$appendQueryOption,
-                        new_qry)
-      }
-      
-      updateTextInput(session, "queryInput", value = new_qry)
-      removeModal()
-    },
-    ignoreInit = TRUE
-    )
-  })
-  
-  queryCompiles = reactive({
-    fmd = try(filterData(input$queryInput), silent = T)
-    
-    return(!(class(fmd) == "try-error"))
-  })
-  
-  hasQueryInput = reactive({
-    if(is.null(input$queryInput)) return(F)
-    if(input$queryInput == "") return(F)
-    
-    T
-  })
-  
-  filterData = function(qry, data_str = 'filteredData')
-    try(
-      qry %>%
-        {paste0(data_str, '() %>% filter(', ., ')')} %>%
-        {parse(text = .)} %>%
-        eval, 
-      silent = T)
-  
-  customFilteredData = reactive({
-    req(hasQueryInput())
-    req(queryCompiles())
-    
-    return(filterData(input$queryInput))
-  })
   
   return(reactive({
-    if(hasQueryInput() & queryCompiles())
-      customFilteredData()
+    if(customQuery$hasValidQuery())
+      customQuery$filteredData()
     else
       filteredData()
   }))

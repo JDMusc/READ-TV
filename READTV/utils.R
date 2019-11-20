@@ -31,3 +31,20 @@ printWithCountGen <- function(msg) {
   
   return(printWithCount)
 }
+
+
+
+applyQuery = function(qry, data)
+  try(
+    qry %>%
+      {paste0('data %>% filter(', ., ')')} %>%
+      {parse(text = .)} %>%
+      eval, 
+    silent = T)
+
+
+doesQueryCompile = function(qry, data) {
+  result = try(applyQuery(qry, data), silent = T)
+  
+  return(!(class(result) == "try-error"))
+}

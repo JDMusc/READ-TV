@@ -22,7 +22,7 @@ selectRows <- function(ns) {
     ),
     column(
       width = 8,
-      uiOutput(ns("customQuery"))
+      customEventsQueryUI(ns("customQuery"))
     )
   )
 }
