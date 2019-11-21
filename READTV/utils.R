@@ -34,13 +34,14 @@ printWithCountGen <- function(msg) {
 
 
 
-applyQuery = function(qry, data)
+applyQuery = function(qry, data) {
   try(
     qry %>%
       {paste0('data %>% filter(', ., ')')} %>%
       {parse(text = .)} %>%
       eval, 
     silent = T)
+}
 
 
 doesQueryCompile = function(qry, data) {

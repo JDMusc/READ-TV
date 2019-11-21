@@ -27,10 +27,18 @@ customEventsQueryServer = function(input, output, session, data) {
       
       filter_choices = c(">", ">=", "<", "<=", "==", "!=")
       choices = unique(d[,input$field])
-      if(fieldClass() %in% c("character", "logical"))
+      if(fieldClass() %in% c("character", "logical")) {
         filter_choices = c("==", "!=")
+        if(fieldClass() == "character")
+          filter_choices = append(c("grepl", "!grepl"), filter_choices)
+      }
       else
         choices = sort(choices)
+      
+      fieldValue = selectizeInput(ns("fieldValue"), "", choices = choices)
+      
+      if(fieldClass() == "character")
+        fieldValue = textInput(ns("fieldValue"), "")
       
       fluidRow(
         column(
@@ -38,8 +46,7 @@ customEventsQueryServer = function(input, output, session, data) {
                          choices = filter_choices),
           width = 2),
         column(
-          selectizeInput(ns("fieldValue"), "",
-                         choices = choices),
+          fieldValue,
           width = 2)
       )
     })
@@ -71,6 +78,11 @@ customEventsQueryServer = function(input, output, session, data) {
       
       new_qry = paste(input$field, input$fieldFilter, field_value)
       
+      if(input$fieldFilter %in% c("grepl", "!grepl"))
+        new_qry = paste0(
+          input$fieldFilter, "(", field_value, ", ", input$field, ")"
+        )
+      
       if(hasQueryInput()) {
         new_qry = paste(input$queryInput, input$appendQueryOption,
                         new_qry)
@@ -85,6 +97,14 @@ customEventsQueryServer = function(input, output, session, data) {
   
   queryCompiles = reactive({
     doesQueryCompile(input$queryInput, data())
+  })
+  
+  observe({
+    req(hasQueryInput())
+    
+    qc = queryCompiles()
+    shinyjs::toggleClass("queryInput", "invalid_query",
+                      !qc)
   })
   
   hasQueryInput = reactive({

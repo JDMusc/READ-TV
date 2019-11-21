@@ -21,7 +21,7 @@ selectRows <- function(ns) {
       uiOutput(ns("extraFilter"))
     ),
     column(
-      width = 8,
+      width = 6,
       customEventsQueryUI(ns("customQuery"))
     )
   )

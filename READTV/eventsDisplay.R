@@ -80,7 +80,7 @@ eventsDisplayServer = function(input, output, session){
       ggplot(aes(x = RelativeTime)) + 
       geom_point(aes(y = Event, colour = Event.Type, shape = factor(Phase) )) +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
-      labs(col = "Event Type", shape = "Phase") +
+      labs(col = "Event.Type", shape = "Phase") +
       scale_shape_manual(values = list("1" = 16, "2" = 17, "3" = 15, "4" = 3)) +
       scale_color_manual(values = event_colors)
     
@@ -172,6 +172,7 @@ eventsDisplayServer = function(input, output, session){
       selectInput(ns("plotType"), "Plot Type", 
                   c("Time Plot" = "timePlot", "Histogram" = "hist"),
                   selected = "timePlot"),
+      #customizeDisplayUI(ns("customizeDisplay")),
       uiOutput(ns("showSource")), 
       uiOutput(ns("calcCPA"), label = "Show CPA"),
       uiOutput(ns("showEventStats"), label = "Basic Statistics"),
@@ -179,6 +180,9 @@ eventsDisplayServer = function(input, output, session){
       uiOutput(ns("doStemPlot"))
     )
   })
+  
+  customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
+                                data)
   
   output$eventStats = renderPrint({
     req(isDataLoaded())

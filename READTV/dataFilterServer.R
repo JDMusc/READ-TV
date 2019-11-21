@@ -8,9 +8,12 @@ dataFilterServer = function(input, output, session, data) {
   selectedQuery = function(selected_values) {
     selected_ixs = selected_values %>% names %>%
       sapply(function(n) !('All' %in% selected_values[[n]]))
-    if(sum(selected_ixs) == 0)
-      return("")
+    tryCatch({
+      if(sum(selected_ixs) == 0)
+        return("")
+    }, error = function(e) browser)
     
+    print(selected_ixs)
     selected_values = selected_values[selected_ixs]
     
     selected_values %>% 
@@ -65,8 +68,6 @@ dataFilterServer = function(input, output, session, data) {
       
       chs = columnValues(df, col)
       
-      if(length(chs) == 1) browser()
-      
       req(selectMods[[col]]())
       
       selectMods[[col]]()$updateChoices(chs)
@@ -114,7 +115,6 @@ dataFilterServer = function(input, output, session, data) {
   })
   
   customQuery = callModule(customEventsQueryServer, "customQuery", filteredData)
-  
   
   return(reactive({
     if(customQuery$hasValidQuery())
