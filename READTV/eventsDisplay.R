@@ -220,7 +220,7 @@ eventsDisplayServer = function(input, output, session){
   
   output$downloadDataOutput = renderUI({
     if(isDataLoaded())
-      downloadButton("downloadData")
+      downloadButton(ns("downloadData"))
   })
   
   output$calcCPA = renderUI({
