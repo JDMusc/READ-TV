@@ -85,10 +85,11 @@ eventsDisplayServer = function(input, output, session){
     if(!is.null(color_col))
       point_aes$colour = quo(!!sym(color_col))
     
-    #browser()
-    
     p = filteredData() %>% 
-      mutate(Event = TRUE, !!shape_col := factor(!!sym(shape_col))) %>%
+      mutate(Event = TRUE) %>% {
+        if(!is.null(shape_col))
+          mutate(., !!shape_col := factor(!!sym(shape_col)))
+        else .} %>%
       ggplot(aes(x = RelativeTime)) + 
       geom_point(point_aes) +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +

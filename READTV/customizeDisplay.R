@@ -7,11 +7,29 @@ customizeDisplayUI = function(id) {
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   
-  shapeColumn = reactiveVal("Phase")
+  shapeColumn = reactiveVal()
   
-  colorColumn = reactiveVal("Event.Type")
+  colorColumn = reactiveVal()
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
+  
+  shouldUpdate = function(valid_choices, current_choice) {
+    should_update = F
+    if(is.null(current_choice)) should_update = T
+    else should_update = !(current_choice %in% valid_choices)
+    
+    return(should_update & length(valid_choices) > 0)
+  }
+  
+  observe({
+    update = function(valids, getset) 
+      if(shouldUpdate(valids, getset()))
+        getset(valids[1])
+    
+    update(validShapeColumns(), shapeColumn)
+    
+    update(validColorColumns(), colorColumn)
+  })
   
   validShapeColumns = reactive({
     req(data())
