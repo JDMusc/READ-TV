@@ -76,19 +76,31 @@ eventsDisplayServer = function(input, output, session){
     req(isDataLoaded())
     req(!is.null(input$doStemPlot))
     
-    p = filteredData() %>% mutate(Event = TRUE) %>%
+    shape_col = customizeDisplay$shapeColumn()
+    color_col = customizeDisplay$colorColumn()
+    
+    point_aes = aes_string(y = "Event")
+    if(!is.null(shape_col))
+      point_aes$shape = quo(!!sym(shape_col))
+    if(!is.null(color_col))
+      point_aes$colour = quo(!!sym(color_col))
+    
+    #browser()
+    
+    p = filteredData() %>% 
+      mutate(Event = TRUE, !!shape_col := factor(!!sym(shape_col))) %>%
       ggplot(aes(x = RelativeTime)) + 
-      geom_point(aes(y = Event, colour = Event.Type, shape = factor(Phase) )) +
+      geom_point(point_aes) +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
-      labs(col = "Event.Type", shape = "Phase") +
-      scale_shape_manual(values = list("1" = 16, "2" = 17, "3" = 15, "4" = 3)) +
-      scale_color_manual(values = event_colors)
+      labs(col = color_col, shape = shape_col) #+
+      #scale_shape_manual(values = list("1" = 16, "2" = 17, "3" = 15, "4" = 3)) +
+      #scale_color_manual(values = event_colors)
     
     if(input$doStemPlot){
       p = p + geom_segment(aes(xend = RelativeTime, 
                                yend = Event - Event, 
                                y = Event,
-                               colour = Event.Type))
+                               colour = !!sym(color_col)))
     }
     
     return(p)
@@ -172,7 +184,7 @@ eventsDisplayServer = function(input, output, session){
       selectInput(ns("plotType"), "Plot Type", 
                   c("Time Plot" = "timePlot", "Histogram" = "hist"),
                   selected = "timePlot"),
-      #customizeDisplayUI(ns("customizeDisplay")),
+      customizeDisplayUI(ns("customizeDisplay")),
       uiOutput(ns("showSource")), 
       uiOutput(ns("calcCPA"), label = "Show CPA"),
       uiOutput(ns("showEventStats"), label = "Basic Statistics"),
@@ -182,7 +194,7 @@ eventsDisplayServer = function(input, output, session){
   })
   
   customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
-                                data)
+                                filteredData)
   
   output$eventStats = renderPrint({
     req(isDataLoaded())
