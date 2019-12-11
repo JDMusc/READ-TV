@@ -4,7 +4,8 @@ customEventsQueryUI <- function(id) {
     {
       div(
         textInput(ns("queryInput"), "Custom Filter", placeholder = ""),
-        actionButton(ns("queryInclude"), "Include Condition")
+        actionButton(ns("queryInclude"), "Include Condition"),
+        actionButton(ns("eventsPreview"), "Preview Events")
       )
     }
   )
@@ -95,16 +96,44 @@ customEventsQueryServer = function(input, output, session, data) {
     )
   })
   
+  
+  
+  
+  observeEvent(input$eventsPreview, {
+    req(queryCompiles())
+    
+    if(hasQueryInput()) 
+      d = filteredData()
+    else
+      d = data()
+    
+    showModal(modalDialog(
+      title = "Events",
+      renderDataTable(d),
+      easyClose = TRUE,
+      size = "m"
+    ))
+  })
+  
   queryCompiles = reactive({
     doesQueryCompile(input$queryInput, data())
   })
   
+  
   observe({
-    req(hasQueryInput())
+    hqi = hasQueryInput()
     
     qc = queryCompiles()
-    shinyjs::toggleClass("queryInput", "invalid_query",
-                      !qc)
+    
+    valid_query = qc | !hqi
+    
+    if(valid_query) {
+      shinyjs::removeClass("queryInput", "invalid_query")
+      shinyjs::enable("eventsPreview")
+    } else {
+      shinyjs::addClass("queryInput", "invalid_query")
+      shinyjs::disable("eventsPreview")
+    }
   })
   
   hasQueryInput = reactive({
