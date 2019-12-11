@@ -1,5 +1,5 @@
 
 fluidPage(
-  #actionButton("addDisplay", "Add Display"),
+  uiOutput("saveDisplay"),
   uiOutput("eventDisplayer")
 )

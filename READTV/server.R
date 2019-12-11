@@ -7,7 +7,7 @@ function(input, output, session){
   
   eventDisplays = reactiveValues()
   
-  observeEvent(input$addDisplay, {
+  observeEvent(input$saveDisplay, {
     displayCount(displayCount() + 1)
     
     id = currentEventId()
@@ -19,6 +19,10 @@ function(input, output, session){
              where = "beforeEnd",
              ui = eventDisplays[[id]]
              )
+  })
+  
+  output$saveDisplay = renderUI({
+    actionButton("saveDisplay", "Save Display")
   })
   
   output$eventDisplayer = renderUI({

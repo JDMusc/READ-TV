@@ -46,21 +46,45 @@ loadDemo = function(events) events %>% relativeTimes
 
 relativeTimes = function(events) {
   case_starts = events %>% 
-    select(-Notes) %>% 
     {.$Case - lag(.$Case, default = -1)} %>%
     {which(. > 0)}
   n_cases = length(case_starts)
-  case_ends = c(case_starts[2:n_cases] - 1, nrow(events))
   
-  events$RelativeTime = events$deltaTime
+  if(n_cases > 1)
+    case_ends = c(case_starts[2:n_cases] - 1, nrow(events))
+  else
+    case_ends = nrow(events)
+  
+  events$RelativeTime = events$Time
+  
   for(i in 1:n_cases) {
     ixs = case_starts[i]:case_ends[i]
-    events$RelativeTime[ixs] = cumsum(events$deltaTime[ixs])
+    case_times = events$Time[ixs]
+    
+    is_valid_time_ix = !is.na(case_times)
+    valid_times = case_times[is_valid_time_ix]
+    
+    lowest_time = ifelse(length(valid_times) > 0, valid_times[1], NA)
+    
+    events$RelativeTime[ixs] = case_times - lowest_time
   }
   
   return(events)
 }
 
+deltaTimes = function(events) {
+  n_events = length(events$Time)
+  prev_time = append(0, events$Time[1:(n_events-1)])
+  events$deltaTime = events$Time - prev_time
+  
+  cases = unique(events$Case)
+  for(ca in cases){
+    ix = match(ca, events$Case)
+    events$deltaTime[ix] = NA
+  }
+  
+  return(events)
+}
 
 resetDeltaTimes = function(events) {
   events$deltaTimeOrig = events$deltaTime
