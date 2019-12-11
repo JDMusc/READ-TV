@@ -96,9 +96,7 @@ customEventsQueryServer = function(input, output, session, data) {
     )
   })
   
-  
-  
-  
+  showSource = callModule(showSourceServer, 'showSource')
   observeEvent(input$eventsPreview, {
     req(queryCompiles())
     
@@ -107,12 +105,7 @@ customEventsQueryServer = function(input, output, session, data) {
     else
       d = data()
     
-    showModal(modalDialog(
-      title = "Events",
-      renderDataTable(d),
-      easyClose = TRUE,
-      size = "m"
-    ))
+    showSource(d)
   })
   
   queryCompiles = reactive({

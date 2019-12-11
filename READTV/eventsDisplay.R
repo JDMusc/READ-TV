@@ -111,8 +111,9 @@ eventsDisplayServer = function(input, output, session){
     summary(filteredData()$deltaTime)
   })
   
+  showSource = callModule(showSourceServer, 'showSource')
   observeEvent(input$showSource, {
-    showSource(filteredData)
+    showSource(filteredData())
   })
   
   observeEvent(input$calcCPA, {
