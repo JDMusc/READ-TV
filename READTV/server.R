@@ -1,23 +1,23 @@
 function(input, output, session){
   
   displayCount = reactiveVal(0)
+  dCountAsId = function(dcount) paste0("eventsDisplay", dcount)
+  
   currentEventId = reactive({
-    paste0("eventsDisplay", displayCount())
+    dCountAsId(displayCount())
   })
   
   eventDisplays = reactiveValues()
   
   observeEvent(input$saveDisplay, {
     displayCount(displayCount() + 1)
+    curr_id = currentEventId()
     
-    id = currentEventId()
-    
-    callModule(eventsDisplayServer, id)
-    eventDisplays[[id]] = eventsDisplayUI(id)
+    eventDisplays[[curr_id]] = callModule(eventsDisplayServer, curr_id)
     
     insertUI(selector = "#eventDisplayer",
-             where = "beforeEnd",
-             ui = eventDisplays[[id]]
+             where = "afterBegin",
+             ui = eventsDisplayUI(curr_id)
              )
   })
   
@@ -26,8 +26,9 @@ function(input, output, session){
   })
   
   output$eventDisplayer = renderUI({
-    id = currentEventId()
-    callModule(eventsDisplayServer, id)
+    id = dCountAsId(0)
+    eventDisplays[[id]] = callModule(eventsDisplayServer, id)
+    
     div(
       eventsDisplayUI(id)
     )
