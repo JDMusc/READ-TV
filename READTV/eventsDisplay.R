@@ -79,30 +79,39 @@ eventsDisplayServer = function(input, output, session){
     
     shape_col = customizeDisplay$shapeColumn()
     color_col = customizeDisplay$colorColumn()
+    y_col = customizeDisplay$yColumn()
+    facet_col = customizeDisplay$facetColumn()
     
-    point_aes = aes_string(y = "Event")
+    point_aes = aes_string(y = y_col)
     if(!is.null(shape_col))
       point_aes$shape = quo(!!sym(shape_col))
     if(!is.null(color_col))
       point_aes$colour = quo(!!sym(color_col))
     
-    p = filteredData() %>% 
+    show_data = filteredData() %>%
       mutate(Event = TRUE) %>% {
         if(!is.null(shape_col))
           mutate(., !!shape_col := factor(!!sym(shape_col)))
-        else .} %>%
+        else .}
+    
+    p = show_data %>%
       ggplot(aes(x = RelativeTime)) + 
       geom_point(point_aes) +
-      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
-      labs(col = color_col, shape = shape_col) #+
-      #scale_shape_manual(values = list("1" = 16, "2" = 17, "3" = 15, "4" = 3)) +
-      #scale_color_manual(values = event_colors)
+      labs(col = color_col, shape = shape_col)
+    
+    y_class = class(show_data[[y_col]])
+    if(y_class == "logical")
+      p = p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
     
     if(input$doStemPlot){
-      p = p + geom_segment(aes(xend = RelativeTime, 
-                               yend = Event - Event, 
-                               y = Event,
-                               colour = !!sym(color_col)))
+      p = p + geom_segment(aes_string(xend = "RelativeTime", 
+                                      yend = 0, 
+                                      y = y_col,
+                                      colour = color_col)
+                           )
+      
+      if(facet_col != "None")
+        p = p + facet_grid(formula(paste(facet_col, "~ .")))
     }
     
     return(p)

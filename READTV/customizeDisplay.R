@@ -11,6 +11,10 @@ customizeDisplayServer = function(input, output, session, data) {
   
   colorColumn = reactiveVal()
   
+  yColumn = reactiveVal("Event")
+  
+  facetColumn = reactiveVal("None")
+  
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
   shouldUpdate = function(valid_choices, current_choice) {
@@ -45,8 +49,21 @@ customizeDisplayServer = function(input, output, session, data) {
                  function(co) length(unique(co)) < 101 | class(co) != "character")
   })
   
+  validYColumns = reactive({
+    req(data())
+    
+    data() %>%
+      validColumns(function(co) class(co) %in% c("logical", "numeric")) %>%
+      {append("Event", .)}
+  })
+  
+  validFacetColumns = reactive({
+    req(data())
+    
+    append("None", validShapeColumns())
+  })
+  
   observeEvent(input$customizeDisplay, {
-    hi = validColorColumns()
     showModal(modalDialog(
       title = "Display Columns",
       footer = fluidRow(
@@ -54,21 +71,31 @@ customizeDisplayServer = function(input, output, session, data) {
         modalButton("Cancel")
       ),
       easyClose = T,
+      selectInput(ns("yColumn"), "Y",
+                  choices = validYColumns(),
+                  selected = yColumn()),
       selectInput(ns("shapeColumn"), "Shape", 
                   choices = validShapeColumns(),
                   selected = shapeColumn()),
       selectInput(ns("colorColumn"), "Color", 
                   choices = validColorColumns(),
-                  selected = colorColumn())
+                  selected = colorColumn()),
+      selectInput(ns("facetColumn"), "Facet",
+                  choices = validFacetColumns(),
+                  selected = facetColumn())
+      
     ))
     
     observeEvent(input$modalSubmit, {
+      yColumn(input$yColumn)
       shapeColumn(input$shapeColumn)
       colorColumn(input$colorColumn)
+      facetColumn(input$facetColumn)
       
       removeModal()
     }, ignoreInit = T)
   })
   
-  return(list(shapeColumn = shapeColumn, colorColumn = colorColumn))
+  return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
+              yColumn = yColumn, facetColumn = facetColumn))
 }
