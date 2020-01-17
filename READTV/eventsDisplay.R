@@ -27,8 +27,6 @@ eventsDisplayUI <- function(id) {
 eventsDisplayServer = function(input, output, session){
   ns = session$ns
   
-  print(paste("created display server", ns("")))
-  
   isHeaderMinimized = reactiveVal(F)
   isDataLoaded = reactiveVal(F)
   

@@ -7,6 +7,8 @@ customizeDisplayUI = function(id) {
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   
+  props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 21)
+  
   shapeColumn = reactiveVal()
   
   colorColumn = reactiveVal()
@@ -16,6 +18,11 @@ customizeDisplayServer = function(input, output, session, data) {
   facetColumn = reactiveVal("None")
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
+  
+  validCountGen = function(n) function(df, co) length(unique(co)) <= n
+  
+  validCountColumns = function(df, n) df %>% 
+    validColumns(function(co) length(unique(co)) <= n)
   
   shouldUpdate = function(valid_choices, current_choice) {
     should_update = F
@@ -38,15 +45,7 @@ customizeDisplayServer = function(input, output, session, data) {
   validShapeColumns = reactive({
     req(data())
     
-    validColumns(data(), 
-                 function(co) length(unique(co)) < 7)
-  })
-  
-  validColorColumns = reactive({
-    req(data())
-
-    validColumns(data(), 
-                 function(co) length(unique(co)) < 101 | class(co) != "character")
+    validCountColumns(data(), props$maxShapeN)
   })
   
   validYColumns = reactive({
@@ -57,13 +56,23 @@ customizeDisplayServer = function(input, output, session, data) {
       {append("Event", .)}
   })
   
+  validColorColumns = reactive({
+    req(data())
+    
+    union(validCountColumns(data(), props$maxColorN),
+          validYColumns())
+  })
+  
   validFacetColumns = reactive({
     req(data())
     
-    append("None", validShapeColumns())
+    append("None", validCountColumns(data(), props$maxFacetN))
   })
   
   observeEvent(input$customizeDisplay, {
+    selectText = function(col, maxN, ext = "") 
+      paste0(col, " (Max ", maxN, " unique values", ext,")")
+    
     showModal(modalDialog(
       title = "Display Columns",
       footer = fluidRow(
@@ -71,16 +80,18 @@ customizeDisplayServer = function(input, output, session, data) {
         modalButton("Cancel")
       ),
       easyClose = T,
-      selectInput(ns("yColumn"), "Y",
+      selectInput(ns("yColumn"), "Y (numeric/logical)",
                   choices = validYColumns(),
                   selected = yColumn()),
-      selectInput(ns("shapeColumn"), "Shape", 
+      selectInput(ns("shapeColumn"), selectText("Shape", props$maxShapeN), 
                   choices = validShapeColumns(),
                   selected = shapeColumn()),
-      selectInput(ns("colorColumn"), "Color", 
+      selectInput(ns("colorColumn"), 
+                  selectText(
+                    "Color", props$maxColorN, ", or numeric/logical"), 
                   choices = validColorColumns(),
                   selected = colorColumn()),
-      selectInput(ns("facetColumn"), "Facet",
+      selectInput(ns("facetColumn"), selectText("Facet", props$maxFacetN),
                   choices = validFacetColumns(),
                   selected = facetColumn())
       
