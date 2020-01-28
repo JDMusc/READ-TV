@@ -1,5 +1,6 @@
 
 fluidPage(
   uiOutput("saveDisplay"),
-  uiOutput("eventDisplayer")
+  uiOutput("eventDisplayer"),
+  theme = shinytheme("cyborg")
 )

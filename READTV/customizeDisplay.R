@@ -17,6 +17,8 @@ customizeDisplayServer = function(input, output, session, data) {
   
   facetColumn = reactiveVal("None")
   
+  facetOrder = reactiveVal()
+  
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
   validCountGen = function(n) function(df, co) length(unique(co)) <= n
@@ -91,22 +93,62 @@ customizeDisplayServer = function(input, output, session, data) {
                     "Color", props$maxColorN, ", or numeric/logical"), 
                   choices = validColorColumns(),
                   selected = colorColumn()),
-      selectInput(ns("facetColumn"), selectText("Facet", props$maxFacetN),
-                  choices = validFacetColumns(),
-                  selected = facetColumn())
-      
+      fluidRow(
+        column(6,
+               selectInput(ns("facetColumn"), 
+                           selectText("Facet", props$maxFacetN),
+                           choices = validFacetColumns(),
+                           selected = facetColumn())),
+        column(2, 
+               checkboxInput(ns("customizeFacets"), 
+                             "Customize"))
+      ),
+      uiOutput(ns("facetCustomize"))
     ))
+    
+    output$facetCustomize = renderUI({
+      if(!input$customizeFacets | input$facetColumn == "None")
+        return()
+
+      facet_values = data() %>% 
+        select_(input$facetColumn) %>% 
+        unique %>% {.[[input$facetColumn]]} %>% 
+        lapply(
+          function(fv) {
+            fvc = as.character(fv)
+            textInput(ns(fvc), fvc, value = fvc, placeholder = fvc)
+          }
+        )
+      
+      bucket_list(
+        header = "Facet Order & Display Values",
+        add_rank_list(
+          text = "Drag from here",
+          input_id = ns("facet_list"),
+          labels = facet_values
+        )
+      )
+    })
     
     observeEvent(input$modalSubmit, {
       yColumn(input$yColumn)
       shapeColumn(input$shapeColumn)
       colorColumn(input$colorColumn)
-      facetColumn(input$facetColumn)
+      
+      fc = input$facetColumn
+      facetColumn(fc)
+      if(!input$customizeFacets)
+          facetOrder(
+            data() %>%  select_(fc) %>% unique %>% {.[[fc]]}
+          )
+        else
+          facetOrder(input$facet_list)
       
       removeModal()
     }, ignoreInit = T)
   })
   
   return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
-              yColumn = yColumn, facetColumn = facetColumn))
+              yColumn = yColumn, facetColumn = facetColumn,
+              facetOrder = facetOrder))
 }

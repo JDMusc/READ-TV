@@ -5,22 +5,33 @@ eventsDisplayUI <- function(id) {
   fluidPage(
     shinyjs::useShinyjs(),
     shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
-    actionButton(ns("minimizeHeader"), "Minimize Header"),
-    uiOutput(ns("headerInformation")),
-    div(id = ns("loadDataHeader"),
-        fluidRow(
-          eventsLoaderUI(ns("loadData")),
-          wellPanel(
-            metaQueryLoaderUI(ns("loadMetaData")),
-            metaQueryUI(ns("metaqueryui"))
+    tabsetPanel(
+      tabPanel(
+        "Upload Data",
+        div(
+          actionButton(ns("minimizeHeader"), "Minimize"),
+          uiOutput(ns("headerInformation")),
+          div(id = ns("loadDataHeader"),
+              fluidRow(
+                eventsLoaderUI(ns("loadData"))),
+              fluidRow(
+                metaQueryLoaderUI(ns("loadMetaData")),
+                metaQueryUI(ns("metaqueryui"))
+                )
           )
         )
-    ),
-    uiOutput(ns("dataFilter")),
-    fluidRow(
-      column(plotOutput(ns("eventPlot")), width = 10),
-      column(uiOutput(ns("sidePanel")), width = 2)
+      ),
+      tabPanel(
+        "Display",
+        div(
+          uiOutput(ns("dataFilter")),
+          fluidRow(
+            column(plotOutput(ns("eventPlot")), width = 10),
+            column(uiOutput(ns("sidePanel")), width = 2)
+          )
+        )
       )
+    )
   )
 }
 
@@ -79,6 +90,8 @@ eventsDisplayServer = function(input, output, session){
     color_col = customizeDisplay$colorColumn()
     y_col = customizeDisplay$yColumn()
     facet_col = customizeDisplay$facetColumn()
+    facet_order = customizeDisplay$facetOrder()
+    print(facet_order)
     
     point_aes = aes_string(y = y_col)
     if(!is.null(shape_col))
@@ -91,6 +104,10 @@ eventsDisplayServer = function(input, output, session){
         if(!is.null(shape_col))
           mutate(., !!shape_col := factor(!!sym(shape_col)))
         else .}
+    
+    if(!is.null(facet_order))
+      show_data[[facet_col]] = factor(show_data[[facet_col]],
+                                      levels = facet_order)
     
     p = show_data %>%
       ggplot(aes(x = RelativeTime)) + 
@@ -137,8 +154,8 @@ eventsDisplayServer = function(input, output, session){
     shinyjs::toggle("loadDataHeader", condition = !isHeaderMinimized())
     updateActionButton(session, "minimizeHeader",
                        label = ifelse(isHeaderMinimized(),
-                                      "Show Header",
-                                      "Minimize Header")
+                                      "Show",
+                                      "Minimize")
     )
   })
   

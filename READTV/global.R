@@ -3,6 +3,8 @@ library(dplyr)
 library(ggplot2)
 library(shiny)
 library(shinyjs)
+library(shinythemes)
+library(sortable)
 
 source('analysisHelpers.R')
 source('config.R')
