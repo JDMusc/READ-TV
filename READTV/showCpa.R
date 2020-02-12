@@ -22,7 +22,7 @@ showCpa = function(input, output, session, data) {
     title = "Change Point Analysis",
     easyClose = T,
     fluidRow(
-      selectInput(ns("cpaSelect"), "Select N", 1:5, selected = 4),
+      selectInput(ns("cpaSelect"), "Select Smoothing Window Width", 1:5, selected = 4),
       selectInput(ns("methodSelect"), "Method", methods, selected = "AMOC"),
       selectInput(ns("penaltySelect"), "Penalty", 
                   penalties, selected = "MBIC"),

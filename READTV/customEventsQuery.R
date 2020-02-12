@@ -3,7 +3,8 @@ customEventsQueryUI <- function(id) {
   renderUI(
     {
       div(
-        textInput(ns("queryInput"), "Custom Filter", placeholder = ""),
+        textInput(ns("queryInput"), "Custom Filter", placeholder = "", 
+                  width = '100%'),
         actionButton(ns("queryInclude"), "Include Condition"),
         actionButton(ns("eventsPreview"), "Preview Events")
       )

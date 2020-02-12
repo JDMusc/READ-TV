@@ -14,12 +14,12 @@ selectRows <- function(ns) {
     ),
     column(
       width = 2,
-      multiSelectUI(ns("eventTypeFilter"), "Event")
+      multiSelectUI(ns("eventTypeFilter"), "Event Type")
     ),
-    column(
-      width = 2,
-      uiOutput(ns("extraFilter"))
-    ),
+    #column(
+    #  width = 2,
+    #  uiOutput(ns("extraFilter"))
+    #),
     column(
       width = 6,
       customEventsQueryUI(ns("customQuery"))

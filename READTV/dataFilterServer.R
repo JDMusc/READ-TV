@@ -13,7 +13,6 @@ dataFilterServer = function(input, output, session, data) {
         return("")
     }, error = function(e) browser)
     
-    print(selected_ixs)
     selected_values = selected_values[selected_ixs]
     
     selected_values %>% 
@@ -95,9 +94,10 @@ dataFilterServer = function(input, output, session, data) {
                                       columnValues(d, "Case"))
     selectMods[["Event.Type"]] = callModule(multiSelectServer, "eventTypeFilter",
                                             columnValues(d, "Event.Type"))
-    efn = extraFilterName()
-    selectMods[[efn]] = callModule(multiSelectServer, "extraFilter", 
-                                   columnValues(d, efn))
+    #efn = extraFilterName()
+    #browser()
+    #selectMods[[efn]] = callModule(multiSelectServer, "extraFilter", 
+    #                               columnValues(d, efn))
   })
   
   

@@ -7,7 +7,7 @@ eventsDisplayUI <- function(id) {
     shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
     tabsetPanel(
       tabPanel(
-        "Upload Data",
+        "Data Upload",
         div(
           actionButton(ns("minimizeHeader"), "Minimize"),
           uiOutput(ns("headerInformation")),
@@ -86,48 +86,53 @@ eventsDisplayServer = function(input, output, session){
     req(isDataLoaded())
     req(!is.null(input$doStemPlot))
     
+    no_customization = customizeDisplay$no_selection
     shape_col = customizeDisplay$shapeColumn()
     color_col = customizeDisplay$colorColumn()
     y_col = customizeDisplay$yColumn()
     facet_col = customizeDisplay$facetColumn()
     facet_order = customizeDisplay$facetOrder()
-    print(facet_order)
+    facet_labels = customizeDisplay$facetLabel()
     
     point_aes = aes_string(y = y_col)
-    if(!is.null(shape_col))
+    if(!(shape_col == no_customization))
       point_aes$shape = quo(!!sym(shape_col))
-    if(!is.null(color_col))
+    if(!(color_col == no_customization))
       point_aes$colour = quo(!!sym(color_col))
     
     show_data = filteredData() %>%
       mutate(Event = TRUE) %>% {
-        if(!is.null(shape_col))
+        if(!(shape_col == no_customization))
           mutate(., !!shape_col := factor(!!sym(shape_col)))
         else .}
     
     if(!is.null(facet_order))
       show_data[[facet_col]] = factor(show_data[[facet_col]],
-                                      levels = facet_order)
+                                      levels = facet_order,
+                                      labels = facet_labels)
     
     p = show_data %>%
       ggplot(aes(x = RelativeTime)) + 
-      geom_point(point_aes) +
-      labs(col = color_col, shape = shape_col)
+      geom_point(point_aes)
     
     y_class = class(show_data[[y_col]])
     if(y_class == "logical")
       p = p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
     
     if(input$doStemPlot){
-      p = p + geom_segment(aes_string(xend = "RelativeTime", 
-                                      yend = 0, 
-                                      y = y_col,
-                                      colour = color_col)
-                           )
-      
-      if(facet_col != "None")
-        p = p + facet_grid(formula(paste(facet_col, "~ .")))
+      if(!(color_col == no_customization))
+        p = p + geom_segment(aes_string(xend = "RelativeTime", 
+                                        yend = 0, 
+                                        y = y_col,
+                                        colour = color_col))
+      else
+        p = p + geom_segment(aes_string(xend = "RelativeTime", 
+                                        yend = 0, 
+                                        y = y_col))
     }
+    
+    if(!(facet_col == no_customization))
+      p = p + facet_grid(formula(paste(facet_col, "~ .")))
     
     return(p)
   })
@@ -147,8 +152,7 @@ eventsDisplayServer = function(input, output, session){
   
   observeEvent(input$minimizeHeader, {
     isHeaderMinimized(!isHeaderMinimized())
-  }
-  )
+  })
   
   observe({
     shinyjs::toggle("loadDataHeader", condition = !isHeaderMinimized())

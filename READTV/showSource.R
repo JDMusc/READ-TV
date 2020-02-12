@@ -15,7 +15,7 @@ showSourceServer = function(input, output, session) {
     })
     
     showModal(modalDialog(
-      title = "Events",
+      title = "Input Source",
       selectInput(ns("columnChoices"), "Columns", colnames(d), multiple = T,
                   selected = defaultCols()),
       renderDataTable(d[, input$columnChoices]),

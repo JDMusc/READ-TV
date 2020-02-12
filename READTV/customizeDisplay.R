@@ -9,15 +9,25 @@ customizeDisplayServer = function(input, output, session, data) {
   
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 21)
   
-  shapeColumn = reactiveVal()
+  no_selection = "None"
   
-  colorColumn = reactiveVal()
+  shapeColumn = reactiveVal(no_selection)
+  
+  colorColumn = reactiveVal(no_selection)
   
   yColumn = reactiveVal("Event")
   
-  facetColumn = reactiveVal("None")
+  facetColumn = reactiveVal(no_selection)
   
   facetOrder = reactiveVal()
+  
+  facetLabel = reactive({
+    fo = facetOrder()
+    
+    if(is.null(fo)) return(NULL)
+    
+    fo %>% lapply(function(f) input[[f]]) %>% as.character
+  })
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
@@ -47,7 +57,7 @@ customizeDisplayServer = function(input, output, session, data) {
   validShapeColumns = reactive({
     req(data())
     
-    validCountColumns(data(), props$maxShapeN)
+    append(no_selection, validCountColumns(data(), props$maxShapeN))
   })
   
   validYColumns = reactive({
@@ -61,22 +71,35 @@ customizeDisplayServer = function(input, output, session, data) {
   validColorColumns = reactive({
     req(data())
     
-    union(validCountColumns(data(), props$maxColorN),
-          validYColumns())
+    no_selection %>% 
+      append(validCountColumns(data(), props$maxColorN)) %>%
+      union(validYColumns())
   })
   
   validFacetColumns = reactive({
     req(data())
     
-    append("None", validCountColumns(data(), props$maxFacetN))
+    append(no_selection, validCountColumns(data(), props$maxFacetN))
   })
+  
+  setFacetOrder = function(){
+    req(input$facetColumn != no_selection)
+    
+    fc = input$facetColumn
+    if(!input$customizeFacets)
+      facetOrder(
+        data() %>%  select_(fc) %>% unique %>% {.[[fc]]}
+      )
+    else
+      facetOrder(input$facet_list)
+  }
   
   observeEvent(input$customizeDisplay, {
     selectText = function(col, maxN, ext = "") 
       paste0(col, " (Max ", maxN, " unique values", ext,")")
     
     showModal(modalDialog(
-      title = "Display Columns",
+      title = "Customize Display",
       footer = fluidRow(
         actionButton(ns("modalSubmit"), "Submit"),
         modalButton("Cancel")
@@ -107,7 +130,7 @@ customizeDisplayServer = function(input, output, session, data) {
     ))
     
     output$facetCustomize = renderUI({
-      if(!input$customizeFacets | input$facetColumn == "None")
+      if(!input$customizeFacets | (input$facetColumn == no_selection))
         return()
 
       facet_values = data() %>% 
@@ -121,9 +144,9 @@ customizeDisplayServer = function(input, output, session, data) {
         )
       
       bucket_list(
-        header = "Facet Order & Display Values",
+        header = "Customize Facet",
         add_rank_list(
-          text = "Drag from here",
+          text = "Facet Order & Display Values",
           input_id = ns("facet_list"),
           labels = facet_values
         )
@@ -135,14 +158,8 @@ customizeDisplayServer = function(input, output, session, data) {
       shapeColumn(input$shapeColumn)
       colorColumn(input$colorColumn)
       
-      fc = input$facetColumn
-      facetColumn(fc)
-      if(!input$customizeFacets)
-          facetOrder(
-            data() %>%  select_(fc) %>% unique %>% {.[[fc]]}
-          )
-        else
-          facetOrder(input$facet_list)
+      facetColumn(input$facetColumn)
+      if(input$facetColumn != no_selection) setFacetOrder()
       
       removeModal()
     }, ignoreInit = T)
@@ -150,5 +167,7 @@ customizeDisplayServer = function(input, output, session, data) {
   
   return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
               yColumn = yColumn, facetColumn = facetColumn,
-              facetOrder = facetOrder))
+              facetOrder = facetOrder,
+              facetLabeller = facetLabel,
+              no_selection = no_selection))
 }
