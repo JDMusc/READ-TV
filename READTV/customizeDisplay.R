@@ -19,15 +19,11 @@ customizeDisplayServer = function(input, output, session, data) {
   
   facetColumn = reactiveVal(no_selection)
   
-  facetOrder = reactiveVal()
+  facetOrder = reactiveVal(no_selection)
   
-  facetLabel = reactive({
-    fo = facetOrder()
-    
-    if(is.null(fo)) return(NULL)
-    
-    fo %>% lapply(function(f) input[[f]]) %>% as.character
-  })
+  facetLabels = reactiveVal(no_selection)
+  
+  facetCustomized = reactiveVal(F)
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
@@ -82,18 +78,6 @@ customizeDisplayServer = function(input, output, session, data) {
     append(no_selection, validCountColumns(data(), props$maxFacetN))
   })
   
-  setFacetOrder = function(){
-    req(input$facetColumn != no_selection)
-    
-    fc = input$facetColumn
-    if(!input$customizeFacets)
-      facetOrder(
-        data() %>%  select_(fc) %>% unique %>% {.[[fc]]}
-      )
-    else
-      facetOrder(input$facet_list)
-  }
-  
   observeEvent(input$customizeDisplay, {
     selectText = function(col, maxN, ext = "") 
       paste0(col, " (Max ", maxN, " unique values", ext,")")
@@ -123,14 +107,14 @@ customizeDisplayServer = function(input, output, session, data) {
                            choices = validFacetColumns(),
                            selected = facetColumn())),
         column(2, 
-               checkboxInput(ns("customizeFacets"), 
+               checkboxInput(ns("customizeFacet"), 
                              "Customize"))
       ),
       uiOutput(ns("facetCustomize"))
     ))
     
     output$facetCustomize = renderUI({
-      if(!input$customizeFacets | (input$facetColumn == no_selection))
+      if(!input$customizeFacet | (input$facetColumn == no_selection))
         return()
 
       facet_values = data() %>% 
@@ -158,8 +142,16 @@ customizeDisplayServer = function(input, output, session, data) {
       shapeColumn(input$shapeColumn)
       colorColumn(input$colorColumn)
       
+      facetCustomized(input$customizeFacet)
       facetColumn(input$facetColumn)
-      if(input$facetColumn != no_selection) setFacetOrder()
+      if(input$customizeFacet) {
+        facetOrder(input$facet_list)
+        
+        input$facet_list %>% 
+          lapply(function(f) input[[f]]) %>% 
+          as.character %>% 
+          facetLabels
+      }
       
       removeModal()
     }, ignoreInit = T)
@@ -168,6 +160,7 @@ customizeDisplayServer = function(input, output, session, data) {
   return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
               yColumn = yColumn, facetColumn = facetColumn,
               facetOrder = facetOrder,
-              facetLabeller = facetLabel,
+              facetLabels = facetLabels,
+              facetCustomized = facetCustomized,
               no_selection = no_selection))
 }
