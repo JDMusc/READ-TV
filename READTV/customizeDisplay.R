@@ -106,15 +106,26 @@ customizeDisplayServer = function(input, output, session, data) {
                            selectText("Facet", props$maxFacetN),
                            choices = validFacetColumns(),
                            selected = facetColumn())),
-        column(2, 
-               checkboxInput(ns("customizeFacet"), 
-                             "Customize"))
+        column(2, uiOutput(ns("facetCustomizeCheck")))
       ),
       uiOutput(ns("facetCustomize"))
     ))
     
+    output$facetCustomizeCheck = renderUI({
+      if(input$facetColumn == no_selection) return()
+      
+      checkboxInput(ns("customizeFacet"), 
+                    "Customize", value = facetCustomized())
+    })
+    
     output$facetCustomize = renderUI({
-      if(!input$customizeFacet | (input$facetColumn == no_selection))
+      if(input$facetColumn == no_selection)
+        return()
+      
+      if(is.null(input$customizeFacet))
+        return()
+
+      if(!input$customizeFacet)
         return()
 
       facet_values = data() %>% 
