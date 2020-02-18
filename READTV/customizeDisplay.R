@@ -108,7 +108,7 @@ customizeDisplayServer = function(input, output, session, data) {
                            selected = facetColumn())),
         column(2, uiOutput(ns("facetCustomizeCheck")))
       ),
-      uiOutput(ns("facetCustomize"))
+      uiOutput(ns("facetCustomizeBucket"))
     ))
     
     output$facetCustomizeCheck = renderUI({
@@ -118,14 +118,15 @@ customizeDisplayServer = function(input, output, session, data) {
                     "Customize", value = facetCustomized())
     })
     
-    output$facetCustomize = renderUI({
-      if(input$facetColumn == no_selection)
-        return()
-      
+    showFacetCustomizeBucket = reactive({
       if(is.null(input$customizeFacet))
-        return()
-
-      if(!input$customizeFacet)
+        return(F)
+      
+      return(input$facetColumn != no_selection & input$customizeFacet)
+    })
+    
+    output$facetCustomizeBucket = renderUI({
+      if(!showFacetCustomizeBucket())
         return()
 
       facet_values = data() %>% 
@@ -153,9 +154,9 @@ customizeDisplayServer = function(input, output, session, data) {
       shapeColumn(input$shapeColumn)
       colorColumn(input$colorColumn)
       
-      facetCustomized(input$customizeFacet)
       facetColumn(input$facetColumn)
-      if(input$customizeFacet) {
+      if(showFacetCustomizeBucket()) {
+        facetCustomized(T)
         facetOrder(input$facet_list)
         
         input$facet_list %>% 
