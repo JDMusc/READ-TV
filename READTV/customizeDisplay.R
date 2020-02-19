@@ -25,6 +25,8 @@ customizeDisplayServer = function(input, output, session, data) {
   
   facetCustomized = reactiveVal(F)
   
+  plotHeight = reactiveVal(400)
+  
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
   validCountGen = function(n) function(df, co) length(unique(co)) <= n
@@ -92,6 +94,8 @@ customizeDisplayServer = function(input, output, session, data) {
       selectInput(ns("yColumn"), "Y (numeric/logical)",
                   choices = validYColumns(),
                   selected = yColumn()),
+      sliderInput(ns("plotHeight"), "Plot Height", 
+                  value = plotHeight(), min = 20, max = 1000, step = 5),
       selectInput(ns("shapeColumn"), selectText("Shape", props$maxShapeN), 
                   choices = validShapeColumns(),
                   selected = shapeColumn()),
@@ -151,6 +155,8 @@ customizeDisplayServer = function(input, output, session, data) {
     
     observeEvent(input$modalSubmit, {
       yColumn(input$yColumn)
+      plotHeight(input$plotHeight)
+      
       shapeColumn(input$shapeColumn)
       colorColumn(input$colorColumn)
       
@@ -174,5 +180,6 @@ customizeDisplayServer = function(input, output, session, data) {
               facetOrder = facetOrder,
               facetLabels = facetLabels,
               facetCustomized = facetCustomized,
+              plotHeight = plotHeight,
               no_selection = no_selection))
 }

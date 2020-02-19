@@ -26,7 +26,7 @@ eventsDisplayUI <- function(id) {
         div(
           uiOutput(ns("dataFilter")),
           fluidRow(
-            column(plotOutput(ns("eventPlot")), width = 10),
+            column(uiOutput(ns("eventPlotContainer")), width = 10),
             column(uiOutput(ns("sidePanel")), width = 2)
           )
         )
@@ -42,6 +42,7 @@ eventsDisplayServer = function(input, output, session){
   isDataLoaded = reactiveVal(F)
   
   eventsInformation = callModule(eventsLoader, "loadData")
+
   
   data <- reactive({
     tbl = eventsInformation()$data
@@ -64,6 +65,9 @@ eventsDisplayServer = function(input, output, session){
   })
   
   filteredData = callModule(dataFilterServer, "dataFilter", data)
+  
+  customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
+                                filteredData)
   
   output$dataFilter = renderUI({
     if(isDataLoaded()) dataFilterUI(ns("dataFilter"))
@@ -181,21 +185,26 @@ eventsDisplayServer = function(input, output, session){
   
   output$headerInformation = renderText({
     if(isHeaderMinimized()) headerMinimalInformation()
-    else NULL
   })
   
   output$doStemPlot = renderUI({
     if(input$plotType == "timePlot" & isDataLoaded())
       checkboxInput(ns("doStemPlot"), "Stem Plot", value = T)
-    else
-      NULL
   })
   
   output$showSource = renderUI({
     if(input$plotType == "timePlot" & isDataLoaded())
       actionButton(inputId = ns("showSource"), label = "Show Source")
-    else
-      NULL
+  })
+  
+  plotHeight = reactive({
+    if(is.null(customizeDisplay$plotHeight)) 400
+    else customizeDisplay$plotHeight()
+  })
+  
+  
+  output$eventPlotContainer = renderUI({
+    plotOutput(ns("eventPlot"), height = plotHeight())
   })
   
   output$eventPlot = renderPlot({
@@ -216,6 +225,8 @@ eventsDisplayServer = function(input, output, session){
       selectInput(ns("plotType"), "Plot Type", 
                   c("Time Plot" = "timePlot", "Histogram" = "hist"),
                   selected = "timePlot"),
+      #sliderInput(ns("plotHeight"), "Plot Height", 
+      #            value = 400, min = 20, max = 2000),
       customizeDisplayUI(ns("customizeDisplay")),
       uiOutput(ns("showSource")), 
       uiOutput(ns("calcCPA"), label = "Show CPA"),
@@ -224,9 +235,6 @@ eventsDisplayServer = function(input, output, session){
       uiOutput(ns("doStemPlot"))
     )
   })
-  
-  customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
-                                filteredData)
   
   output$eventStats = renderPrint({
     req(isDataLoaded())
