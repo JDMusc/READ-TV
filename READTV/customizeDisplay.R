@@ -133,15 +133,24 @@ customizeDisplayServer = function(input, output, session, data) {
       if(!showFacetCustomizeBucket())
         return()
 
-      facet_values = data() %>% 
-        select_(input$facetColumn) %>% 
-        unique %>% {.[[input$facetColumn]]} %>% 
-        lapply(
-          function(fv) {
-            fvc = as.character(fv)
-            textInput(ns(fvc), fvc, value = fvc, placeholder = fvc)
-          }
-        )
+      if(facetColumn() != input$facetColumn)
+        facet_values = data()[[input$facetColumn]] %>% 
+          unique %>% lapply(
+            function(fv) {
+              fvc = as.character(fv)
+              textInput(ns(fvc), fvc, value = fvc, placeholder = fvc)
+            }
+          )
+      else {
+        facet_values = 1:length(facetOrder()) %>%
+          lapply(
+            function(i) {
+              fl = as.character(facetOrder()[i])
+              fv = as.character(facetLabels()[i])
+              textInput(ns(fl), fl, value = fv)
+            }
+          )
+      }
       
       bucket_list(
         header = "Customize Facet",
