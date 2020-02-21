@@ -1,6 +1,7 @@
-
-fluidPage(
-  uiOutput("saveDisplay"),
-  uiOutput("eventDisplayer"),
-  theme = shinytheme("cyborg")
-)
+function(request)
+  fluidPage(
+    bookmarkButton(),
+    uiOutput("saveDisplay"),
+    uiOutput("eventDisplayer"),
+    theme = shinytheme("cyborg")
+  )
