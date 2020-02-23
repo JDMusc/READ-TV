@@ -148,6 +148,7 @@ customEventsQueryServer = function(input, output, session, data) {
     hasQueryInput() & queryCompiles()
   })
   
-  return(list(filteredData = filteredData, hasValidQuery = hasValidQuery))
+  return(list(filteredData = filteredData, 
+              hasValidQuery = hasValidQuery))
 
 }

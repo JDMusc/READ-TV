@@ -28,7 +28,9 @@ eventsDisplayServer = function(input, output, session){
     return(!(class(fmd) == "try-error"))
   })
   
-  filteredData = callModule(dataFilterServer, "dataFilter", data)
+  dataFilter = callModule(dataFilterServer, "dataFilter", data)
+  
+  filteredData = reactive({dataFilter$filteredData()})
   
   customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
                                 filteredData)
@@ -121,8 +123,25 @@ eventsDisplayServer = function(input, output, session){
   output$eventPlotContainer = renderUI({
     plotOutput(ns("eventPlot"), 
                height = plotHeight(),
-               brush = "event_plot_brush")
+               brush = brushOpts(ns("event_plot_brush"),
+                                 direction = "x",
+                                 resetOnNew = T),
+               dblclick = clickOpts(ns("event_plot_dblclick"))
+               )
   })
+  
+  
+  observeEvent(input$event_plot_dblclick, {
+    brush = input$event_plot_brush
+    if(!is.null(brush)) {
+      left = brush$xmin
+      right = brush$xmax
+      
+      dataFilter$constraints$RelativeTime = function(rt) rt >= left & rt <= right
+    }
+    else dataFilter$constraints$RelativeTime = function(rt) T
+  })
+  
   
   output$eventPlot = renderPlot({
     req(isDataLoaded())

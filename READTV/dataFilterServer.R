@@ -30,13 +30,17 @@ dataFilterServer = function(input, output, session, data) {
       paste(collapse = '&')
   }
   
+  
+  constraints = reactiveValues()
+  
+  
   filteredDataCount = printWithCountGen("filtered data")
-  filteredData <- reactive({
+  preQueryFilteredData <- reactive({
     req(data())
     
     d = data()
     
-    filteredDataCount()
+    #filteredDataCount()
     
     if('Case' %in% names(selectMods)) {
       cols = c('Case', 'Event.Type', extraFilterName())
@@ -47,6 +51,12 @@ dataFilterServer = function(input, output, session, data) {
         
         if(isSelected(val)) d = d %>% filter(.data[[col]] %in% val)
       }
+    }
+    
+    for(col in names(constraints)) {
+      fn = constraints[[col]]
+      passing_rows = fn(d[[col]])
+      d = d[passing_rows,]
     }
     
     d
@@ -114,13 +124,18 @@ dataFilterServer = function(input, output, session, data) {
     multiSelectUI(ns("extraFilter"), extraFilterName())
   })
   
-  customQuery = callModule(customEventsQueryServer, "customQuery", filteredData)
+  customQuery = callModule(customEventsQueryServer, "customQuery", preQueryFilteredData)
   
-  return(reactive({
-    if(customQuery$hasValidQuery())
+  filteredData = reactive({
+    hvq = customQuery$hasValidQuery()
+    if(hvq)
       customQuery$filteredData()
     else
-      filteredData()
-  }))
+      preQueryFilteredData()
+  })
+  
+  return(list(filteredData = filteredData,
+              hasValidQuery = customQuery$hasValidQuery,
+              constraints = constraints))
 }
 
