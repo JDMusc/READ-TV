@@ -18,7 +18,7 @@ showSourceServer = function(input, output, session) {
       title = "Input Source",
       selectInput(ns("columnChoices"), "Columns", colnames(d), multiple = T,
                   selected = defaultCols()),
-      renderDataTable(d[, input$columnChoices]),
+      DT::renderDataTable(d[, input$columnChoices]),
       easyClose = TRUE,
       size = "m"
     ))

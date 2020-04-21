@@ -1,5 +1,7 @@
 library(changepoint)
+library(DT)
 library(dplyr)
+library(ggforce)
 library(ggplot2)
 library(shiny)
 library(shinyjs)

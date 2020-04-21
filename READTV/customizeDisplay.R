@@ -25,6 +25,10 @@ customizeDisplayServer = function(input, output, session, data) {
   
   facetCustomized = reactiveVal(F)
   
+  facetRowN = reactiveVal(no_selection)
+  
+  facetPage = reactiveVal(1)
+  
   plotHeight = reactiveVal(400)
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
@@ -152,12 +156,21 @@ customizeDisplayServer = function(input, output, session, data) {
           )
       }
       
-      bucket_list(
-        header = "Customize Facet",
-        add_rank_list(
-          text = "Facet Order & Display Values",
-          input_id = ns("facet_list"),
-          labels = facet_values
+      tabsetPanel(
+        tabPanel("Pagination",
+                 sliderInput(ns("facetRowN"), "Items Per Tab",
+                             min = 2, max = 20, value = 10)
+                 ),
+        tabPanel(
+          "Facet Ordering",
+          bucket_list(
+            header = "Customize Facet",
+            add_rank_list(
+              text = "Facet Order & Display Values",
+              input_id = ns("facet_list"),
+              labels = facet_values
+            )
+          )
         )
       )
     })
@@ -172,6 +185,7 @@ customizeDisplayServer = function(input, output, session, data) {
       facetColumn(input$facetColumn)
       if(showFacetCustomizeBucket()) {
         facetCustomized(T)
+        facetRowN(input$facetRowN)
         facetOrder(input$facet_list)
         
         input$facet_list %>% 
@@ -185,10 +199,13 @@ customizeDisplayServer = function(input, output, session, data) {
   })
   
   return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
-              yColumn = yColumn, facetColumn = facetColumn,
+              yColumn = yColumn, 
+              facetColumn = facetColumn,
               facetOrder = facetOrder,
               facetLabels = facetLabels,
               facetCustomized = facetCustomized,
+              facetPage = facetPage,
+              facetRowN = facetRowN,
               plotHeight = plotHeight,
               no_selection = no_selection))
 }

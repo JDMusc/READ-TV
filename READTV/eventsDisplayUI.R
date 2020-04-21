@@ -8,6 +8,7 @@ eventsDisplayUI <- function(id) {
       tabPanel(
         "Data Upload",
         div(
+          shinythemes::themeSelector(),
           actionButton(ns("minimizeHeader"), "Minimize"),
           uiOutput(ns("headerInformation")),
           div(id = ns("loadDataHeader"),

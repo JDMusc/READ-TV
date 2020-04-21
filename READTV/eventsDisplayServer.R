@@ -59,6 +59,18 @@ eventsDisplayServer = function(input, output, session){
     generateTimePlot(filteredData(), customizeDisplay, input$doStemPlot)
   })
   
+  doFacet = reactive({
+    if(isDataLoaded()) !(
+      customizeDisplay$facetRowN() == customizeDisplay$no_selection)
+    else F
+  })
+  
+  facetPageN <- reactive({
+    if(!doFacet()) -1
+    else n_pages(timePlot())
+  })
+  
+  
   eventStats <- reactive({
     summary(filteredData()$deltaTime)
   })
@@ -119,15 +131,29 @@ eventsDisplayServer = function(input, output, session){
     else customizeDisplay$plotHeight()
   })
   
+  output$facetPageSlider = renderUI({
+    if(doFacet()) selectInput(
+      ns("facetPageSlider"), "Facet Page", 1:facetPageN(), 
+      selected = customizeDisplay$facetPage())
+    else NULL
+  })
+  
+  observeEvent(input$facetPageSlider, {
+    pg = as.numeric(input$facetPageSlider)
+    customizeDisplay$facetPage(pg)
+  })
   
   output$eventPlotContainer = renderUI({
-    plotOutput(ns("eventPlot"), 
-               height = plotHeight(),
-               brush = brushOpts(ns("event_plot_brush"),
-                                 direction = "x",
-                                 resetOnNew = T),
-               dblclick = clickOpts(ns("event_plot_dblclick"))
-               )
+    fluidPage(
+      plotOutput(ns("eventPlot"), 
+                 height = plotHeight(),
+                 brush = brushOpts(ns("event_plot_brush"),
+                                   direction = "x",
+                                   resetOnNew = T),
+                 dblclick = clickOpts(ns("event_plot_dblclick"))
+                 ),
+      uiOutput(ns("facetPageSlider"))
+    )
   })
   
   

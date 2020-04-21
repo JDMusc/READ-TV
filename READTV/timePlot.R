@@ -7,6 +7,8 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   facet_order = customizeDisplay$facetOrder()
   facet_labels = customizeDisplay$facetLabels()
   facet_customized = customizeDisplay$facetCustomized()
+  facet_row_n = customizeDisplay$facetRowN()
+  facet_page = customizeDisplay$facetPage()
   
   point_aes = aes_string(y = y_col)
   if(!(shape_col == no_selection))
@@ -41,12 +43,20 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
                                       colour = color_col))
     else
       p = p + geom_segment(aes_string(xend = "RelativeTime", 
-                                      yend = 0, 
+                                      yend = 0,
                                       y = y_col))
   }
   
-  if(!(facet_col == no_selection))
-    p = p + facet_grid(formula(paste(facet_col, "~ .")))
+  if(!(facet_col == no_selection)) {
+    fm = formula(paste(facet_col, "~ ."))
+    if(!(facet_row_n == no_selection)) {
+      p = p + facet_grid_paginate(fm,
+                         ncol = 1,
+                         nrow = facet_row_n,
+                         page = facet_page)
+    }
+    else p = p + facet_grid(fm)
+  }
   
   return(p)
 }

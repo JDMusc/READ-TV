@@ -100,7 +100,7 @@ metaQueryServer = function(input, output, session, metaDataFile) {
     
     showModal(modalDialog(
       title = "Cases",
-      renderDataTable(meta_data),
+      DT::renderDataTable(meta_data),
       easyClose = TRUE,
       size = "m"
     ))
