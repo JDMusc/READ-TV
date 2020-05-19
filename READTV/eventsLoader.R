@@ -17,7 +17,8 @@ eventsLoader = function(input, output, session) {
     if(config.testing) {
       data = eventDataF()$datapath %>% loadEventsClean
     } else {
-      data = eventDataF()$datapath %>% read.csv(stringsAsFactors = F) %>% 
+      data = eventDataF()$datapath %>% 
+        loadEvents %>% 
         deltaTimes %>% 
         relativeTimes %>%
         filter(RelativeTime >= 0)

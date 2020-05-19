@@ -4,13 +4,13 @@ validTypes = function()
   c('COO', 'COM', 'EXT', 'TRN', 'EQ', 'ENV', 'PF', 'SDM', 'IC')
 
 
-loadEvents = function() {
-  tc_events = read.csv("data/tc_prepped_events.csv")
+loadEvents = function(f_name) {
+  events = read.csv(f_name, stringsAsFactors = F)
   
-  #Subcode is always NA, therefore will remove
-  tc_events$Subcode = NULL
+  if(!is.numeric(events$Time))
+    events$Time = as.POSIXct(events$Time)
   
-  tc_events %>% resetDeltaTimes %>% return
+  return(events)
 }
 
 

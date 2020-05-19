@@ -7,7 +7,7 @@ customizeDisplayUI = function(id) {
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   
-  props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 21)
+  props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
   
   no_selection = "None"
   
