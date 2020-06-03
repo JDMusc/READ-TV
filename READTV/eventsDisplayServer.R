@@ -61,7 +61,7 @@ eventsDisplayServer = function(input, output, session){
   
   doFacet = reactive({
     if(isDataLoaded()) !(
-      customizeDisplay$facetRowN() == customizeDisplay$no_selection)
+      customizeDisplay$facetRowN == customizeDisplay$no_selection)
     else F
   })
   
@@ -128,19 +128,19 @@ eventsDisplayServer = function(input, output, session){
   
   plotHeight = reactive({
     if(is.null(customizeDisplay$plotHeight)) 400
-    else customizeDisplay$plotHeight()
+    else customizeDisplay$plotHeight
   })
   
   output$facetPageSlider = renderUI({
     if(doFacet()) selectInput(
       ns("facetPageSlider"), "Facet Page", 1:facetPageN(), 
-      selected = customizeDisplay$facetPage())
+      selected = customizeDisplay$facetPage)
     else NULL
   })
   
   observeEvent(input$facetPageSlider, {
     pg = as.numeric(input$facetPageSlider)
-    customizeDisplay$facetPage(pg)
+    customizeDisplay$facetPage = pg
   })
   
   output$eventPlotContainer = renderUI({

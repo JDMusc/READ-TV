@@ -49,3 +49,9 @@ doesQueryCompile = function(qry, data) {
   
   return(!(class(result) == "try-error"))
 }
+
+
+getElementSafe = function(item_name, obj, default = NULL) {
+  if(item_name %in% names(obj)) obj[[item_name]]
+  else default
+}

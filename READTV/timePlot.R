@@ -1,14 +1,14 @@
 generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   no_selection = customizeDisplay$no_selection
-  shape_col = customizeDisplay$shapeColumn()
-  color_col = customizeDisplay$colorColumn()
-  y_col = customizeDisplay$yColumn()
-  facet_col = customizeDisplay$facetColumn()
-  facet_order = customizeDisplay$facetOrder()
-  facet_labels = customizeDisplay$facetLabels()
-  facet_customized = customizeDisplay$facetCustomized()
-  facet_row_n = customizeDisplay$facetRowN()
-  facet_page = customizeDisplay$facetPage()
+  shape_col = customizeDisplay$shapeColumn
+  color_col = customizeDisplay$colorColumn
+  y_col = customizeDisplay$yColumn
+  facet_col = customizeDisplay$facetColumn
+  facet_order = customizeDisplay$facetOrder
+  facet_labels = customizeDisplay$facetLabels
+  facet_customized = customizeDisplay$facetCustomized
+  facet_row_n = customizeDisplay$facetRowN
+  facet_page = customizeDisplay$facetPage
   
   point_aes = aes_string(y = y_col)
   if(!(shape_col == no_selection))

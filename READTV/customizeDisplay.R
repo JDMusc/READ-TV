@@ -4,32 +4,29 @@ customizeDisplayUI = function(id) {
   actionButton(ns("customizeDisplay"), "Customize Display")
 }
 
+
+genDefaults = function(no_selection){
+  list(no_selection = no_selection,
+	     shapeColumn = no_selection,
+	     colorColumn = no_selection,
+	     yColumn = 'Event',
+	     facetColumn = no_selection,
+	     facetOrder = no_selection,
+	     facetLabels = no_selection,
+	     facetCustomized = F,
+	     facetRowN = no_selection,
+	     facetPage = 1,
+	     plotHeight = 400
+  )
+}
+
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
-  
+
   no_selection = "None"
-  
-  shapeColumn = reactiveVal(no_selection)
-  
-  colorColumn = reactiveVal(no_selection)
-  
-  yColumn = reactiveVal("Event")
-  
-  facetColumn = reactiveVal(no_selection)
-  
-  facetOrder = reactiveVal(no_selection)
-  
-  facetLabels = reactiveVal(no_selection)
-  
-  facetCustomized = reactiveVal(F)
-  
-  facetRowN = reactiveVal(no_selection)
-  
-  facetPage = reactiveVal(1)
-  
-  plotHeight = reactiveVal(400)
+  ret = do.call(reactiveValues, genDefaults(no_selection))
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
@@ -47,13 +44,13 @@ customizeDisplayServer = function(input, output, session, data) {
   }
   
   observe({
-    update = function(valids, getset) 
-      if(shouldUpdate(valids, getset()))
-        getset(valids[1])
+    update = function(valids, current) 
+      if(shouldUpdate(valids, current))
+        ret[[current]] = valids[1]
     
-    update(validShapeColumns(), shapeColumn)
+    update(validShapeColumns(), ret$shapeColumn)
     
-    update(validColorColumns(), colorColumn)
+    update(validColorColumns(), ret$colorColumn)
   })
   
   validShapeColumns = reactive({
@@ -66,7 +63,9 @@ customizeDisplayServer = function(input, output, session, data) {
     req(data())
     
     data() %>%
-      validColumns(function(co) class(co) %in% c("logical", "numeric")) %>%
+      validColumns(function(co) class(co) %in% c("logical", 
+                                                 "numeric",
+                                                 "integer")) %>%
       {append("Event", .)}
   })
   
@@ -97,23 +96,23 @@ customizeDisplayServer = function(input, output, session, data) {
       easyClose = T,
       selectInput(ns("yColumn"), "Y (numeric/logical)",
                   choices = validYColumns(),
-                  selected = yColumn()),
+                  selected = ret$yColumn),
       sliderInput(ns("plotHeight"), "Plot Height", 
-                  value = plotHeight(), min = 20, max = 1000, step = 5),
+                  value = ret$plotHeight, min = 20, max = 1000, step = 5),
       selectInput(ns("shapeColumn"), selectText("Shape", props$maxShapeN), 
                   choices = validShapeColumns(),
-                  selected = shapeColumn()),
+                  selected = ret$shapeColumn),
       selectInput(ns("colorColumn"), 
                   selectText(
                     "Color", props$maxColorN, ", or numeric/logical"), 
                   choices = validColorColumns(),
-                  selected = colorColumn()),
+                  selected = ret$colorColumn),
       fluidRow(
         column(6,
                selectInput(ns("facetColumn"), 
                            selectText("Facet", props$maxFacetN),
                            choices = validFacetColumns(),
-                           selected = facetColumn())),
+                           selected = ret$facetColumn)),
         column(2, uiOutput(ns("facetCustomizeCheck")))
       ),
       uiOutput(ns("facetCustomizeBucket"))
@@ -123,7 +122,7 @@ customizeDisplayServer = function(input, output, session, data) {
       if(input$facetColumn == no_selection) return()
       
       checkboxInput(ns("customizeFacet"), 
-                    "Customize", value = facetCustomized())
+                    "Customize", value = ret$facetCustomized)
     })
     
     showFacetCustomizeBucket = reactive({
@@ -137,7 +136,7 @@ customizeDisplayServer = function(input, output, session, data) {
       if(!showFacetCustomizeBucket())
         return()
 
-      if(facetColumn() != input$facetColumn)
+      if(ret$facetColumn != input$facetColumn)
         facet_values = data()[[input$facetColumn]] %>% 
           unique %>% lapply(
             function(fv) {
@@ -146,11 +145,11 @@ customizeDisplayServer = function(input, output, session, data) {
             }
           )
       else {
-        facet_values = 1:length(facetOrder()) %>%
+        facet_values = 1:length(ret$facetOrder) %>%
           lapply(
             function(i) {
-              fl = as.character(facetOrder()[i])
-              fv = as.character(facetLabels()[i])
+              fl = as.character(ret$facetOrder[i])
+              fv = as.character(ret$facetLabels[i])
               textInput(ns(fl), fl, value = fv)
             }
           )
@@ -176,36 +175,37 @@ customizeDisplayServer = function(input, output, session, data) {
     })
     
     observeEvent(input$modalSubmit, {
-      yColumn(input$yColumn)
-      plotHeight(input$plotHeight)
+      ret$yColumn = input$yColumn
+      ret$plotHeight = input$plotHeight
       
-      shapeColumn(input$shapeColumn)
-      colorColumn(input$colorColumn)
+      ret$shapeColumn = input$shapeColumn
+      ret$colorColumn = input$colorColumn
       
-      facetColumn(input$facetColumn)
+      ret$facetColumn = input$facetColumn
       if(showFacetCustomizeBucket()) {
-        facetCustomized(T)
-        facetRowN(input$facetRowN)
-        facetOrder(input$facet_list)
+        ret$facetCustomized = T
+        ret$facetRowN = input$facetRowN
+        ret$facetOrder = input$facet_list
         
         input$facet_list %>% 
           lapply(function(f) input[[f]]) %>% 
           as.character %>% 
-          facetLabels
+	  {ret$facetLabels = .}
       }
       
       removeModal()
     }, ignoreInit = T)
   })
   
-  return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
-              yColumn = yColumn, 
-              facetColumn = facetColumn,
-              facetOrder = facetOrder,
-              facetLabels = facetLabels,
-              facetCustomized = facetCustomized,
-              facetPage = facetPage,
-              facetRowN = facetRowN,
-              plotHeight = plotHeight,
-              no_selection = no_selection))
+  #return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
+  #            yColumn = yColumn, 
+  #            facetColumn = facetColumn,
+  #            facetOrder = facetOrder,
+  #            facetLabels = facetLabels,
+  #            facetCustomized = facetCustomized,
+  #            facetPage = facetPage,
+  #            facetRowN = facetRowN,
+  #            plotHeight = plotHeight,
+  #            no_selection = no_selection))
+  return(ret)
 }

@@ -67,9 +67,12 @@ dataFilterServer = function(input, output, session, data) {
     req('Case' %in% names(selectMods))
     
     d = data()
-    cols = c('Case', 'Event.Type', extraFilterName())
+    cols = c('Case', 'Event.Type')#, extraFilterName())
     selected_vals = sapply(cols, 
-                           function(col) selectMods[[col]]()$selected())
+                           function(col) {
+                             selectMods[[col]]()$selected()
+                           }
+                           )
     for(col in cols) {
       qry = selectedQuery(selected_vals[setdiff(cols, col)])
       

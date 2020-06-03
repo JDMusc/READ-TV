@@ -6,6 +6,14 @@ eventsLoaderUI = function(id) {
 }
 
 
+loadWithRelativeAndDelta = function(data_f) 
+	data_f %>% 
+		loadEvents %>% 
+		deltaTimes %>% 
+		relativeTimes %>%
+		filter(RelativeTime >= 0)
+
+
 eventsLoader = function(input, output, session) {
   ns = session$ns
   
@@ -17,11 +25,7 @@ eventsLoader = function(input, output, session) {
     if(config.testing) {
       data = eventDataF()$datapath %>% loadEventsClean
     } else {
-      data = eventDataF()$datapath %>% 
-        loadEvents %>% 
-        deltaTimes %>% 
-        relativeTimes %>%
-        filter(RelativeTime >= 0)
+      data = loadWithRelativeAndDelta(eventDataF()$datapath)
     }
 
     return(list(name = eventDataF()$name, data = data))
