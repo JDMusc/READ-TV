@@ -3,6 +3,7 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   shape_col = customizeDisplay$shapeColumn
   color_col = customizeDisplay$colorColumn
   y_col = customizeDisplay$yColumn
+  x_col = customizeDisplay$xColumn
   facet_col = customizeDisplay$facetColumn
   facet_order = customizeDisplay$facetOrder
   facet_labels = customizeDisplay$facetLabels
@@ -28,7 +29,7 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
                                     labels = facet_labels)
   
   p = show_data %>%
-    ggplot(aes(x = RelativeTime)) + 
+    ggplot(aes_string(x = x_col)) + 
     geom_point(point_aes)
   
   y_class = class(show_data[[y_col]])
@@ -37,12 +38,12 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   
   if(doStemPlot){
     if(!(color_col == no_selection))
-      p = p + geom_segment(aes_string(xend = "RelativeTime", 
+      p = p + geom_segment(aes_string(xend = x_col, 
                                       yend = 0, 
                                       y = y_col,
                                       colour = color_col))
     else
-      p = p + geom_segment(aes_string(xend = "RelativeTime", 
+      p = p + geom_segment(aes_string(xend = x_col, 
                                       yend = 0,
                                       y = y_col))
   }

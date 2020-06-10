@@ -4,14 +4,20 @@ validTypes = function()
   c('COO', 'COM', 'EXT', 'TRN', 'EQ', 'ENV', 'PF', 'SDM', 'IC')
 
 
-loadEvents = function(f_name) {
+loadEvents = function(f_name) 
+  f_name %>% 
+    read.csv(stringsAsFactors = F)
+
+
+loadEventsAsTsibble = function(f_name, index = 'DateTime', key = NULL) {
   events = read.csv(f_name, stringsAsFactors = F)
   
-  if(!is.numeric(events$Time))
-    events$Time = as.POSIXct(events$Time)
+  if(!is.numeric(events[[index]]))
+  	events[[index]] = as.POSIXct(events[[index]])
+
+  events = as_tsibble(events, index = index, key = key)
   
-  return(events)
-}
+  return(events) }
 
 
 loadEventsClean = function(f = "data/tc_prepped_events.csv") f %>% 

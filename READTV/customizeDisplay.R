@@ -5,11 +5,12 @@ customizeDisplayUI = function(id) {
 }
 
 
-genDefaults = function(no_selection){
+generatePlotDefaults = function(no_selection){
   list(no_selection = no_selection,
 	     shapeColumn = no_selection,
 	     colorColumn = no_selection,
 	     yColumn = 'Event',
+	     xColumn = 'RelativeTime',
 	     facetColumn = no_selection,
 	     facetOrder = no_selection,
 	     facetLabels = no_selection,
@@ -26,7 +27,7 @@ customizeDisplayServer = function(input, output, session, data) {
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
 
   no_selection = "None"
-  ret = do.call(reactiveValues, genDefaults(no_selection))
+  ret = do.call(reactiveValues, generatePlotDefaults(no_selection))
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
@@ -68,6 +69,14 @@ customizeDisplayServer = function(input, output, session, data) {
                                                  "integer")) %>%
       {append("Event", .)}
   })
+
+  validXColumns = reactive({
+    req(data())
+    
+    data() %>%
+      validColumns(function(co) class(co) %in% 
+		   c("numeric", "integer", "POSIXct", "POSIXt"))
+  })
   
   validColorColumns = reactive({
     req(data())
@@ -97,6 +106,9 @@ customizeDisplayServer = function(input, output, session, data) {
       selectInput(ns("yColumn"), "Y (numeric/logical)",
                   choices = validYColumns(),
                   selected = ret$yColumn),
+      selectInput(ns("xColumn"), "X (numeric/date time)",
+                  choices = validXColumns(),
+                  selected = ret$xColumn),
       sliderInput(ns("plotHeight"), "Plot Height", 
                   value = ret$plotHeight, min = 20, max = 1000, step = 5),
       selectInput(ns("shapeColumn"), selectText("Shape", props$maxShapeN), 
@@ -175,6 +187,7 @@ customizeDisplayServer = function(input, output, session, data) {
     })
     
     observeEvent(input$modalSubmit, {
+      ret$xColumn = input$xColumn
       ret$yColumn = input$yColumn
       ret$plotHeight = input$plotHeight
       
@@ -197,15 +210,5 @@ customizeDisplayServer = function(input, output, session, data) {
     }, ignoreInit = T)
   })
   
-  #return(list(shapeColumn = shapeColumn, colorColumn = colorColumn, 
-  #            yColumn = yColumn, 
-  #            facetColumn = facetColumn,
-  #            facetOrder = facetOrder,
-  #            facetLabels = facetLabels,
-  #            facetCustomized = facetCustomized,
-  #            facetPage = facetPage,
-  #            facetRowN = facetRowN,
-  #            plotHeight = plotHeight,
-  #            no_selection = no_selection))
   return(ret)
 }
