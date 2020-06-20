@@ -136,12 +136,18 @@ customEventsQueryServer = function(input, output, session, data) {
     
     T
   })
+
+  query = reactive({
+    req(hasQueryInput())
+    req(queryCompiles())
+
+    return(input$queryInput)
+  })
   
   filteredData = reactive({
     req(hasQueryInput())
-    req(queryCompiles())
     
-    return(applyQuery(input$queryInput, data()))
+    return(applyQuery(query(), data()))
   })
   
   hasValidQuery = reactive({
@@ -149,6 +155,7 @@ customEventsQueryServer = function(input, output, session, data) {
   })
   
   return(list(filteredData = filteredData, 
-              hasValidQuery = hasValidQuery))
+              hasValidQuery = hasValidQuery,
+	      query = query))
 
 }

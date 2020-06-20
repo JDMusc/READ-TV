@@ -1,144 +1,124 @@
 
-
 dataFilterServer = function(input, output, session, data) {
   ns = session$ns
   
   selectMods <- reactiveValues()
   
-  selectedQuery = function(selected_values) {
-    selected_ixs = selected_values %>% names %>%
-      sapply(function(n) !('All' %in% selected_values[[n]]))
-    tryCatch({
-      if(sum(selected_ixs) == 0)
-        return("")
-    }, error = function(e) browser)
-    
-    selected_values = selected_values[selected_ixs]
-    
-    selected_values %>% 
-      names %>% 
-      sapply(function(n) {
-        values = selected_values[[n]]
-        is_char = class(values) == 'character'
-        
-        values_str = values %>% sapply(function(v) 
-          if(is_char)  paste0("'", v, "'") else v) %>%
-          paste(collapse = ',')
-        
-        paste(n, '%in%', paste0('c(', values_str, ')'))
-        }) %>%
-      paste(collapse = '&')
-  }
-  
-  
   constraints = reactiveValues()
   
-  
   filteredDataCount = printWithCountGen("filtered data")
-  preQueryFilteredData <- reactive({
+
+  selectedVals <- reactive({
+    cols = c('Case', 'Event.Type')
+
+    sapply(cols, 
+	   function(col) selectMods[[col]]()$selected())
+  })
+
+  selectedData <- reactive({
     req(data())
     
     d = data()
     
     #filteredDataCount()
+
+    selected_vals = selectedVals()
+    qry = generateSelectedQuery(selected_vals)
+    df = applyQuery(qry, data())
     
-    if('Case' %in% names(selectMods)) {
-      cols = c('Case', 'Event.Type', extraFilterName())
-      for(col in cols){
-        m = selectMods[[col]]()
-        req(m$selected())
-        val = m$selected()
-        
-        if(isSelected(val)) d = d %>% filter(.data[[col]] %in% val)
-      }
-    }
+    #if('Case' %in% names(selectMods)) {
+    #  cols = c('Case', 'Event.Type', extraFilterName())
+    #  for(col in cols){
+    #    m = selectMods[[col]]()
+    #    req(m$selected())
+    #    val = m$selected()
+    #    
+    #    if(isSelected(val)) d = d %>% filter(.data[[col]] %in% val)
+    #  }
+    #}
+    df
     
     for(col in names(constraints)) {
       fn = constraints[[col]]
-      passing_rows = fn(d[[col]])
-      d = d[passing_rows,]
+      passing_rows = fn(df[[col]])
+      df = df[passing_rows,]
     }
     
-    d
+    df
   })
-  
+
   updateChoicesCountDebug = printWithCountGen('update choices')
   observe({
-    req('Case' %in% names(selectMods))
-    
-    d = data()
-    cols = c('Case', 'Event.Type')#, extraFilterName())
-    selected_vals = sapply(cols, 
-                           function(col) {
-                             selectMods[[col]]()$selected()
-                           }
-                           )
-    for(col in cols) {
-      qry = selectedQuery(selected_vals[setdiff(cols, col)])
-      
-      df = applyQuery(qry, data())
-      
-      chs = columnValues(df, col)
-      
-      req(selectMods[[col]]())
-      
-      selectMods[[col]]()$updateChoices(chs)
-      }
+	  req('Case' %in% names(selectMods))
+
+	  d = data()
+	  cols = c('Case', 'Event.Type')
+	  selected_vals = selectedVals()
+
+	  for(col in cols) {
+		  others = setdiff(cols, col)
+	  	  qry = generateSelectedQuery(selected_vals[others])
+	  	  df = applyQuery(qry, d)
+
+		  chs = columnValues(df, col)
+
+		  req(selectMods[[col]]())
+
+		  selectMods[[col]]()$updateChoices(chs)
+	  }
   })
-  
-  
+
+
   columnValues = function(df, col) {
-    chs = tryCatch({df[[col]] %>% unique},
-                   error = function(e) browser())
-    
-    if(class(chs) == "factor")
-      as.character(chs)
-    else
-      chs
+	  chs = tryCatch({df[[col]] %>% unique},
+		  error = function(e) browser())
+
+	  if(class(chs) == "factor")
+		  as.character(chs)
+	  else
+		  chs
   }
-  
-  
+
+
   observe({
-    req(extraFilterName())
-    
-    d = data()
-    
-    selectMods[["Case"]] = callModule(multiSelectServer, "caseFilter",
-                                      columnValues(d, "Case"))
-    selectMods[["Event.Type"]] = callModule(multiSelectServer, "eventTypeFilter",
-                                            columnValues(d, "Event.Type"))
-    #efn = extraFilterName()
-    #browser()
-    #selectMods[[efn]] = callModule(multiSelectServer, "extraFilter", 
-    #                               columnValues(d, efn))
+	  req(extraFilterName())
+
+	  d = data()
+
+	  selectMods[["Case"]] = callModule(multiSelectServer, "caseFilter",
+					    columnValues(d, "Case"))
+	  selectMods[["Event.Type"]] = callModule(multiSelectServer, "eventTypeFilter",
+						  columnValues(d, "Event.Type"))
   })
-  
-  
+
+
   extraFilterName = reactive({
-    req(data())
-    
-    colnames(data())[3]
+	  req(data())
+
+	  colnames(data())[3]
   })
-  
-  
+
+
   output$extraFilter <- renderUI({
-    req(extraFilterName())
-    
-    multiSelectUI(ns("extraFilter"), extraFilterName())
+	  req(extraFilterName())
+
+	  multiSelectUI(ns("extraFilter"), extraFilterName())
   })
-  
-  customQuery = callModule(customEventsQueryServer, "customQuery", preQueryFilteredData)
-  
+
+  customQuery = callModule(customEventsQueryServer, "customQuery", selectedData)
+
   filteredData = reactive({
-    hvq = customQuery$hasValidQuery()
-    if(hvq)
-      customQuery$filteredData()
-    else
-      preQueryFilteredData()
+	  hvq = customQuery$hasValidQuery()
+	  if(hvq)
+		  customQuery$filteredData()
+	  else
+		  selectedData()
   })
-  
+
   return(list(filteredData = filteredData,
-              hasValidQuery = customQuery$hasValidQuery,
-              constraints = constraints))
+	      hasValidQuery = customQuery$hasValidQuery,
+	      query = customQuery$query,
+	      selectedVals = selectedVals,
+	      constraints = constraints))
 }
 

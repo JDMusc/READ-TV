@@ -15,7 +15,7 @@ loadEventsAsTsibble = function(f_name, index = 'DateTime', key = NULL) {
   if(!is.numeric(events[[index]]))
   	events[[index]] = as.POSIXct(events[[index]])
 
-  events = as_tsibble(events, index = index, key = key)
+  events = as_tsibble(events, index = index, key = key, regular=F)
   
   return(events) }
 

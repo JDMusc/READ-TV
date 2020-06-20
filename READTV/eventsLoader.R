@@ -29,7 +29,8 @@ eventsLoader = function(input, output, session) {
       data = loadEventsWithRelativeAndDeltaTime(eventDataF()$datapath)
     }
 
-    return(list(name = eventDataF()$name, data = data))
+    return(list(name = eventDataF()$name, data = data,
+		datapath = eventDataF()$datapath))
   })
   )
 }

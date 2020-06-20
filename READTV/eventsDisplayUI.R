@@ -1,7 +1,7 @@
 
 eventsDisplayUI <- function(id) {
   ns = NS(id)
-  fluidPage(
+  fp = fluidPage(
     shinyjs::useShinyjs(),
     shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
     tabsetPanel(
@@ -30,8 +30,17 @@ eventsDisplayUI <- function(id) {
             column(uiOutput(ns("sidePanel")), width = 2)
           )
         )
-      )
+      ),
+      tabPanel(
+        "Source Code",
+      	div(
+      	  sourceCodeUI(ns("sourcecode"))
+      	)
+      ),
+    id = ns("tabs")
     )
   )
+
+  fp
 }
 

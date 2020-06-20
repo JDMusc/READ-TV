@@ -21,6 +21,7 @@ generatePlotDefaults = function(no_selection){
   )
 }
 
+
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   

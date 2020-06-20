@@ -6,7 +6,6 @@ eventsDisplayServer = function(input, output, session){
   isDataLoaded = reactiveVal(F)
   
   eventsInformation = callModule(eventsLoader, "loadData")
-
   
   data <- reactive({
     tbl = eventsInformation()$data
@@ -51,12 +50,15 @@ eventsDisplayServer = function(input, output, session){
   event_colors = eventTypeColors()
   
   updateTimePlotCountDebug = printWithCountGen('time plot')
-  
+
+  doStemPlot = reactive({input$doStemPlot})
+
   timePlot <- reactive({
     req(isDataLoaded())
-    req(!is.null(input$doStemPlot))
-    
-    generateTimePlot(filteredData(), customizeDisplay, input$doStemPlot)
+    req(!is.null(doStemPlot()))
+
+    #showTab("tabs", "Source Code")
+    generateTimePlot(filteredData(), customizeDisplay, doStemPlot())
   })
   
   doFacet = reactive({
@@ -69,7 +71,6 @@ eventsDisplayServer = function(input, output, session){
     if(!doFacet()) -1
     else n_pages(timePlot())
   })
-  
   
   eventStats <- reactive({
     summary(filteredData()$deltaTime)
@@ -179,7 +180,6 @@ eventsDisplayServer = function(input, output, session){
       return(hist())
   })
   
-  
   output$sidePanel = renderUI({
     req(isDataLoaded())
     
@@ -235,4 +235,8 @@ eventsDisplayServer = function(input, output, session){
   observeEvent(input$showEventStats, {
     callModule(showEventStats, "", data=filteredData)
   })
+
+  sourceCode <- callModule(sourceCodeServer, "sourcecode", 
+			   customizeDisplay, dataFilter, doStemPlot,
+  			   eventsInformation, isDataLoaded)
 }

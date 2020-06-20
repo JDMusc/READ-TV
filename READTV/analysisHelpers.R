@@ -4,7 +4,8 @@ withinTime = function(time_data, time, n) time_data %>%
   between(time - n, time + n)
 
 withinTimeSeries = function(time_data, n = 4){
-  sapply(min(time_data):max(time_data), 
+  #sapply(min(time_data):max(time_data), 
+  sapply(time_data, 
          function(t) time_data %>% withinTime(t, n) %>% sum) %>%
   ts(start = min(time_data))
   }
