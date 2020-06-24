@@ -8,7 +8,8 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   facet_order = customizeDisplay$facetOrder
   facet_labels = customizeDisplay$facetLabels
   facet_customized = customizeDisplay$facetCustomized
-  facet_row_n = customizeDisplay$facetRowN
+  facet_paginated = customizeDisplay$facetPaginated
+  facet_rows_per_pg = customizeDisplay$facetRowsPerPage
   facet_page = customizeDisplay$facetPage
   
   point_aes = aes_string(y = y_col)
@@ -27,6 +28,9 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
     show_data[[facet_col]] = factor(show_data[[facet_col]],
                                     levels = facet_order,
                                     labels = facet_labels)
+  else
+    if(facet_paginated)
+      show_data[[facet_col]] = factor(show_data[[facet_col]])
   
   p = show_data %>%
     ggplot(aes_string(x = x_col)) + 
@@ -50,10 +54,10 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   
   if(!(facet_col == no_selection)) {
     fm = formula(paste(facet_col, "~ ."))
-    if(!(facet_row_n == no_selection)) {
+    if(facet_paginated) {
       p = p + facet_grid_paginate(fm,
                          ncol = 1,
-                         nrow = facet_row_n,
+                         nrow = facet_rows_per_pg,
                          page = facet_page)
     }
     else p = p + facet_grid(fm)

@@ -67,7 +67,7 @@ plotOptsToSourceCode = function(plot_options) {
     if(val == no_selection | val == def_opts[[n]])
       next
     
-    if(is.character(val))
+    if(is.character(val) & !is.array(val))
       val = f("\"${val}\"")
     
     src = paste(src, f("plot_options$${n} = ${val}"), sep = '\n')

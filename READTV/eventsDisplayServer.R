@@ -63,7 +63,7 @@ eventsDisplayServer = function(input, output, session){
   
   doFacet = reactive({
     if(isDataLoaded()) !(
-      customizeDisplay$facetRowN == customizeDisplay$no_selection)
+      customizeDisplay$facetRowsPerPage == customizeDisplay$no_selection)
     else F
   })
   
@@ -133,9 +133,13 @@ eventsDisplayServer = function(input, output, session){
   })
   
   output$facetPageSlider = renderUI({
+    f = stringr::str_interp
+    page = customizeDisplay$facetPage
     if(doFacet()) selectInput(
-      ns("facetPageSlider"), "Facet Page", 1:facetPageN(), 
-      selected = customizeDisplay$facetPage)
+      ns("facetPageSlider"), 
+      f("Facet Page (${page} out of ${facetPageN()})"), 
+      1:facetPageN(), 
+      selected = page)
     else NULL
   })
   

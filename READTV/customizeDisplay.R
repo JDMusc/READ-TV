@@ -15,7 +15,8 @@ generatePlotDefaults = function(no_selection){
 	     facetOrder = no_selection,
 	     facetLabels = no_selection,
 	     facetCustomized = F,
-	     facetRowN = no_selection,
+       facetPaginated = F,
+	     facetRowsPerPage = no_selection,
 	     facetPage = 1,
 	     plotHeight = 400
   )
@@ -126,9 +127,12 @@ customizeDisplayServer = function(input, output, session, data) {
                            selectText("Facet", props$maxFacetN),
                            choices = validFacetColumns(),
                            selected = ret$facetColumn)),
-        column(2, uiOutput(ns("facetCustomizeCheck")))
+        column(2,
+               fluidRow(uiOutput(ns("facetCustomizeCheck"))),
+               fluidRow(uiOutput(ns("facetPaginateCheck"))))
       ),
-      uiOutput(ns("facetCustomizeBucket"))
+      fluidRow(uiOutput(ns("facetPaginateBucket"))),
+      fluidRow(uiOutput(ns("facetCustomizeBucket")))
     ))
     
     output$facetCustomizeCheck = renderUI({
@@ -138,11 +142,19 @@ customizeDisplayServer = function(input, output, session, data) {
                     "Customize", value = ret$facetCustomized)
     })
     
+    output$facetPaginateCheck = renderUI({
+      if(input$facetColumn == no_selection) return()
+      
+      checkboxInput(ns("paginateFacet"), 
+                    "Paginate", value = ret$facetPaginated)
+    })
+    
     showFacetCustomizeBucket = reactive({
-      if(is.null(input$customizeFacet))
+      cf = input$customizeFacet
+      if(is.null(cf))
         return(F)
       
-      return(input$facetColumn != no_selection & input$customizeFacet)
+      return(input$facetColumn != no_selection & cf)
     })
     
     output$facetCustomizeBucket = renderUI({
@@ -168,23 +180,29 @@ customizeDisplayServer = function(input, output, session, data) {
           )
       }
       
-      tabsetPanel(
-        tabPanel("Pagination",
-                 sliderInput(ns("facetRowN"), "Items Per Tab",
-                             min = 2, max = 20, value = 10)
-                 ),
-        tabPanel(
-          "Facet Ordering",
-          bucket_list(
-            header = "Customize Facet",
-            add_rank_list(
-              text = "Facet Order & Display Values",
-              input_id = ns("facet_list"),
-              labels = facet_values
-            )
-          )
+      div(bucket_list(
+        header = "Customize Facet",
+        add_rank_list(
+          text = "Facet Order & Display Values",
+          input_id = ns("facet_list"),
+          labels = facet_values
         )
-      )
+      ))
+    })
+    
+    showFacetPaginateBucket = reactive({
+      if(is.null(input$paginateFacet))
+        return(F)
+      
+      return(input$facetColumn != no_selection & input$paginateFacet)
+    })
+    
+    output$facetPaginateBucket = renderUI({
+      if(!showFacetPaginateBucket())
+        return()
+      
+      sliderInput(ns("facetRowsPerPage"), "Items Per Page",
+                  min = 2, max = 20, value = 10)
     })
     
     observeEvent(input$modalSubmit, {
@@ -198,13 +216,17 @@ customizeDisplayServer = function(input, output, session, data) {
       ret$facetColumn = input$facetColumn
       if(showFacetCustomizeBucket()) {
         ret$facetCustomized = T
-        ret$facetRowN = input$facetRowN
         ret$facetOrder = input$facet_list
         
         input$facet_list %>% 
           lapply(function(f) input[[f]]) %>% 
           as.character %>% 
-	  {ret$facetLabels = .}
+          {ret$facetLabels = .}
+      }
+      
+      if(showFacetPaginateBucket()) {
+        ret$facetPaginated = T
+        ret$facetRowsPerPage = input$facetRowsPerPage
       }
       
       removeModal()
