@@ -1,6 +1,6 @@
 
 sourceCodeServer = function(input, output, session, 
-			    customizeDisplay, dataFilter, doStemPlot,
+			    customizeDisplay, dataFilter,
 			    eventsInformation, isDataLoaded){
   ns = session$ns
   
@@ -21,13 +21,11 @@ sourceCodeServer = function(input, output, session,
     selected_vals = safeFn(dataFilter$selectedVals)
     
     file_name = eventsInformation()$name
-    sp = doStemPlot()
 
     dont_render = is.null(sp)
 
     if(dont_render) return("")
 
-    generatePlotSourceCode(plot_opts, filter_qry, selected_vals, file_name, 
-			   doStemPlot = sp)
+    generatePlotSourceCode(plot_opts, filter_qry, selected_vals, file_name)
   })
 }

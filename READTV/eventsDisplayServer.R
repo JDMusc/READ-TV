@@ -51,14 +51,11 @@ eventsDisplayServer = function(input, output, session){
   
   updateTimePlotCountDebug = printWithCountGen('time plot')
 
-  doStemPlot = reactive({input$doStemPlot})
-
   timePlot <- reactive({
     req(isDataLoaded())
-    req(!is.null(doStemPlot()))
 
     #showTab("tabs", "Source Code")
-    generateTimePlot(filteredData(), customizeDisplay, doStemPlot())
+    generateTimePlot(filteredData(), customizeDisplay)
   })
   
   doFacet = reactive({
@@ -115,11 +112,6 @@ eventsDisplayServer = function(input, output, session){
   
   output$headerInformation = renderText({
     if(isHeaderMinimized()) headerMinimalInformation()
-  })
-  
-  output$doStemPlot = renderUI({
-    if(input$plotType == "timePlot" & isDataLoaded())
-      checkboxInput(ns("doStemPlot"), "Stem Plot", value = T)
   })
   
   output$showSource = renderUI({
@@ -195,8 +187,7 @@ eventsDisplayServer = function(input, output, session){
       uiOutput(ns("showSource")), 
       uiOutput(ns("calcCPA"), label = "Show CPA"),
       uiOutput(ns("showEventStats"), label = "Basic Statistics"),
-      uiOutput(ns("downloadDataOutput")),
-      uiOutput(ns("doStemPlot"))
+      uiOutput(ns("downloadDataOutput"))
     )
   })
   
@@ -241,6 +232,6 @@ eventsDisplayServer = function(input, output, session){
   })
 
   sourceCode <- callModule(sourceCodeServer, "sourcecode", 
-			   customizeDisplay, dataFilter, doStemPlot,
+			   customizeDisplay, dataFilter,
   			   eventsInformation, isDataLoaded)
 }

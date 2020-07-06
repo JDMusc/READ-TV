@@ -1,4 +1,4 @@
-generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
+generateTimePlot <- function(data, customizeDisplay) {
   no_selection = customizeDisplay$no_selection
   shape_col = customizeDisplay$shapeColumn
   color_col = customizeDisplay$colorColumn
@@ -11,6 +11,9 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   facet_paginated = customizeDisplay$facetPaginated
   facet_rows_per_pg = customizeDisplay$facetRowsPerPage
   facet_page = customizeDisplay$facetPage
+  do_stem_plot = customizeDisplay$doStemPlot
+  
+  cpa_params = customizeDisplay$cpaParams
   
   point_aes = aes_string(y = y_col)
   if(!(shape_col == no_selection))
@@ -40,7 +43,7 @@ generateTimePlot <- function(data, customizeDisplay, doStemPlot) {
   if(y_class == "logical")
     p = p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
   
-  if(doStemPlot){
+  if(do_stem_plot){
     if(!(color_col == no_selection))
       p = p + geom_segment(aes_string(xend = x_col, 
                                       yend = 0, 

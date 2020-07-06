@@ -4,9 +4,25 @@ validTypes = function()
   c('COO', 'COM', 'EXT', 'TRN', 'EQ', 'ENV', 'PF', 'SDM', 'IC')
 
 
-loadEvents = function(f_name) 
-  f_name %>% 
-    read.csv(stringsAsFactors = F)
+loadEvents = function(f_name) {
+  is_rds = f_name %>% 
+    file_ext %>% 
+    tolower %>% 
+    {. == 'rds'}
+  if(is_rds)
+    readRDS(f_name)
+  else
+    read.csv(f_name, stringsAsFactors = F)
+}
+
+
+loadEventsWithRelativeAndDeltaTime = function(data_f, index = 'DateTime', key = NULL) 
+  data_f %>% 
+  #loadEventsAsTsibble(index = index, key = key) %>% 
+  loadEvents %>%
+  deltaTimes %>% 
+  relativeTimes %>%
+  filter(RelativeTime >= 0)
 
 
 loadEventsAsTsibble = function(f_name, index = 'DateTime', key = NULL) {
@@ -20,7 +36,7 @@ loadEventsAsTsibble = function(f_name, index = 'DateTime', key = NULL) {
   return(events) }
 
 
-loadEventsClean = function(f = "data/tc_prepped_events.csv") f %>% 
+loadSugicalEvents = function(f = "data/tc_prepped_events.csv") f %>% 
   read.csv %>% 
   filter(Event.Type %in% validTypes()) %>% 
   droplevels %>%
@@ -52,8 +68,8 @@ loadDemo = function(events) events %>% relativeTimes
 
 relativeTimes = function(events) {
   case_starts = events %>% 
-    {.$Case - lag(.$Case, default = -1)} %>%
-    {which(. > 0)}
+    {.$Case != lag(.$Case, default = -1)} %>%
+    {which(.)}
   n_cases = length(case_starts)
   
   if(n_cases > 1)

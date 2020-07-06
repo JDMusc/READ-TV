@@ -18,7 +18,9 @@ generatePlotDefaults = function(no_selection){
        facetPaginated = F,
 	     facetRowsPerPage = no_selection,
 	     facetPage = 1,
-	     plotHeight = 400
+	     plotHeight = 400,
+       doStemPlot = T,
+       cpaParams = NULL
   )
 }
 
@@ -66,9 +68,10 @@ customizeDisplayServer = function(input, output, session, data) {
     req(data())
     
     data() %>%
-      validColumns(function(co) class(co) %in% c("logical", 
-                                                 "numeric",
-                                                 "integer")) %>%
+      validColumns(function(co) 
+        all(
+          class(co) %in% c("logical", "numeric", "integer")
+        )) %>%
       {append("Event", .)}
   })
 
@@ -76,8 +79,11 @@ customizeDisplayServer = function(input, output, session, data) {
     req(data())
     
     data() %>%
-      validColumns(function(co) class(co) %in% 
-		   c("numeric", "integer", "POSIXct", "POSIXt"))
+      validColumns(function(co) 
+        all(
+          class(co) %in% c("numeric", "integer", "POSIXct", "POSIXt", "difftime")
+          )
+      ) 
   })
   
   validColorColumns = reactive({
@@ -121,6 +127,7 @@ customizeDisplayServer = function(input, output, session, data) {
                     "Color", props$maxColorN, ", or numeric/logical"), 
                   choices = validColorColumns(),
                   selected = ret$colorColumn),
+      checkboxInput(ns("doStemPlot"), "Stem Plot", value = ret$doStemPlot),
       fluidRow(
         column(6,
                selectInput(ns("facetColumn"), 
@@ -212,6 +219,8 @@ customizeDisplayServer = function(input, output, session, data) {
       
       ret$shapeColumn = input$shapeColumn
       ret$colorColumn = input$colorColumn
+      
+      ret$doStemPlot = input$doStemPlot
       
       ret$facetColumn = input$facetColumn
       if(showFacetCustomizeBucket()) {

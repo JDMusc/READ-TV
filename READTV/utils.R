@@ -79,7 +79,7 @@ plotOptsToSourceCode = function(plot_options) {
 
 filterQryToSourceCode = function(filter_qry, data_name, filtered_data_name) {
   f = stringr::str_interp
-  src = f("${filtered_data_name} = ${data_name} %>% filter(${filter_qry})")
+  src = f("${filtered_data_name} = ${data_name} %>%\n\t\tfilter(${filter_qry})")
   return(src)
 }
 
@@ -114,50 +114,50 @@ selectedValsToSourceCode = function(selected_vals, data_name, selected_data_name
   f = stringr::str_interp
 
   selected_qry = generateSelectedQuery(selected_vals)
-  src = f("${selected_data_name} = ${data_name} %>% filter(${selected_qry})")
+  src = f("${selected_data_name} = ${data_name} %>% \n\t\tfilter(${selected_qry})")
   return(src)
 }
 
 generatePlotSourceCode = function(plot_options, filter_qry, selected_vals, f_name,
-                                  data_name = "events", doStemPlot = T) {
-  f = stringr::str_interp
+				  data_name = "events") {
+	f = stringr::str_interp
 
-  load_f_src = paste(
-    f("f_name = \"${f_name}\" #update to your local path"),
-    f("${data_name} = loadEventsWithRelativeAndDeltaTime(f_name)"),
-    sep = '\n')
-  
-  events_src = load_f_src
+	load_f_src = paste(
+			   f("f_name = \"${f_name}\" #update to your local path"),
+			   f("${data_name} = loadEventsWithRelativeAndDeltaTime(f_name)"),
+			   sep = '\n')
 
-  appendToSrc = function(input_data, prefix, qry_input, src, fn) {
-    ret = list(output_data = input_data, src = src)
-    if(is.null(qry_input)) return(ret)
+	events_src = load_f_src
 
-    ret$output_data = f("${prefix}_${data_name}")
-    ret$src = paste(src,
-		    fn(qry_input, input_data, ret$output_data),
-                    sep = '\n')
+	appendToSrc = function(input_data, prefix, qry_input, src, fn) {
+		ret = list(output_data = input_data, src = src)
+		if(is.null(qry_input)) return(ret)
 
-    ret
-  }
+		ret$output_data = f("${prefix}_${data_name}")
+		ret$src = paste(src,
+				fn(qry_input, input_data, ret$output_data),
+				sep = '\n')
 
-  none_selected = selected_vals %>%
-	  sapply(function(f) any(f %in% 'All')) %>%
-	  all
-  if(none_selected) selected_vals = NULL
-  selected = appendToSrc(data_name, "selected", selected_vals, events_src,
-                               selectedValsToSourceCode)
+		ret
+	}
 
-  filtered = appendToSrc(selected$output_data, "filtered", filter_qry, selected$src,
-                               filterQryToSourceCode)
-  
-  plot_opts_src = plotOptsToSourceCode(plot_options)
-  
-  src = paste(
-    "source(readtv)",
-    filtered$src,
-    plot_opts_src,
-    f("p = generateTimePlot(${filtered$output}, plot_options, ${doStemPlot})"),
+	none_selected = selected_vals %>%
+		sapply(function(f) any(f %in% 'All')) %>%
+		all
+	if(none_selected) selected_vals = NULL
+	selected = appendToSrc(data_name, "selected", selected_vals, events_src,
+			       selectedValsToSourceCode)
+
+	filtered = appendToSrc(selected$output_data, "filtered", filter_qry, selected$src,
+			       filterQryToSourceCode)
+
+	plot_opts_src = plotOptsToSourceCode(plot_options)
+
+	src = paste(
+		    "source(readtv)",
+		    filtered$src,
+		    plot_opts_src,
+		    f("p = generateTimePlot(${filtered$output}, plot_options)"),
     "plot(p)",
     sep = '\n\n')
   

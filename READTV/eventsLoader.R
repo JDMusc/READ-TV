@@ -6,15 +6,6 @@ eventsLoaderUI = function(id) {
 }
 
 
-loadEventsWithRelativeAndDeltaTime = function(data_f, index = 'DateTime', key = NULL) 
-	data_f %>% 
-		#loadEventsAsTsibble(index = index, key = key) %>% 
-		loadEvents %>%
-		deltaTimes %>% 
-		relativeTimes %>%
-		filter(RelativeTime >= 0)
-
-
 eventsLoader = function(input, output, session) {
   ns = session$ns
   
@@ -24,7 +15,7 @@ eventsLoader = function(input, output, session) {
     req(eventDataF())
     
     if(config.testing) {
-      data = eventDataF()$datapath %>% loadEventsClean
+      data = eventDataF()$datapath %>% loadSugicalEvents
     } else {
       data = loadEventsWithRelativeAndDeltaTime(eventDataF()$datapath)
     }
