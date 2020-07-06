@@ -8,7 +8,9 @@ eventsDisplayServer = function(input, output, session){
   eventsInformation = callModule(eventsLoader, "loadData")
   
   data <- reactive({
-    tbl = eventsInformation()$data
+    req(eventsInformation$name())
+    
+    tbl = eventsInformation$data()
     if(isMetaDataLoaded()) {
       tbl = tbl %>% filter(Case %in% filteredMetaData()$data$Case)
     }
@@ -29,7 +31,10 @@ eventsDisplayServer = function(input, output, session){
   
   dataFilter = callModule(dataFilterServer, "dataFilter", data)
   
-  filteredData = reactive({dataFilter$filteredData()})
+  filteredData = reactive({
+    req(isDataLoaded())
+    dataFilter$filteredData()
+  })
   
   customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
                                 filteredData)
@@ -97,6 +102,7 @@ eventsDisplayServer = function(input, output, session){
   
   
   headerMinimalInformation = reactive({
+    print("header minimal")
     parts = c()
     
     if(isDataLoaded())
@@ -107,6 +113,7 @@ eventsDisplayServer = function(input, output, session){
       parts = append(parts, filteredMetaData()$query)
     }
     
+    print("end header minimal")
     return(toString(parts))
   })
   

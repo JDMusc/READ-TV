@@ -9,19 +9,34 @@ eventsLoaderUI = function(id) {
 eventsLoader = function(input, output, session) {
   ns = session$ns
   
-  eventDataF = callModule(fileWellServer, "filewell", "Event Data", '../data/tc_prepped_events.csv')
+  eventDataF = callModule(fileWellServer, "filewell", "Event Data", 
+                          '../data/tc_prepped_events.csv')
   
-  return(reactive({
+  name = reactive({
     req(eventDataF())
+    eventDataF()$name
+  })
+  
+  datapath = reactive({
+    req(eventDataF())
+    eventDataF()$datapath
+  })
+  
+  data = reactive({
+    req(datapath())
+    datap = datapath()
     
     if(config.testing) {
-      data = eventDataF()$datapath %>% loadSugicalEvents
+      d = datap %>% loadSugicalEvents
     } else {
-      data = loadEventsWithRelativeAndDeltaTime(eventDataF()$datapath)
+      d = datap %>% loadEventsWithRelativeAndDeltaTime
     }
-
-    return(list(name = eventDataF()$name, data = data,
-		datapath = eventDataF()$datapath))
+    
+    d
   })
-  )
+
+  return(
+    list(name = name, data = data,
+         datapath = datapath)
+    )
 }

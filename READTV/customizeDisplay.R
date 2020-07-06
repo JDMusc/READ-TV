@@ -20,7 +20,7 @@ generatePlotDefaults = function(no_selection){
 	     facetPage = 1,
 	     plotHeight = 400,
        doStemPlot = T,
-       cpaParams = NULL
+       cpaParams = no_selection
   )
 }
 

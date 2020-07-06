@@ -20,11 +20,7 @@ sourceCodeServer = function(input, output, session,
     filter_qry = safeFn(dataFilter$query)
     selected_vals = safeFn(dataFilter$selectedVals)
     
-    file_name = eventsInformation()$name
-
-    dont_render = is.null(sp)
-
-    if(dont_render) return("")
+    file_name = eventsInformation$name()
 
     generatePlotSourceCode(plot_opts, filter_qry, selected_vals, file_name)
   })
