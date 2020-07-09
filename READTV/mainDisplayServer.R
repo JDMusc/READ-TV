@@ -1,5 +1,5 @@
 
-eventsDisplayServer = function(input, output, session){
+mainDisplayServer = function(input, output, session){
   ns = session$ns
   
   isHeaderMinimized = reactiveVal(F)

@@ -1,5 +1,5 @@
 
-eventsDisplayUI <- function(id) {
+mainDisplayUI <- function(id) {
   ns = NS(id)
   fp = fluidPage(
     shinyjs::useShinyjs(),
@@ -22,7 +22,7 @@ eventsDisplayUI <- function(id) {
         )
       ),
       tabPanel(
-        "Display",
+        "Basic Display",
         div(
           uiOutput(ns("dataFilter")),
           fluidRow(
@@ -32,6 +32,12 @@ eventsDisplayUI <- function(id) {
             column(uiOutput(ns("sidePanel")), width = 12)
           )
         )
+      ),
+      tabPanel(
+        "CPA"
+      ),
+      tabPanel(
+        "Forecasting"
       ),
       tabPanel(
         "Source Code",

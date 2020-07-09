@@ -86,8 +86,6 @@ generateTimePlot <- function(data, customizeDisplay, cpaParams = NULL) {
                                        type = "closed")) +
       geom_label(data = cpa_labels, 
                  aes(x = x, y = y, label = sprintf("%.2f", label)))
-    #browser()
-      #geom_line(data = cpa_df, aes(y = CpaInput))
   }
   
   return(p)
