@@ -3,12 +3,11 @@
 withinTime = function(time_data, time, n) time_data %>% 
   between(time - n, time + n)
 
-withinTimeSeries = function(time_data, n = 4){
-  #sapply(min(time_data):max(time_data), 
-  sapply(time_data, 
-         function(t) time_data %>% withinTime(t, n) %>% sum) %>%
-  ts(start = min(time_data))
-  }
+withinTimeSeries = function(time_data, values_data, 
+                            n = 4, agg_fn = sum) 
+  sapply(
+    time_data, 
+    function(t) agg_fn(values_data[abs(time_data - t) <= n]))
 
 
 interEventTime = function(data, event_type, prev_event_type){

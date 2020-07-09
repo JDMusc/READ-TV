@@ -58,9 +58,13 @@ eventsDisplayServer = function(input, output, session){
 
   timePlot <- reactive({
     req(isDataLoaded())
+    req(dataFilter$hasValidQuery() |  !dataFilter$hasQueryInput())
 
     #showTab("tabs", "Source Code")
-    generateTimePlot(filteredData(), customizeDisplay)
+    cpa_params = calcCpa
+    if(length(names(calcCpa)) == 0) cpa_params = NULL
+    
+    generateTimePlot(filteredData(), customizeDisplay, cpa_params)
   })
   
   doFacet = reactive({
@@ -76,15 +80,6 @@ eventsDisplayServer = function(input, output, session){
   
   eventStats <- reactive({
     summary(filteredData()$deltaTime)
-  })
-  
-  showSource = callModule(showSourceServer, 'showSource')
-  observeEvent(input$showSource, {
-    showSource(filteredData())
-  })
-  
-  observeEvent(input$calcCPA, {
-    callModule(showCpa, "", data=filteredData)
   })
   
   observeEvent(input$minimizeHeader, {
@@ -119,11 +114,6 @@ eventsDisplayServer = function(input, output, session){
   
   output$headerInformation = renderText({
     if(isHeaderMinimized()) headerMinimalInformation()
-  })
-  
-  output$showSource = renderUI({
-    if(input$plotType == "timePlot" & isDataLoaded())
-      actionButton(inputId = ns("showSource"), label = "Show Source")
   })
   
   plotHeight = reactive({
@@ -175,36 +165,26 @@ eventsDisplayServer = function(input, output, session){
   
   output$eventPlot = renderPlot({
     req(isDataLoaded())
-    req(input$plotType)
-    
-    if(input$plotType == "timePlot")
-      return(timePlot())
-    if(input$plotType == "hist")
-      return(hist())
+    timePlot()
   })
   
   output$sidePanel = renderUI({
     req(isDataLoaded())
     
-    wellPanel(
-      selectInput(ns("plotType"), "Plot Type", 
-                  c("Time Plot" = "timePlot", "Histogram" = "hist"),
-                  selected = "timePlot"),
-      customizeDisplayUI(ns("customizeDisplay")),
-      uiOutput(ns("showSource")), 
-      uiOutput(ns("calcCPA"), label = "Show CPA"),
-      uiOutput(ns("showEventStats"), label = "Basic Statistics"),
-      uiOutput(ns("downloadDataOutput"))
+    tabsetPanel(
+      tabPanel("Display", 
+               customizeDisplayUI(ns("customizeDisplay"))),
+      tabPanel("CPA", cpaUI(ns("calcCPA"))),
+      tabPanel("Event Statistics", 
+               uiOutput(ns("showEventStats"), label = "Basic Statistics")),
+      tabPanel("Download Data", uiOutput(ns("downloadDataOutput")))
     )
   })
   
   output$eventStats = renderPrint({
     req(isDataLoaded())
     
-    if(input$plotType == "timePlot")
-      return(eventStats())
-    if(input$plotType == "hist")
-      return(eventStats())
+    eventStats()
   })
   
   output$downloadData <- downloadHandler(
@@ -224,10 +204,8 @@ eventsDisplayServer = function(input, output, session){
       downloadButton(ns("downloadData"))
   })
   
-  output$calcCPA = renderUI({
-    if(input$plotType == "timePlot" & isDataLoaded())
-      actionButton(inputId = ns("calcCPA"), label = "Show CPA")
-  })
+  calcCpa = callModule(cpaServer, "calcCPA", filteredData,
+                       customizeDisplay)
   
   output$showEventStats = renderUI({
     if(isDataLoaded())

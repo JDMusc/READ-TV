@@ -1,52 +1,100 @@
 
-calcCpa = function(data, col = 'CpaInput',
+calcCpa = function(data, values_col = 'CpaInput',
                    cpa_params = generateCpaDefaults())
-  cpt.mean(data[[col]], 
-           method = cpa_params$method,
+  data %>%
+  arrange(!!index(data)) %>% 
+  {.[[values_col]]} %>% 
+  cpt.mean(method = cpa_params$method,
            penalty = cpa_params$penalty,
            Q = cpa_params$Q,
            pen.value = cpa_params$pen.value)
 
 
 generateCpaDefaults = function()
-  list(Q = 4, col = 'CpaInput', method = 'BinSeg', penalty = 'BIC',
-       pen.value = .05)
+  list(Q = 4, input_col = 'CpaInput', method = 'BinSeg', penalty = 'BIC',
+       pen.value = .05, smooth_window_n = 1)
 
-cpaToHorizontalSegment = function(cpa_pts)
-  data.frame(xend = cpa_pts$cpts,
-             x = lag(cpa_pts$cpts, default = 0),
-             yend = cpa_pts$vals,
-             y = cpa_pts$vals)
+cpaToHorizontalSegment = function(cpa_df) cpa_df %>% 
+  group_modify(~ data.frame(xend = .x$cpts,
+                            yend = .x$vals,
+                            y = .x$vals,
+                            x = lag(.x$cpts, default = 0)))
 
-cpaToVerticalSegment = function(cpa_pts)
-  cpa_pts$cpts %>% 
-  lag %>% 
-  na.omit %>% 
-  as.numeric %>% 
-  {data.frame(xintercept = .)}
-
-
-prepForCpa = function(data, sum_window_length, 
-                      input_col = 'RelativeTime', 
-                      output_col = 'CpaInput') data %>% 
-  mutate(!!sym(output_col) := withinTimeSeries(
-    !!sym(input_col), n = sum_window_length)
-    ) %>% 
-  as.tsibble(index = !!sym(input_col))
+cpaToVerticalSegment = function(cpa_df) cpa_df %>% 
+  group_modify(~ data.frame(
+    xintercept = (
+      .x$cpts %>% lag %>% na.omit %>% as.numeric
+    ))
+  )
 
 
-quickPlotCpa = function(data, sum_window_length, 
+cpaPipeline = function(data, axes_params, cpa_params) {
+  is_facet = !is.null(axes_params$facetColumn)
+  if(is_facet) data %<>% 
+    group_by(!!sym(axes_params$facetColumn))
+  
+  data %>% 
+    group_modify(~ preprocessForCpa(.x, cpa_params$smooth_window_n,
+                                index_col = axes_params$xColumn)) %>% 
+    group_modify(~ cpaPtsAndValues(
+      calcCpa(as_tsibble(.x, index = axes_params$xColumn), 
+              cpa_params = cpa_params), 
+      .x))
+}
+
+
+preprocessForCpa = function(data, smooth_window_n, 
+                      index_col = 'RelativeTime', 
+                      values_col = NULL,
+                      output_col = 'CpaInput') {
+  if(is.null(values_col)) {
+    data$IsEvent = 1
+    values_col = 'IsEvent'
+  }
+  
+  mutate_fn = function(data) data %>% 
+    mutate(!!sym(output_col) := withinTimeSeries(
+      !!sym(index_col), !!sym(values_col),
+      n = smooth_window_n)# / smooth_window_n
+    )
+  
+  select_fn = function(data) data %>% 
+    select(!!sym(index_col), !!sym(output_col)) %>% 
+    distinct
+  
+  as_tsibble_fn = function(data) data %>% 
+    as_tsibble(index = !!sym(index_col))
+  
+  is_facet = !is.null(groups(data))
+  if(is_facet) {
+    facet_col = groups(data)[[1]] #only supports one facet column for now
+    data %<>% 
+      group_modify(~ mutate_fn(.x)) %>%
+      group_modify(~ select_fn(.x)) %>% 
+      as_tsibble(index = !!sym(index_col), key = !!facet_col)
+  }
+  else
+    data %<>% 
+      mutate_fn %>% 
+      select_fn %>% 
+      as_tsibble_fn
+  
+  data
+}
+
+
+quickPlotCpa = function(data, smooth_window_n, 
                         input_col = 'RelativeTime',
                         cpa_params = generateCpaDefaults()) {
-  prepped_data = data %>% 
-    prepForCpa(sum_window_length = sum_window_length, 
+  smoothed_data = data %>% 
+    smoothForCpa(smooth_window_n = smooth_window_n, 
                input_col = input_col)
   
-  p = autoplot(prepped_data, CpaInput)
+  p = autoplot(smoothed_data, CpaInput)
   
-  geom_input = prepped_data %>% 
+  geom_input = smoothed_data %>% 
     calcCpa(cpa_params = cpa_params) %>% 
-     cpaPtsAndValues(prepped_data) %>% 
+     cpaPtsAndValues(smoothed_data) %>% 
     cpaToHorizontalSegment
   
   p + geom_segment(data = geom_input, 
@@ -55,14 +103,51 @@ quickPlotCpa = function(data, sum_window_length,
 
 
 cpaPenalties = function() c("None", "SIC", "BIC", "MBIC", "AIC", 
-                            "Hannan-Quinn", "Asymptotic", "Manual", "CROPS")
+                            "Hannan-Quinn", "Asymptotic", "CROPS") #add support for Manual
 
 
 cpaMethods = function() c("AMOC", "PELT", "SegNeigh", "BinSeg")
 
 
-cpaPtsAndValues = function(cpt_out, data) {
-  index_col = tsibble::index(data)
-  cpts = data[[index_col]][cpt_out@cpts]
-  list(cpts = cpts, vals = cpt_out@param.est$mean)
+cpaPtsAndValues = function(cpt_out, data, time_col = 'RelativeTime') {
+  cpts = data %>% 
+    arrange(!!sym(time_col)) %>% 
+    {.[[time_col]][cpt_out@cpts]}
+  data.frame(cpts = cpts, vals = cpt_out@param.est$mean)
+}
+
+
+arrowDfFromCpaDf = function(cpa_df, yend, n_heads = 3) {
+  arrow_data = cpa_df
+  #for(i in 1:n_heads) {
+  #  arrow_data[paste0('_a', i)] = i/n_heads * yend
+  #}
+  
+  start_col = ncol(cpa_df) + 1
+  end_col = ncol(arrow_data)
+  mutate_fn = function(df) df %>% 
+    mutate(increases = (lead(vals, default = 0) - vals) > 0)
+  filter_last_fn = function(df) df %>% slice(-n())
+  arrow_data %>% 
+    group_modify(~ mutate_fn(.x)) %>% 
+    group_modify(~ filter_last_fn(.x)) %>% 
+    #pivot_longer(cols = start_col:end_col, values_to = 'yend') %>% 
+    rename(x = cpts) %>%
+    mutate(xend = x, y = if_else(increases, 0, yend),
+           yend = if_else(increases, yend, 0))
+}
+
+
+textDfFromCpaDf = function(cpa_df, y_offset = 1.1) {
+  calc_midpoint = function(cpts) {
+    starts = lag(cpts, default = 0)
+    (cpts - starts)/2 + starts
+  }
+  mutate_fn = function(df) df %>% 
+    mutate(midpoint = calc_midpoint(cpts))
+  
+  cpa_df %>% 
+    group_modify(~ mutate_fn(.x)) %>% 
+    rename(x = midpoint, label = vals) %>% 
+    mutate(y = y_offset)
 }

@@ -1,4 +1,4 @@
-generateTimePlot <- function(data, customizeDisplay) {
+generateTimePlot <- function(data, customizeDisplay, cpaParams = NULL) {
   no_selection = customizeDisplay$no_selection
   shape_col = customizeDisplay$shapeColumn
   color_col = customizeDisplay$colorColumn
@@ -13,7 +13,7 @@ generateTimePlot <- function(data, customizeDisplay) {
   facet_page = customizeDisplay$facetPage
   do_stem_plot = customizeDisplay$doStemPlot
   
-  cpa_params = customizeDisplay$cpaParams
+  do_cpa = !is.null(cpaParams)
   
   point_aes = aes_string(y = y_col)
   if(!(shape_col == no_selection))
@@ -64,6 +64,30 @@ generateTimePlot <- function(data, customizeDisplay) {
                          page = facet_page)
     }
     else p = p + facet_grid(fm)
+  }
+  
+  do_cpa = !is.null(cpaParams)
+  if(do_cpa) {
+    axes_params = list(xColumn = customizeDisplay$xColumn,
+                       facetColumn = customizeDisplay$facetColumn)
+    if(customizeDisplay$facetColumn == customizeDisplay$no_selection)
+      axes_params$facetColumn = NULL
+    
+    cpa_df = data %>% 
+      cpaPipeline(axes_params, cpaParams)
+    cpa_arrows = cpa_df %>% 
+      arrowDfFromCpaDf(yend = 1.5, n_heads = 1)
+    cpa_labels = cpa_df %>% 
+      textDfFromCpaDf(y_offset = 1.3)
+    p = p + geom_segment(data = cpa_arrows, aes(x = x, xend = xend,
+                                                y = y, yend = yend),
+                         show.legend = F, 
+                         arrow = arrow(length = unit(0.15, "cm"), 
+                                       type = "closed")) +
+      geom_label(data = cpa_labels, 
+                 aes(x = x, y = y, label = sprintf("%.2f", label)))
+    #browser()
+      #geom_line(data = cpa_df, aes(y = CpaInput))
   }
   
   return(p)

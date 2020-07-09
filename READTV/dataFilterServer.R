@@ -117,6 +117,7 @@ dataFilterServer = function(input, output, session, data) {
 
   return(list(filteredData = filteredData,
 	      hasValidQuery = customQuery$hasValidQuery,
+	      hasQueryInput = customQuery$hasQueryInput,
 	      query = customQuery$query,
 	      selectedVals = selectedVals,
 	      constraints = constraints))

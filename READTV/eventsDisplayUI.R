@@ -26,8 +26,10 @@ eventsDisplayUI <- function(id) {
         div(
           uiOutput(ns("dataFilter")),
           fluidRow(
-            column(uiOutput(ns("eventPlotContainer")), width = 10),
-            column(uiOutput(ns("sidePanel")), width = 2)
+            column(uiOutput(ns("eventPlotContainer")), width = 12)
+            ),
+          fluidRow(
+            column(uiOutput(ns("sidePanel")), width = 12)
           )
         )
       ),
