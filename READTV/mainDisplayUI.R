@@ -5,21 +5,8 @@ mainDisplayUI <- function(id) {
     shinyjs::useShinyjs(),
     shinyjs::inlineCSS(list(.invalid_query = 'background-color: #f006')),
     tabsetPanel(
-      tabPanel(
-        "Data Upload",
-        div(
-          shinythemes::themeSelector(),
-          actionButton(ns("minimizeHeader"), "Minimize"),
-          uiOutput(ns("headerInformation")),
-          div(id = ns("loadDataHeader"),
-              fluidRow(
-                eventsLoaderUI(ns("loadData"))),
-              fluidRow(
-                metaQueryLoaderUI(ns("loadMetaData")),
-                metaQueryUI(ns("metaqueryui"))
-                )
-          )
-        )
+      tabPanel("Data Upload",
+               dataUploadTabUI(ns("dataUpload"))
       ),
       tabPanel(
         "Basic Display",

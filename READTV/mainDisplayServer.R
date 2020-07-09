@@ -2,32 +2,18 @@
 mainDisplayServer = function(input, output, session){
   ns = session$ns
   
-  isHeaderMinimized = reactiveVal(F)
-  isDataLoaded = reactiveVal(F)
-  
-  eventsInformation = callModule(eventsLoader, "loadData")
-  
-  data <- reactive({
-    req(eventsInformation$name())
-    
-    tbl = eventsInformation$data()
-    if(isMetaDataLoaded()) {
-      tbl = tbl %>% filter(Case %in% filteredMetaData()$data$Case)
-    }
-    isDataLoaded(T)
-    tbl
+  dataUploadTab = callModule(dataUploadTabServer, "dataUpload")
+  data = reactive({dataUploadTab$data()})
+  eventsInformation = dataUploadTab$eventsInformation
+  headerMinimalInformation = reactive({
+    dataUploadTab$headerMinimalInformation()
   })
+  isDataLoaded = reactive({dataUploadTab$isDataLoaded()})
   
   metaDataFile <- callModule(metaQueryLoader, "loadMetaData")
   
   filteredMetaData <- callModule(metaQueryServer, "metaqueryui", 
                                  metaDataFile)
-  
-  isMetaDataLoaded = reactive({
-    fmd = try(filteredMetaData(), silent = T)
-    
-    return(!(class(fmd) == "try-error"))
-  })
   
   dataFilter = callModule(dataFilterServer, "dataFilter", data)
   
@@ -80,40 +66,6 @@ mainDisplayServer = function(input, output, session){
   
   eventStats <- reactive({
     summary(filteredData()$deltaTime)
-  })
-  
-  observeEvent(input$minimizeHeader, {
-    isHeaderMinimized(!isHeaderMinimized())
-  })
-  
-  observe({
-    shinyjs::toggle("loadDataHeader", condition = !isHeaderMinimized())
-    updateActionButton(session, "minimizeHeader",
-                       label = ifelse(isHeaderMinimized(),
-                                      "Show",
-                                      "Minimize")
-    )
-  })
-  
-  
-  headerMinimalInformation = reactive({
-    print("header minimal")
-    parts = c()
-    
-    if(isDataLoaded())
-      parts = append(parts, eventsInformation()$name)
-    
-    if(isMetaDataLoaded()) {
-      parts = append(parts, metaDataFile()$name)
-      parts = append(parts, filteredMetaData()$query)
-    }
-    
-    print("end header minimal")
-    return(toString(parts))
-  })
-  
-  output$headerInformation = renderText({
-    if(isHeaderMinimized()) headerMinimalInformation()
   })
   
   plotHeight = reactive({
