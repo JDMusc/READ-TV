@@ -9,16 +9,8 @@ mainDisplayUI <- function(id) {
                dataUploadTabUI(ns("dataUpload"))
       ),
       tabPanel(
-        "Basic Display",
-        div(
-          uiOutput(ns("dataFilter")),
-          fluidRow(
-            column(uiOutput(ns("eventPlotContainer")), width = 12)
-            ),
-          fluidRow(
-            column(uiOutput(ns("sidePanel")), width = 12)
-          )
-        )
+        'Basic Display',
+        basicDisplayTabUI(ns("basicDisplay"))
       ),
       tabPanel(
         "CPA"

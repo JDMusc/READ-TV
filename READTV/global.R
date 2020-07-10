@@ -16,6 +16,8 @@ library(tsibble)
 enableBookmarking(store = 'server')
 
 source('analysisHelpers.R')
+source('basicDisplayTabServer.R')
+source('basicDisplayTabUI.R')
 source('config.R')
 source('cpaModule.R')
 source('cpaUtils.R')
