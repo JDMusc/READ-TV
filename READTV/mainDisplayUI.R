@@ -13,7 +13,8 @@ mainDisplayUI <- function(id) {
         basicDisplayTabUI(ns("basicDisplay"))
       ),
       tabPanel(
-        "CPA"
+        "CPA",
+        cpaTabUI(ns("cpa"))
       ),
       tabPanel(
         "Forecasting"

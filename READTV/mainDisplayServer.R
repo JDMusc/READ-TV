@@ -18,6 +18,10 @@ mainDisplayServer = function(input, output, session){
   customizeDisplay = basicDisplay$customizeDisplay
   filteredData = basicDisplay$filteredData
   
+  #----CPA----
+  cpa = callModule(cpaTabServer, "cpa",
+                   filteredData, headerMinimalInformation,
+                   isDataLoaded, customizeDisplay)
   
   #-----Source Code----
   sourceCode <- callModule(sourceCodeServer, "sourcecode", 
