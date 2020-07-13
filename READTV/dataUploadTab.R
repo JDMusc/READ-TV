@@ -32,9 +32,9 @@ dataUploadTabServer = function(input, output, session) {
   headerMinimalInformation = reactive({
     print("header minimal")
     parts = c()
-    
+
     if(isDataLoaded())
-      parts = append(parts, eventsInformation()$name)
+      parts = append(parts, eventsInformation$name())
     
     if(isMetaDataLoaded()) {
       parts = append(parts, metaDataFile()$name)
