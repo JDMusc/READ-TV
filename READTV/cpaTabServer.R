@@ -34,42 +34,11 @@ cpaTabServer = function(input, output, session, filteredData,
     req(isDataLoaded())
     
     tabsetPanel(
-      tabPanel("Display"),
-      tabPanel("CPA", cpaUI(ns("calcCPA"))),
-      tabPanel("Event Statistics", 
-               uiOutput(ns("showEventStats"), label = "Basic Statistics")),
-      tabPanel("Download Data", uiOutput(ns("downloadDataOutput")))
+      tabPanel("Preprocess"),
+      tabPanel("CPA Parameters", cpaUI(ns("calcCPA")))
     )
   })
   
-  
-  #----Event Stats----
-  output$showEventStats = renderUI({
-    if(isDataLoaded())
-      actionButton(inputId = ns("showEventStats"), "Basic Statistics")
-  })
-  
-  observeEvent(input$showEventStats, {
-    callModule(showEventStats, "", data=filteredData)
-  })
-  
-  #----Download Data----
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      hmi = headerMinimalInformation() %>% 
-        {gsub(', ?', '-', .)} %>%
-        {gsub('.csv','', .)}
-      paste0(hmi, "-", Sys.Date(), ".csv", sep="")
-    },
-    content = function(file) {
-      write.csv(filteredData(), file, row.names = F)
-    }
-  )
-  
-  output$downloadDataOutput = renderUI({
-    if(isDataLoaded())
-      downloadButton(ns("downloadData"))
-  })
   
   #----CPA----
   calcCpa = callModule(cpaServer, "calcCPA", filteredData,
