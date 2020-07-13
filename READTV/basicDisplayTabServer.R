@@ -81,7 +81,6 @@ basicDisplayTabServer = function(input, output, session, data,
     tabsetPanel(
       tabPanel("Display", 
                customizeDisplayUI(ns("customizeDisplay"))),
-      tabPanel("CPA", cpaUI(ns("calcCPA"))),
       tabPanel("Event Statistics", 
                uiOutput(ns("showEventStats"), label = "Basic Statistics")),
       tabPanel("Download Data", uiOutput(ns("downloadDataOutput")))
