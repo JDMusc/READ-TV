@@ -1,19 +1,17 @@
-generateTimePlot <- function(data, customizeDisplay, cpaParams = NULL) {
-  no_selection = customizeDisplay$no_selection
-  shape_col = customizeDisplay$shapeColumn
-  color_col = customizeDisplay$colorColumn
-  y_col = customizeDisplay$yColumn
-  x_col = customizeDisplay$xColumn
-  facet_col = customizeDisplay$facetColumn
-  facet_order = customizeDisplay$facetOrder
-  facet_labels = customizeDisplay$facetLabels
-  facet_customized = customizeDisplay$facetCustomized
-  facet_paginated = customizeDisplay$facetPaginated
-  facet_rows_per_pg = customizeDisplay$facetRowsPerPage
-  facet_page = customizeDisplay$facetPage
-  do_stem_plot = customizeDisplay$doStemPlot
-  
-  do_cpa = !is.null(cpaParams)
+generateTimePlot <- function(data, plot_opts) {
+  no_selection = plot_opts$no_selection
+  shape_col = plot_opts$shapeColumn
+  color_col = plot_opts$colorColumn
+  y_col = plot_opts$yColumn
+  x_col = plot_opts$xColumn
+  facet_col = plot_opts$facetColumn
+  facet_order = plot_opts$facetOrder
+  facet_labels = plot_opts$facetLabels
+  facet_customized = plot_opts$facetCustomized
+  facet_paginated = plot_opts$facetPaginated
+  facet_rows_per_pg = plot_opts$facetRowsPerPage
+  facet_page = plot_opts$facetPage
+  do_stem_plot = plot_opts$doStemPlot
   
   point_aes = aes_string(y = y_col)
   if(!(shape_col == no_selection))
@@ -64,28 +62,6 @@ generateTimePlot <- function(data, customizeDisplay, cpaParams = NULL) {
                          page = facet_page)
     }
     else p = p + facet_grid(fm)
-  }
-  
-  do_cpa = !is.null(cpaParams)
-  if(do_cpa) {
-    axes_params = list(xColumn = customizeDisplay$xColumn,
-                       facetColumn = customizeDisplay$facetColumn)
-    if(customizeDisplay$facetColumn == customizeDisplay$no_selection)
-      axes_params$facetColumn = NULL
-    
-    cpa_df = data %>% 
-      cpaPipeline(axes_params, cpaParams)
-    cpa_arrows = cpa_df %>% 
-      arrowDfFromCpaDf(yend = 1.5, n_heads = 1)
-    cpa_labels = cpa_df %>% 
-      textDfFromCpaDf(y_offset = 1.3)
-    p = p + geom_segment(data = cpa_arrows, aes(x = x, xend = xend,
-                                                y = y, yend = yend),
-                         show.legend = F, 
-                         arrow = arrow(length = unit(0.15, "cm"), 
-                                       type = "closed")) +
-      geom_label(data = cpa_labels, 
-                 aes(x = x, y = y, label = sprintf("%.2f", label)))
   }
   
   return(p)

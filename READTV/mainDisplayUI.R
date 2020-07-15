@@ -9,7 +9,7 @@ mainDisplayUI <- function(id) {
                dataUploadTabUI(ns("dataUpload"))
       ),
       tabPanel(
-        'Basic Display',
+        'Filter & Facet',
         basicDisplayTabUI(ns("basicDisplay"))
       ),
       tabPanel(

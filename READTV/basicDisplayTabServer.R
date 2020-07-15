@@ -31,11 +31,8 @@ basicDisplayTabServer = function(input, output, session, data,
   timePlot <- reactive({
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
-
-    cpa_params = calcCpa
-    if(length(names(calcCpa)) == 0) cpa_params = NULL
     
-    generateTimePlot(filteredData(), customizeDisplay, cpa_params)
+    generateTimePlot(filteredData(), customizeDisplay)
   })
   
   plotHeight = reactive({
@@ -148,10 +145,6 @@ basicDisplayTabServer = function(input, output, session, data,
     if(isDataLoaded())
       downloadButton(ns("downloadData"))
   })
-  
-  #----CPA----
-  calcCpa = callModule(cpaServer, "calcCPA", filteredData,
-                       customizeDisplay)
   
   
   #----Return----

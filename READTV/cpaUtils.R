@@ -28,25 +28,38 @@ cpaToVerticalSegment = function(cpa_df) cpa_df %>%
   )
 
 
-cpaPipeline = function(data, axes_params, cpa_params) {
-  is_facet = !is.null(axes_params$facetColumn)
+cpaPipeline = function(data, time_column, values_column, facet_column = NULL, 
+                       cpa_params, agg_fn = sum, preprocess = T) {
+  is_facet = !is.null(facet_column)
   if(is_facet) data %<>% 
-    group_by(!!sym(axes_params$facetColumn))
+    group_by(!!sym(facet_column))
+
+  if(preprocess) {
+    data %<>%
+      group_modify(~ preprocessForCpa(.x, cpa_params$smooth_window_n,
+                                      index_col = time_column, 
+                                      agg_fn = agg_fn,
+                                      values_col = values_column,
+                                      facet_col = facet_column)
+    )
+    
+    values_column = 'CpaInput'
+  }
   
   data %>% 
-    group_modify(~ preprocessForCpa(.x, cpa_params$smooth_window_n,
-                                index_col = axes_params$xColumn)) %>% 
     group_modify(~ cpaPtsAndValues(
-      calcCpa(as_tsibble(.x, index = axes_params$xColumn), 
-              cpa_params = cpa_params), 
+      calcCpa(as_tsibble(.x, index = time_column), 
+              cpa_params = cpa_params, values_col = values_column), 
       .x))
 }
 
 
 preprocessForCpa = function(data, smooth_window_n, 
-                      index_col = 'RelativeTime', 
-                      values_col = NULL,
-                      output_col = 'CpaInput') {
+                            index_col = 'RelativeTime', 
+                            values_col = NULL,
+                            output_col = 'CpaInput',
+                            facet_col = NULL,
+                            agg_fn = sum) {
   if(is.null(values_col)) {
     data$IsEvent = 1
     values_col = 'IsEvent'
@@ -55,7 +68,7 @@ preprocessForCpa = function(data, smooth_window_n,
   mutate_fn = function(data) data %>% 
     mutate(!!sym(output_col) := withinTimeSeries(
       !!sym(index_col), !!sym(values_col),
-      n = smooth_window_n)# / smooth_window_n
+      n = smooth_window_n, agg_fn = agg_fn)
     )
   
   select_fn = function(data) data %>% 
@@ -65,10 +78,11 @@ preprocessForCpa = function(data, smooth_window_n,
   as_tsibble_fn = function(data) data %>% 
     as_tsibble(index = !!sym(index_col))
   
-  is_facet = !is.null(groups(data))
+  is_facet = !is.null(facet_col)
   if(is_facet) {
-    facet_col = groups(data)[[1]] #only supports one facet column for now
+    #facet_col = groups(data)[[1]] #only supports one facet column for now
     data %<>% 
+      group_by(!!sym(facet_col)) %>% 
       group_modify(~ mutate_fn(.x)) %>%
       group_modify(~ select_fn(.x)) %>% 
       as_tsibble(index = !!sym(index_col), key = !!facet_col)
@@ -87,7 +101,7 @@ quickPlotCpa = function(data, smooth_window_n,
                         input_col = 'RelativeTime',
                         cpa_params = generateCpaDefaults()) {
   smoothed_data = data %>% 
-    smoothForCpa(smooth_window_n = smooth_window_n, 
+    preprocessForCpa(smooth_window_n = smooth_window_n, 
                input_col = input_col)
   
   p = autoplot(smoothed_data, CpaInput)

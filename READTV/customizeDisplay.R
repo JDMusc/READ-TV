@@ -5,8 +5,8 @@ customizeDisplayUI = function(id) {
 }
 
 
-generatePlotDefaults = function(no_selection){
-  list(no_selection = no_selection,
+generatePlotDefaults = function(no_selection, overrides = list()){
+  ret = list(no_selection = no_selection,
 	     shapeColumn = no_selection,
 	     colorColumn = no_selection,
 	     yColumn = 'Event',
@@ -22,6 +22,10 @@ generatePlotDefaults = function(no_selection){
        doStemPlot = T,
        cpaParams = no_selection
   )
+
+  for(n in names(overrides)) ret[[n]] = overrides[[n]]
+
+  return(ret)
 }
 
 
