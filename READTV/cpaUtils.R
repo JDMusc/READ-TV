@@ -59,19 +59,23 @@ preprocessForCpa = function(data, smooth_window_n,
                             values_col = NULL,
                             output_col = 'CpaInput',
                             facet_col = NULL,
+                            stride = 1,
                             agg_fn = sum) {
   if(is.null(values_col)) {
     data$IsEvent = 1
     values_col = 'IsEvent'
   }
+
+ #input_select_fn = function(data) data %>% 
+ #  select(!!sym(index_col), !!sym(values_col)) %>% 
+ #  distinct
   
   mutate_fn = function(data) data %>% 
-    mutate(!!sym(output_col) := withinTimeSeries(
-      !!sym(index_col), !!sym(values_col),
-      n = smooth_window_n, agg_fn = agg_fn)
-    )
+    {withinTimeSeries(.[[index_col]], .[[values_col]],
+                     n = smooth_window_n, agg_fn = agg_fn, stride = stride)} %>% 
+    select(!!sym(output_col) := Value, !!sym(index_col) := Time)
   
-  select_fn = function(data) data %>% 
+  output_select_fn = function(data) data %>% 
     select(!!sym(index_col), !!sym(output_col)) %>% 
     distinct
   
@@ -83,14 +87,16 @@ preprocessForCpa = function(data, smooth_window_n,
     #facet_col = groups(data)[[1]] #only supports one facet column for now
     data %<>% 
       group_by(!!sym(facet_col)) %>% 
+      #group_modify ~ input_select_fn(.x) %>% 
       group_modify(~ mutate_fn(.x)) %>%
-      group_modify(~ select_fn(.x)) %>% 
+      group_modify(~ output_select_fn(.x)) %>% 
       as_tsibble(index = !!sym(index_col), key = !!facet_col)
   }
   else
-    data %<>% 
+    data %<>%
+      #input_select_fn %>% 
       mutate_fn %>% 
-      select_fn %>% 
+      output_select_fn %>% 
       as_tsibble_fn
   
   data

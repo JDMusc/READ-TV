@@ -1,46 +1,67 @@
 generateTimePlot <- function(data, plot_opts) {
-  no_selection = plot_opts$no_selection
-  shape_col = plot_opts$shapeColumn
-  color_col = plot_opts$colorColumn
-  y_col = plot_opts$yColumn
+  #----Mandatory Fields----
   x_col = plot_opts$xColumn
-  facet_col = plot_opts$facetColumn
-  facet_order = plot_opts$facetOrder
-  facet_labels = plot_opts$facetLabels
-  facet_customized = plot_opts$facetCustomized
-  facet_paginated = plot_opts$facetPaginated
-  facet_rows_per_pg = plot_opts$facetRowsPerPage
-  facet_page = plot_opts$facetPage
-  do_stem_plot = plot_opts$doStemPlot
   
-  point_aes = aes_string(y = y_col)
-  if(!(shape_col == no_selection))
-    point_aes$shape = quo(!!sym(shape_col))
-  if(!(color_col == no_selection))
-    point_aes$colour = quo(!!sym(color_col))
+  #----Optional Fields----
+  no_selection = getElementSafe('no_selection', plot_opts, '_None_')
   
+  getSafe = function(item_name, default = no_selection)
+    getElementSafe(item_name, plot_opts, default)
+  
+  y_col = getSafe('yColumn', 'Event')
+  
+  shape_col = getSafe('shapeColumn')
+  color_col = getSafe('colorColumn')
+  
+  facet_col = getSafe('facetColumn')
+  facet_order = getSafe('facetOrder')
+  facet_labels = getSafe('facetLabels')
+  
+  is_facet_customized = getSafe('isFacetCustomized', F)
+  is_facet_paginated = getSafe('isFacetPaginated', F)
+  facet_rows_per_pg = getSafe('facetRowsPerPage')
+  facet_page = getSafe('facetPage', 1)
+  do_stem_plot = getSafe('doStemPlot', T)
+  geom_function = getSafe('geomFunction', geom_point)
+
+  
+  #----Plot Data----
   show_data = data %>%
     mutate(Event = TRUE) %>% {
       if(!(shape_col == no_selection))
         mutate(., !!shape_col := factor(!!sym(shape_col)))
       else .}
   
-  if(facet_customized)
+  
+  #---Color & Shape----
+  data_aes = aes_string(y = y_col)
+  if(!(shape_col == no_selection))
+    data_aes$shape = quo(!!sym(shape_col))
+  if(!(color_col == no_selection))
+    data_aes$colour = quo(!!sym(color_col))
+  
+  
+  #----Facet----
+  if(is_facet_customized)
     show_data[[facet_col]] = factor(show_data[[facet_col]],
                                     levels = facet_order,
                                     labels = facet_labels)
   else
-    if(facet_paginated)
+    if(is_facet_paginated)
       show_data[[facet_col]] = factor(show_data[[facet_col]])
   
+  
+  #----Base Plot----
   p = show_data %>%
     ggplot(aes_string(x = x_col)) + 
-    geom_point(point_aes)
+    geom_function(data_aes)
   
   y_class = class(show_data[[y_col]])
   if(y_class == "logical")
     p = p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
   
+  
+  #----Do Stem----
   if(do_stem_plot){
     if(!(color_col == no_selection))
       p = p + geom_segment(aes_string(xend = x_col, 
@@ -53,9 +74,10 @@ generateTimePlot <- function(data, plot_opts) {
                                       y = y_col))
   }
   
+  #----Facet Pagination----
   if(!(facet_col == no_selection)) {
     fm = formula(paste(facet_col, "~ ."))
-    if(facet_paginated) {
+    if(is_facet_paginated) {
       p = p + facet_grid_paginate(fm,
                          ncol = 1,
                          nrow = facet_rows_per_pg,
@@ -64,5 +86,6 @@ generateTimePlot <- function(data, plot_opts) {
     else p = p + facet_grid(fm)
   }
   
+  #----Return----
   return(p)
 }

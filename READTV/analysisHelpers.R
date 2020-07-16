@@ -4,10 +4,15 @@ withinTime = function(time_data, time, n) time_data %>%
   between(time - n, time + n)
 
 withinTimeSeries = function(time_data, values_data, 
-                            n = 4, agg_fn = sum) 
-  sapply(
-    time_data, 
+                            n = 4, agg_fn = sum, stride = 1) {
+  time_pts = seq(from = min(time_data), to = max(time_data),
+                 by = stride)
+  vals = sapply(
+    time_pts, 
     function(t) agg_fn(values_data[abs(time_data - t) <= n]))
+  
+  data.frame(Time = time_pts, Value = vals)
+}
 
 
 interEventTime = function(data, event_type, prev_event_type){

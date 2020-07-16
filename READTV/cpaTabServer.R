@@ -6,13 +6,53 @@ cpaTabServer = function(input, output, session, previousData,
   
   #----Plot----
   timePlot <- reactive({
-    req(plotData())
+    req(previousData())
     
-    plot_opts = plotOptions()
-    p = generateTimePlot(plotData(), plot_opts)
+    prev_data = previousData()
+    prev_plot_opts = previousPlotOpts
+    
+    if(showSmoothed()) {
+      cpa_data = cpaData()
+      cpa_plot_opts = smoothedPlotOptions()
+    }
+    
+    if(!showOriginal()) {
+      p = generateTimePlot(cpa_data, cpa_plot_opts)
+    }
+    else
+      p = generateTimePlot(prev_data, prev_plot_opts)
+    
+    show_both = showOriginalAndEventFrequency()
+    if(show_both){
+      p = addEventFrequencyToPlot(
+        p, cpa_data, 
+        cpa_plot_opts$xColumn, cpa_plot_opts$yColumn)
+    }
     
     if(doCpa()) {
-      p = addCpaMarkersToPlot(p, cpaMarkers())
+      use_cpa_y = !showOriginal()
+      if(show_both) {
+        mx_cpa = cpa_data %>% 
+          pull(!!sym(cpa_plot_opts$yColumn)) %>% 
+          max(na.rm = T)
+        
+        mx_prev = prev_data %>% 
+          getElementSafe(prev_plot_opts$yColumn, 1) %>% 
+          max(na.rm = T)
+        
+        use_cpa_y = mx_cpa > mx_prev
+      }
+      
+      if(use_cpa_y) {
+        plot_data = cpa_data
+        y_col = cpa_plot_opts$yColumn
+      } else {
+        plot_data = prev_data
+        y_col = prev_plot_opts$yColumn
+      }
+      
+      p = addCpaMarkersToPlot(p, cpaMarkers(),
+                              plot_data, y_col)
     }
     
     p
@@ -32,33 +72,34 @@ cpaTabServer = function(input, output, session, previousData,
     )
   })
   
+  showOriginalAndEventFrequency = reactive({
+    is.list(yColumn())
+  })
+  
   showSmoothed = reactive({
-    (yColumn() != previousPlotOpts$yColumn) & doSmooth()
+    (
+      ('CpaInput' %in% yColumn()) | 
+        showOriginalAndEventFrequency()
+    ) & doSmooth()
   })
   
-  plotData = reactive({
-    d = previousData()
-    
-    if(showSmoothed())
-      cpaData()
-    else
-      previousData()
+  showOriginal = reactive({
+    (previousPlotOpts$yColumn %in% yColumn()) | 
+      showOriginalAndEventFrequency()
   })
   
-  plotOptions = reactive({
+  smoothedPlotOptions = reactive({
     ppo = previousPlotOpts
-    plot_opts = ppo
+    no_selection = ppo$no_selection
     
-    if(showSmoothed()) {
-      no_selection = ppo$no_selection
-      
-      plot_opts = generatePlotDefaults(
-        no_selection, ppo)
-      
-      plot_opts$yColumn = yColumn()
-      plot_opts$shapeColumn = no_selection
-      plot_opts$colorColumn = no_selection
-    }
+    plot_opts = generatePlotDefaults(no_selection, ppo)
+    
+    y_col = yColumn()
+    if(is.list(y_col)) 
+      y_col = y_col$`Event Frequency`
+    plot_opts$yColumn = y_col
+    plot_opts$shapeColumn = no_selection
+    plot_opts$colorColumn = no_selection
     
     plot_opts
   })
@@ -95,28 +136,35 @@ cpaTabServer = function(input, output, session, previousData,
                          choices = c("Vertical", "Horizontal", "Both")),
              width = 4),
       column(selectInput(ns("y_column"), "Y-axis",
-                         choices = yColumns), width = 2)
+                         choices = yColumns,
+                         selected = "Both"), width = 2)
     )
   })
   
-  yColumns = c("Original", "Smoothed")
+  yColumns = c("Original", "Event Frequency", "Both")
   
   yColumn = reactive({
-    default = previousPlotOpts$yColumn
-    if(is.null(input$y_column)) return(default)
+    original = previousPlotOpts$yColumn
+    if(is.null(input$y_column)) return(original)
     
-    if(input$y_column == "Original") default
-    else 'CpaInput'
+    mapping = list(Original = original, 
+                   `Event Frequency` = 'CpaInput')
+    mapping$Both = mapping
+    
+    mapping[[input$y_column]]
   })
   
 
   #----CPA----
-  cpaParams = callModule(cpaParamsServer, "cpaParams", preprocess)
+  cpaParams = callModule(cpaParamsServer, "cpaParams", cpaData)
   
-  doCpa = reactive({
-    if(length(names(cpaParams)) == 0) return(F)
-    
-    return(cpaParams$submit)
+  doCpa = reactiveVal(F)
+  observeEvent(cpaData(), {
+    doCpa(F)
+  })
+  
+  observe({
+    doCpa(getElementSafe('submit_valid', cpaParams, F))
   })
   
   cpaMarkers = reactive({
@@ -125,9 +173,9 @@ cpaTabServer = function(input, output, session, previousData,
     
     if(is.null(cpa_params)) return(NULL)
     
-    plot_opts = plotOptions()
+    plot_opts = smoothedPlotOptions()
     cpaData() %>% cpaPipeline(
-      time_column = plot_opts$xColumn,
+      time_column = cpaIndexColumn(),
       values_column = cpaInputColumn(), 
       facet_column = facetColumn(),
       cpa_params = cpa_params, preprocess = F)
@@ -140,7 +188,9 @@ cpaTabServer = function(input, output, session, previousData,
     if(ds)
       previousData() %>% 
         preprocessForCpa(
-          preprocess$smoothed_window_n, agg_fn = preprocess$agg_fn,
+          preprocess$smooth_window_n, 
+          agg_fn = preprocess$agg_fn,
+          index_col = cpaIndexColumn(),
           facet_col = facetColumn())
     else
       previousData()
@@ -149,6 +199,11 @@ cpaTabServer = function(input, output, session, previousData,
   cpaInputColumn = reactive({
     if(preprocess$do_smooth) 'CpaInput'
     else yColumn()
+  })
+  
+  
+  cpaIndexColumn = reactive({
+    smoothedPlotOptions()$xColumn
   })
   
   facetColumn = reactive({

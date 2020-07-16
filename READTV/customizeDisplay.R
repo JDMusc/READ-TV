@@ -14,13 +14,13 @@ generatePlotDefaults = function(no_selection, overrides = list()){
 	     facetColumn = no_selection,
 	     facetOrder = no_selection,
 	     facetLabels = no_selection,
-	     facetCustomized = F,
-       facetPaginated = F,
+	     isFacetCustomized = F,
+	     isFacetPaginated = F,
 	     facetRowsPerPage = no_selection,
 	     facetPage = 1,
 	     plotHeight = 400,
-       doStemPlot = T,
-       cpaParams = no_selection
+	     doStemPlot = T,
+	     geomFunction = geom_point
   )
 
   for(n in names(overrides)) ret[[n]] = overrides[[n]]
@@ -150,14 +150,14 @@ customizeDisplayServer = function(input, output, session, data) {
       if(input$facetColumn == no_selection) return()
       
       checkboxInput(ns("customizeFacet"), 
-                    "Customize", value = ret$facetCustomized)
+                    "Customize", value = ret$isFacetCustomized)
     })
     
     output$facetPaginateCheck = renderUI({
       if(input$facetColumn == no_selection) return()
       
       checkboxInput(ns("paginateFacet"), 
-                    "Paginate", value = ret$facetPaginated)
+                    "Paginate", value = ret$isFacetPaginated)
     })
     
     showFacetCustomizeBucket = reactive({
@@ -228,7 +228,7 @@ customizeDisplayServer = function(input, output, session, data) {
       
       ret$facetColumn = input$facetColumn
       if(showFacetCustomizeBucket()) {
-        ret$facetCustomized = T
+        ret$isFacetCustomized = T
         ret$facetOrder = input$facet_list
         
         input$facet_list %>% 
@@ -238,7 +238,7 @@ customizeDisplayServer = function(input, output, session, data) {
       }
       
       if(showFacetPaginateBucket()) {
-        ret$facetPaginated = T
+        ret$isFacetPaginated = T
         ret$facetRowsPerPage = input$facetRowsPerPage
       }
       

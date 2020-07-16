@@ -2,15 +2,13 @@ cpaPreprocessUI = function(id) {
   ns = NS(id)
   
   fluidRow(
-    column(selectInput(ns("doSmooth"), "Smooth",
-                       choices = c("Yes", "No"),
-                       selected = "Yes"),
-           width = 2),
+    column(uiOutput(ns("doSmooth")), width = 2),
     column(uiOutput(ns("windowWidth")), width = 2),
-    column(selectInput(ns("aggFn"), "Smooth Function",
-                       choices = c("sum", "mean"),
-                       selected = "sum"),
-           width = 2),
+    column(uiOutput(ns("smoothStride")), width = 2),
+    column(selectInput(ns("aggFn"), "Frequency Measure",
+                       choices = c("count", "rate"),
+                       selected = "rate"),
+           width = 3),
     column(actionButton(ns("preprocessSubmit"), label = "Preprocess"),
            width = 2)
   )
@@ -23,37 +21,75 @@ cpaPreprocessServer = function(input, output, session, previousData,
   
   #----Do Smooth----
   doSmooth = reactive({
-    if(is.null(input$doSmooth)) return(FALSE)
+    if(is.null(input$doSmoothSelect)) return(FALSE)
     
-    return(input$doSmooth == "Yes")
+    return(input$doSmoothSelect == "Event Frequency")
   })
   
+  
+  yColumn = reactive({
+    previousPlotOpts$yColumn
+  })
+  
+  output$doSmooth = renderUI({
+    selectInput(ns("doSmoothSelect"), "CPA Input",
+                     choices = c(yColumn(), "Event Frequency"),
+                     selected = yColumn())
+  })
+  
+  smoothInputUIs = c("windowWidth", "smoothStride", "aggFn", "preprocessSubmit")
+  smoothInputs = c("windowWidthText", "smoothStrideText", "aggFn")
+  
+  toggleSmoothControl = function(id)
+    shinyjs::toggle(id = id, condition = doSmooth())
+  
+  observe({
+    smoothInputUIs %>% sapply(toggleSmoothControl)
+  })
   
   #----Window Width----
-  observe({
-    shinyjs::toggle(id = "windowWidth",
-                    condition = doSmooth())
-  })
-  
   output$windowWidth = renderUI({
     req(previousData())
     
-    value = previousData()[[previousPlotOpts$xColumn]] %>% 
-      as.numeric %>% 
+    value = previousData() %>% 
+      pull(!!sym(previousPlotOpts$xColumn)) %>% 
+      {. - dplyr::lag(., default = 0)} %>% 
+      {.[.>=0]} %>% 
       mean %>% 
       round(2)
     
-    value = getElementSafe("smoothed_window_n", ret, value)
+    value = getElementSafe("smooth_window_n", ret, value)
     
-    textInput(ns("windowWidthText"), "Smooth Width",
+    textInput(ns("windowWidthText"), "Interval Width",
               value = value)
+  })
+  
+  windowWidth = reactive({
+    req(input$windowWidthText)
+    
+    as.numeric(input$windowWidthText)
+  })
+  
+  #----Smooth Stride----
+  output$smoothStride = renderUI({
+    req(previousData())
+    value = getElementSafe("smooth_stride", ret, 5)
+    
+    textInput(ns("smoothStrideText"), "Interval Stride",
+              value = value)
+  })
+
+  #----Aggregate Function----
+  aggregateFunction = reactive({
+    agg_fn = input$aggFn
+    if(agg_fn == "count") length
+    else function(values) length(values)/windowWidth()
   })
   
   #----Preprocess Changed----
   observe({
-    tmp = doSmooth()
-    tmp = input$windowWidthText
-    tmp = input$aggFn
+    for(si in setdiff(smoothInputs, "preprocessSubmit")) 
+      tmp = input[[si]]
     
     shinyjs::enable('preprocessSubmit')
   })
@@ -62,8 +98,9 @@ cpaPreprocessServer = function(input, output, session, previousData,
   ret = reactiveValues()
   
   observeEvent(input$preprocessSubmit, {
-    ret$smoothed_window_n = as.numeric(input$windowWidthText)
-    ret$agg_fn = eval(parse(text = input$aggFn))
+    ret$smooth_window_n = as.numeric(input$windowWidthText)
+    ret$agg_fn = aggregateFunction()
+    ret$smooth_stride = as.numeric(input$smoothStrideText)
     ret$do_smooth = doSmooth()
     shinyjs::disable("preprocessSubmit")
   })

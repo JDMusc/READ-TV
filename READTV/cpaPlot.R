@@ -1,9 +1,22 @@
-addCpaMarkersToPlot <- function(time_plot, cpa_df) {
+addCpaMarkersToPlot <- function(time_plot, cpa_df, plot_data, y_column = NULL,
+                                facet_column = NULL) {
     p = time_plot
+    is_facet = !is.null(facet_column)
+    getYEnd = function(sub_cpa_df) {
+      plot_data_sub = plot_data
+      if(is_facet) plot_data_sub = plot_data %>% 
+          filter(!!sym(facet_column) == unique(sub_cpa_df[[facet_column]]))
+      
+      y_column %>% 
+      getElementSafe(plot_data_sub, 1) %>% 
+      max
+    }
+    
     cpa_arrows = cpa_df %>% 
-      arrowDfFromCpaDf(yend = 1.5, n_heads = 1)
+      group_modify(~ arrowDfFromCpaDf(.x, yend = getYEnd(.x) + .5, n_heads = 1))
     cpa_labels = cpa_df %>% 
-      textDfFromCpaDf(y_offset = 1.3)
+      group_modify(~ textDfFromCpaDf(.x, y_offset = getYEnd(.x) + .3))
+    
     p = p + geom_segment(data = cpa_arrows, aes(x = x, xend = xend,
                                                 y = y, yend = yend),
                          show.legend = F, 
@@ -14,3 +27,10 @@ addCpaMarkersToPlot <- function(time_plot, cpa_df) {
   
   return(p)
 }
+
+
+addEventFrequencyToPlot = function(time_plot, cpa_input_data, x, y,
+                                   frequency_type = 'rate')
+	cpa_input_data %>% 
+  mutate(color = frequency_type) %>%
+  {time_plot + geom_line(aes(x = !!sym(x), y = !!sym(y), color=color), data = .)}

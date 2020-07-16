@@ -9,7 +9,7 @@ cpaParamsUI = function(id) {
   )
 }
 
-cpaParamsServer = function(input, output, session, preprocess) {
+cpaParamsServer = function(input, output, session, cpaData) {
   ns = session$ns
   
   defaults = generateCpaDefaults()
@@ -37,32 +37,35 @@ cpaParamsServer = function(input, output, session, preprocess) {
   })
   
   
-  #----Should Recalculate----
+  #----Can Recalculate----
   observe({
+    req(cpaData())
+    
     tmp = input$qSelect
     tmp = input$methodSelect
     tmp = input$penaltySelect
     tmp = input$pen.value
-    tmp = preprocess
+    tmp = cpaData()
     
+    ret$submit_valid = F
     shinyjs::enable('cpaSubmit')
   })
   
   #----Submit----
-  ret = reactiveValues(submit = F)
+  ret = reactiveValues(submit_valid = F)
   
   defaultOrRet = function(field) 
     getElementSafe(field, ret, defaults[[field]])
   
   observeEvent(input$cpaSubmit, {
-    ret$submit = T
     ret$Q = as.numeric(input$qSelect)
     ret$method = input$methodSelect
     ret$penalty = input$penaltySelect
     ret$pen.value = defaults$pen.value
     
-    updateActionButton(session, "cpaSubmit", label = "Update CPA Params")
-    shinyjs::disable("cpaSubmit")
+    updateActionButton(session, "cpaSubmit", label = "Recalculate CPA")
+    ret$submit_valid = T
+    shinyjs::disable('cpaSubmit')
   })
   
   return(ret)
