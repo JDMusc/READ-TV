@@ -49,7 +49,7 @@ basicDisplayTabServer = function(input, output, session, data,
                                    resetOnNew = T),
                  dblclick = clickOpts(ns("event_plot_dblclick"))
                  ),
-      uiOutput(ns("facetPageSlider"))
+      uiOutput(ns("facetPageControl"))
     )
   })
   
@@ -90,9 +90,8 @@ basicDisplayTabServer = function(input, output, session, data,
   
   ##----Axis Settings: Facet----
   doFacet = reactive({
-    if(isDataLoaded()) !(
-      customizeDisplay$facetRowsPerPage == customizeDisplay$no_selection)
-    else F
+    cd = customizeDisplay
+    isDataLoaded() & (cd$facetRowsPerPage != cd$no_selection)
   })
   
   facetPageN <- reactive({
@@ -100,25 +99,22 @@ basicDisplayTabServer = function(input, output, session, data,
     else n_pages(timePlot())
   })
   
-  output$facetPageSlider = renderUI({
-    f = stringr::str_interp
-    page = customizeDisplay$facetPage
-    if(doFacet()) selectInput(
-      ns("facetPageSlider"), 
-      f("Facet Page (${page} out of ${facetPageN()})"), 
-      1:facetPageN(), 
-      selected = page)
-    else NULL
+  output$facetPageControl = renderUI({
+    if(doFacet())
+      facetPageUI(ns("facetPageControl"))
   })
   
-  observeEvent(input$facetPageSlider, {
-    pg = as.numeric(input$facetPageSlider)
-    customizeDisplay$facetPage = pg
+  facetPageControl = callModule(facetPageServer, "facetPageControl",
+                                facetPageN)
+  
+  observeEvent(facetPageControl$page, {
+    pg = facetPageControl$page
+    if(!is.null(pg))
+      customizeDisplay$facetPage = facetPageControl$page
   })
   
   
   #----Event Stats----
-  
   output$showEventStats = renderUI({
     if(isDataLoaded())
       actionButton(inputId = ns("showEventStats"), "Basic Statistics")
