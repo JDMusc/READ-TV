@@ -15,7 +15,7 @@ addCpaMarkersToPlot <- function(time_plot, cpa_df, plot_data, y_column = NULL,
     cpa_arrows = cpa_df %>% 
       group_modify(~ arrowDfFromCpaDf(.x, yend = getYEnd(.x) + .5, n_heads = 1))
     cpa_labels = cpa_df %>% 
-      group_modify(~ textDfFromCpaDf(.x, y_offset = getYEnd(.x) + .3))
+      group_modify(~ textDfFromCpaDf(.x, y_offset = getYEnd(.x) + .2))
     
     p = p + geom_segment(data = cpa_arrows, aes(x = x, xend = xend,
                                                 y = y, yend = yend),

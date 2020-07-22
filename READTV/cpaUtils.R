@@ -4,10 +4,10 @@ calcCpa = function(data, values_col = 'CpaInput',
   data %>%
   arrange(!!index(data)) %>% 
   {.[[values_col]]} %>% 
-  cpt.mean(method = cpa_params$method,
+  {cpt.mean(., method = cpa_params$method,
            penalty = cpa_params$penalty,
            Q = cpa_params$Q,
-           pen.value = cpa_params$pen.value)
+           pen.value = cpa_params$pen.value)}
 
 
 generateCpaDefaults = function()

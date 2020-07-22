@@ -5,10 +5,10 @@ cpaPreprocessUI = function(id) {
     column(uiOutput(ns("doSmooth")), width = 2),
     column(uiOutput(ns("windowWidth")), width = 2),
     column(uiOutput(ns("smoothStride")), width = 2),
-    column(selectInput(ns("aggFn"), "Frequency Measure",
+    column(selectInput(ns("aggFn"), "Freq. Metric",
                        choices = c("count", "rate"),
-                       selected = "rate"),
-           width = 3),
+                       selected = "count"),
+           width = 2),
     column(actionButton(ns("preprocessSubmit"), label = "Preprocess"),
            width = 2)
   )
@@ -100,6 +100,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   observeEvent(input$preprocessSubmit, {
     ret$smooth_window_n = as.numeric(input$windowWidthText)
     ret$agg_fn = aggregateFunction()
+    ret$agg_fn_label = input$aggFn
     ret$smooth_stride = as.numeric(input$smoothStrideText)
     ret$do_smooth = doSmooth()
     shinyjs::disable("preprocessSubmit")

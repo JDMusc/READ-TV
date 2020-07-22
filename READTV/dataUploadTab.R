@@ -30,7 +30,6 @@ dataUploadTabServer = function(input, output, session) {
   })
   
   headerMinimalInformation = reactive({
-    print("header minimal")
     parts = c()
 
     if(isDataLoaded())
@@ -41,7 +40,6 @@ dataUploadTabServer = function(input, output, session) {
       parts = append(parts, filteredMetaData()$query)
     }
     
-    print("end header minimal")
     return(toString(parts))
   })
   
