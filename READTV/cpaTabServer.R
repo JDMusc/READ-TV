@@ -1,7 +1,7 @@
 
 cpaTabServer = function(input, output, session, previousData, 
                         headerMinimalInformation, isDataLoaded,
-                        previousPlotOpts){
+                        previousPlotOpts, facetPageN){
   ns = session$ns
   
   #----Plot----
@@ -9,7 +9,7 @@ cpaTabServer = function(input, output, session, previousData,
     req(previousData())
     
     prev_data = previousData()
-    plot_opts = plotOptions()
+    plot_opts = plotOptions
     
     if(showSmoothed()) {
       cpa_input_data = cpaInputData()
@@ -67,9 +67,10 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   output$eventPlotContainer = renderUI({
+    print("rerender event plot container")
     fluidPage(
       plotOutput(ns("eventPlot"), 
-                 height = plotOptions()$plotHeight
+                 height = plotOptions$plotHeight
       ),
       uiOutput(ns("facetPageControl"))
     )
@@ -97,17 +98,19 @@ cpaTabServer = function(input, output, session, previousData,
     generatePlotDefaults(no_selection, plot_opts)
   }
   
-  plotOptions = reactive({
+  #reactiveValues so that dependencies update on a given field instead of any field
+  plotOptions = reactiveValues()
+  observe({
     plot_opts = copyPlotOpts(previousPlotOpts)
     if(doFacet())
       plot_opts$facetPage = facetPageControl$page
-    plot_opts
+    
+    updateReactiveVals(plot_opts, plotOptions)
   })
   
-  #reactiveValues so that dependencies update on a given field instead of whole list
   smoothedPlotOptions = reactiveValues()
   observe({
-    plot_opts = copyPlotOpts(plotOptions())
+    plot_opts = copyPlotOpts(plotOptions)
     no_selection = plot_opts$no_selection
     
     y_col = yColumnSelect()
@@ -117,21 +120,14 @@ cpaTabServer = function(input, output, session, previousData,
     plot_opts$shapeColumn = no_selection
     plot_opts$colorColumn = no_selection
     
-    comparable_fields = setdiff(names(plot_opts),
-                                'geomFunction')
-    for(nm in comparable_fields) {
-      po_val = plot_opts[[nm]]
-      if(!(nm %in% names(smoothedPlotOptions)))
-        smoothedPlotOptions[[nm]] = po_val
-      else {
-        if(smoothedPlotOptions[[nm]] != po_val)
-          smoothedPlotOptions[[nm]] = po_val
-      }
-    }
-    
-    smoothedPlotOptions$geomFunction = 
-      plot_opts$geomFunction
+    updateReactiveVals(plot_opts, smoothedPlotOptions)
   })
+  
+  
+  updateReactiveVals = function(src_opts, rvs) 
+    for(nm in names(src_opts))
+      if(!identical(src_opts[[nm]], rvs[[nm]]))
+        rvs[[nm]] = src_opts[[nm]]
   
   
   #----Side Panel ----
@@ -156,13 +152,16 @@ cpaTabServer = function(input, output, session, previousData,
     isDataLoaded() & (ppo$facetRowsPerPage != ppo$no_selection)
   })
   
-  facetPageN <- reactive({
+  facetPageN2 <- reactive({
     if(!doFacet()) -1
     else {
-      ppo = previousPlotOpts
-      n_plots = n_distinct(previousData()[[facetColumn()]])
-      n_plots %/% ppo$facetRowsPerPage + 
-        ifelse(n_plots %% ppo$facetRowsPerPage > 0, 1, 0)
+      #browser()
+      #ppo = previousPlotOpts
+      #n_plots = n_distinct(previousData()[[facetColumn()]])
+      #n_plots %/% ppo$facetRowsPerPage + 
+      #  ifelse(n_plots %% ppo$facetRowsPerPage > 0, 1, 0)
+      #n_pages(timePlot())
+      facetPageN()
     }
   })
   

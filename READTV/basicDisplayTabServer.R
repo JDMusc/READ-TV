@@ -147,6 +147,7 @@ basicDisplayTabServer = function(input, output, session, data,
   return(list(
     customizeDisplay = customizeDisplay,
     dataFilter = dataFilter,
-    filteredData = filteredData
+    filteredData = filteredData,
+    facetPageN = facetPageN
   ))
 }

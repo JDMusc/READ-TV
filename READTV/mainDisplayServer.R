@@ -17,11 +17,12 @@ mainDisplayServer = function(input, output, session){
   dataFilter = basicDisplay$dataFilter
   customizeDisplay = basicDisplay$customizeDisplay
   filteredData = basicDisplay$filteredData
+  facetPageN = basicDisplay$facetPageN
   
   #----CPA----
   cpa = callModule(cpaTabServer, "cpa",
                    filteredData, headerMinimalInformation,
-                   isDataLoaded, customizeDisplay)
+                   isDataLoaded, customizeDisplay, facetPageN)
   
   #-----Source Code----
   sourceCode <- callModule(sourceCodeServer, "sourcecode", 
