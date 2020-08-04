@@ -9,7 +9,7 @@ generatePlotDefaults = function(no_selection, overrides = list()){
   ret = list(no_selection = no_selection,
 	     shapeColumn = no_selection,
 	     colorColumn = no_selection,
-	     yColumn = 'Event',
+	     yColumn = no_selection,
 	     xColumn = 'RelativeTime',
 	     facetColumn = no_selection,
 	     facetOrder = no_selection,
@@ -32,12 +32,18 @@ generatePlotDefaults = function(no_selection, overrides = list()){
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   
+  anyEvent = 'Any Event'
+  
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
 
   no_selection = "None"
   ret = do.call(reactiveValues, generatePlotDefaults(no_selection))
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
+  
+  numberLikeColumns = function(df) df %>% 
+    validColumns(function(co) 
+      all(class(co) %in% c("logical", "numeric", "integer")))
   
   validCountGen = function(n) function(df, co) length(unique(co)) <= n
   
@@ -68,15 +74,24 @@ customizeDisplayServer = function(input, output, session, data) {
     append(no_selection, validCountColumns(data(), props$maxShapeN))
   })
   
+  selectableColumns = function(cols) {
+    if(anyEvent %not in% cols) 
+      return(cols)
+    else {
+      cols_list = as.list(cols)
+      names(cols_list) = cols
+      cols_list[[anyEvent]] = no_selection
+      
+      return(cols_list)
+    }
+  }
+  
   validYColumns = reactive({
     req(data())
     
     data() %>%
-      validColumns(function(co) 
-        all(
-          class(co) %in% c("logical", "numeric", "integer")
-        )) %>%
-      {append("Event", .)}
+      numberLikeColumns %>%
+      {append(anyEvent, .)}
   })
 
   validXColumns = reactive({
@@ -93,9 +108,10 @@ customizeDisplayServer = function(input, output, session, data) {
   validColorColumns = reactive({
     req(data())
     
+    d = data()
     no_selection %>% 
-      append(validCountColumns(data(), props$maxColorN)) %>%
-      union(validYColumns())
+      append(validCountColumns(d, props$maxColorN)) %>%
+      union(numberLikeColumns(d))
   })
   
   validFacetColumns = reactive({
@@ -116,7 +132,7 @@ customizeDisplayServer = function(input, output, session, data) {
       ),
       easyClose = T,
       selectInput(ns("yColumn"), "Y (numeric/logical)",
-                  choices = validYColumns(),
+                  choices = selectableColumns(validYColumns()),
                   selected = ret$yColumn),
       selectInput(ns("xColumn"), "X (numeric/date time)",
                   choices = validXColumns(),

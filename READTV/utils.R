@@ -163,3 +163,6 @@ generatePlotSourceCode = function(plot_options, filter_qry, selected_vals, f_nam
   
   return(src)
 }
+
+`%not in%` = function(item, collection) !(item %in% collection)
+

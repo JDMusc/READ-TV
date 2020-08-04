@@ -8,7 +8,7 @@ generateTimePlot <- function(data, plot_opts) {
   getSafe = function(item_name, default = no_selection)
     getElementSafe(item_name, plot_opts, default)
   
-  y_col = getSafe('yColumn', 'Event')
+  y_col = getSafe('yColumn')
   
   shape_col = getSafe('shapeColumn')
   color_col = getSafe('colorColumn')
@@ -26,11 +26,15 @@ generateTimePlot <- function(data, plot_opts) {
 
   
   #----Plot Data----
-  show_data = data %>%
-    mutate(Event = TRUE) %>% {
-      if(!(shape_col == no_selection))
-        mutate(., !!shape_col := factor(!!sym(shape_col)))
-      else .}
+  show_data = data
+  if(y_col == no_selection) {
+    show_data = show_data %>% 
+      mutate(Event = TRUE)
+    y_col = 'Event'
+  }
+  if(shape_col != no_selection)
+    show_data = show_data %>% 
+      mutate(!!shape_col := factor(!!sym(shape_col)))
   
   
   #---Color & Shape----
