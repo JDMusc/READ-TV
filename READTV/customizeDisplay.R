@@ -6,33 +6,44 @@ customizeDisplayUI = function(id) {
 
 
 generatePlotDefaults = function(no_selection, overrides = list()){
-  ret = list(no_selection = no_selection,
-	     shapeColumn = no_selection,
-	     colorColumn = no_selection,
-	     yColumn = no_selection,
-	     xColumn = 'RelativeTime',
-	     facetColumn = no_selection,
-	     facetOrder = no_selection,
-	     facetLabels = no_selection,
-	     isFacetCustomized = F,
-	     isFacetPaginated = F,
-	     facetRowsPerPage = no_selection,
-	     facetPage = 1,
-	     plotHeight = 400,
-	     doStemPlot = T,
-	     geomFunction = geom_point
-  )
+  ret = list(
+    no_selection = no_selection,
+    anyEvent = 'Any Event',
+    shapeColumn = no_selection,
+    colorColumn = no_selection,
+    yColumn = no_selection,
+    xColumn = 'RelativeTime',
+    facetColumn = no_selection,
+    facetOrder = no_selection,
+    facetLabels = no_selection,
+    isFacetCustomized = F,
+    isFacetPaginated = F,
+    facetRowsPerPage = no_selection,
+    facetPage = 1,
+    plotHeight = 400,
+    doStemPlot = T,
+    geomFunction = geom_point
+    )
 
   for(n in names(overrides)) ret[[n]] = overrides[[n]]
 
   return(ret)
 }
 
+displayNoSelectionAsAnyEvent = function(cols, anyEvent, no_selection) {
+  if(no_selection %not in% cols) 
+    return(cols)
+  else {
+    cols_list = as.list(cols)
+    names(cols_list) = cols
+    names(cols_list)[which(cols == no_selection)] = anyEvent
+    
+    return(cols_list)
+  }
+}
 
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
-  
-  anyEvent = 'Any Event'
   
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
 
@@ -74,24 +85,13 @@ customizeDisplayServer = function(input, output, session, data) {
     append(no_selection, validCountColumns(data(), props$maxShapeN))
   })
   
-  selectableColumns = function(cols) {
-    if(anyEvent %not in% cols) 
-      return(cols)
-    else {
-      cols_list = as.list(cols)
-      names(cols_list) = cols
-      cols_list[[anyEvent]] = no_selection
-      
-      return(cols_list)
-    }
-  }
   
   validYColumns = reactive({
     req(data())
     
     data() %>%
       numberLikeColumns %>%
-      {append(anyEvent, .)}
+      {append(no_selection, .)}
   })
 
   validXColumns = reactive({
@@ -132,7 +132,9 @@ customizeDisplayServer = function(input, output, session, data) {
       ),
       easyClose = T,
       selectInput(ns("yColumn"), "Y (numeric/logical)",
-                  choices = selectableColumns(validYColumns()),
+                  choices = 
+                    displayNoSelectionAsAnyEvent(
+                      validYColumns(), ret$anyEvent, no_selection),
                   selected = ret$yColumn),
       selectInput(ns("xColumn"), "X (numeric/date time)",
                   choices = validXColumns(),

@@ -33,7 +33,10 @@ cpaPreprocessServer = function(input, output, session, previousData,
   
   output$doSmooth = renderUI({
     selectInput(ns("doSmoothSelect"), "CPA Input",
-                     choices = c(yColumn(), "Event Frequency"),
+                     choices = displayNoSelectionAsAnyEvent(
+                       c(yColumn(), "Event Frequency"),
+                       previousPlotOpts$anyEvent,
+                       previousPlotOpts$no_selection),
                      selected = yColumn())
   })
   

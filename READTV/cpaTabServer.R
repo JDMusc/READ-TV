@@ -88,7 +88,7 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   showOriginal = reactive({
-    (previousPlotOpts$yColumn %in% yColumnDisplay()) | 
+    (previousPlotOpts$yColumn %in% yColumnDisplay()) |
       showOriginalAndEventFrequency()
   })
   
@@ -175,7 +175,11 @@ cpaTabServer = function(input, output, session, previousData,
   
   #---Display----
   output$display = renderUI({
-    yColumns = c("Original", "Event Frequency", "Both")
+    
+    yColumns = displayNoSelectionAsAnyEvent(
+      c(previousPlotOpts$yColumn, "Event Frequency", "Both"),
+      anyEvent = previousPlotOpts$anyEvent,
+      no_selection = previousPlotOpts$no_selection)
     
     fluidRow(
       column(selectInput(ns("markerDirection"), 
@@ -191,25 +195,28 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   yColMapping = reactive({
-    original = previousPlotOpts$yColumn
-    mapping = list(Original = original, 
-                   `Event Frequency` = 'CpaInput')
+    mapping = list(`Event Frequency` = 'CpaInput')
+    
+    prev_y = previousPlotOpts$yColumn
+    mapping[[prev_y]] = prev_y
+    
     mapping$Both = mapping
+    
     mapping
   })
   
   yColumnDisplay = reactive({
     mapping = yColMapping()
     
+    ds = doSmooth()
+    if(!ds)
+      return(mapping[[previousPlotOpts$yColumn]])
+    
     y_col_selected = !is.null(input$y_column)
     if(y_col_selected)
       return(mapping[[input$y_column]])
-    
-    ds = doSmooth()
-    if(ds) 
+    else
       return(mapping$Both)
-    else 
-      return(mapping$Original)
   })
   
 
