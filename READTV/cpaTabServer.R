@@ -77,18 +77,18 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   showOriginalAndEventFrequency = reactive({
-    is.list(yColumnSelect())
+    is.list(yColumnDisplay())
   })
   
   showSmoothed = reactive({
     (
-      ('CpaInput' %in% yColumnSelect()) | 
+      ('CpaInput' %in% yColumnDisplay()) | 
         showOriginalAndEventFrequency()
     ) & doSmooth()
   })
   
   showOriginal = reactive({
-    (previousPlotOpts$yColumn %in% yColumnSelect()) | 
+    (previousPlotOpts$yColumn %in% yColumnDisplay()) | 
       showOriginalAndEventFrequency()
   })
   
@@ -101,6 +101,7 @@ cpaTabServer = function(input, output, session, previousData,
   #reactiveValues so that dependencies update on a given field instead of any field
   plotOptions = reactiveValues()
   observe({
+    req(previousPlotOpts)
     plot_opts = copyPlotOpts(previousPlotOpts)
     if(doFacet())
       plot_opts$facetPage = facetPageControl$page
@@ -110,10 +111,12 @@ cpaTabServer = function(input, output, session, previousData,
   
   smoothedPlotOptions = reactiveValues()
   observe({
+    req(plotOptions)
+    
     plot_opts = copyPlotOpts(plotOptions)
     no_selection = plot_opts$no_selection
     
-    y_col = yColumnSelect()
+    y_col = yColumnDisplay()
     if(is.list(y_col)) 
       y_col = y_col$`Event Frequency`
     plot_opts$yColumn = y_col
@@ -125,9 +128,11 @@ cpaTabServer = function(input, output, session, previousData,
   
   
   updateReactiveVals = function(src_opts, rvs) 
-    for(nm in names(src_opts))
-      if(!identical(src_opts[[nm]], rvs[[nm]]))
-        rvs[[nm]] = src_opts[[nm]]
+    for(nm in names(src_opts)) {
+      src_val = src_opts[[nm]]
+      if(!identical(src_val, rvs[[nm]]))
+        rvs[[nm]] = src_val
+    }
   
   
   #----Side Panel ----
@@ -150,19 +155,6 @@ cpaTabServer = function(input, output, session, previousData,
   doFacet = reactive({
     ppo = previousPlotOpts
     isDataLoaded() & (ppo$facetRowsPerPage != ppo$no_selection)
-  })
-  
-  facetPageN2 <- reactive({
-    if(!doFacet()) -1
-    else {
-      #browser()
-      #ppo = previousPlotOpts
-      #n_plots = n_distinct(previousData()[[facetColumn()]])
-      #n_plots %/% ppo$facetRowsPerPage + 
-      #  ifelse(n_plots %% ppo$facetRowsPerPage > 0, 1, 0)
-      #n_pages(timePlot())
-      facetPageN()
-    }
   })
   
   output$facetPageControl = renderUI({
@@ -198,15 +190,26 @@ cpaTabServer = function(input, output, session, previousData,
     )
   })
   
-  yColumnSelect = reactive({
+  yColMapping = reactive({
     original = previousPlotOpts$yColumn
-    if(is.null(input$y_column)) return(original)
-    
     mapping = list(Original = original, 
                    `Event Frequency` = 'CpaInput')
     mapping$Both = mapping
+    mapping
+  })
+  
+  yColumnDisplay = reactive({
+    mapping = yColMapping()
     
-    mapping[[input$y_column]]
+    y_col_selected = !is.null(input$y_column)
+    if(y_col_selected)
+      return(mapping[[input$y_column]])
+    
+    ds = doSmooth()
+    if(ds) 
+      return(mapping$Both)
+    else 
+      return(mapping$Original)
   })
   
 
@@ -260,7 +263,7 @@ cpaTabServer = function(input, output, session, previousData,
   
   cpaInputColumn = reactive({
     if(doSmooth()) 'CpaInput'
-    else yColumnSelect()
+    else yColumnDisplay()
   })
   
   cpaIndexColumn = reactive({
