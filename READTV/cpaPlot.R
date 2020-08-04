@@ -3,13 +3,16 @@ addCpaMarkersToPlot <- function(time_plot, cpa_df, plot_data, y_column = NULL,
     p = time_plot
     is_facet = !is.null(facet_column)
     getYEnd = function(sub_cpa_df) {
+      if(y_column %not in% names(plot_data))
+        return(1)
+      
       plot_data_sub = plot_data
       if(is_facet) plot_data_sub = plot_data %>% 
           filter(!!sym(facet_column) == unique(sub_cpa_df[[facet_column]]))
       
-      y_column %>% 
-      getElementSafe(plot_data_sub, 1) %>% 
-      max
+      na_safe = plot_data_sub[y_column] %>% drop_na
+      if(nrow(na_safe) == 0) 1
+      else max(na_safe)
     }
     
     cpa_arrows = cpa_df %>% 
