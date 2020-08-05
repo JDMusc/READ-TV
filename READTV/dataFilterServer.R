@@ -26,18 +26,6 @@ dataFilterServer = function(input, output, session, data) {
     qry = generateSelectedQuery(selected_vals)
     df = applyQuery(qry, data())
     
-    #if('Case' %in% names(selectMods)) {
-    #  cols = c('Case', 'Event.Type', extraFilterName())
-    #  for(col in cols){
-    #    m = selectMods[[col]]()
-    #    req(m$selected())
-    #    val = m$selected()
-    #    
-    #    if(isSelected(val)) d = d %>% filter(.data[[col]] %in% val)
-    #  }
-    #}
-    df
-    
     for(col in names(constraints)) {
       fn = constraints[[col]]
       passing_rows = fn(df[[col]])

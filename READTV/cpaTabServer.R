@@ -1,7 +1,7 @@
 
 cpaTabServer = function(input, output, session, previousData, 
-                        headerMinimalInformation, isDataLoaded,
-                        previousPlotOpts, facetPageN){
+                        isDataLoaded, previousPlotOpts, 
+                        facetPageN){
   ns = session$ns
   
   #----Plot----
@@ -32,7 +32,7 @@ cpaTabServer = function(input, output, session, previousData,
       )
     }
     
-    if(doCpa()) {
+    if(plotCpa()) {
       use_cpa_y = !showOriginal()
       if(show_both) {
         mx_cpa = cpa_input_data %>% 
@@ -223,13 +223,13 @@ cpaTabServer = function(input, output, session, previousData,
   #----CPA----
   cpaParams = callModule(cpaParamsServer, "cpaParams", cpaInputData)
   
-  doCpa = reactiveVal(F)
+  plotCpa = reactiveVal(F)
   observeEvent(cpaInputData(), {
-    doCpa(F)
+    plotCpa(F)
   })
   
   observe({
-    doCpa(getElementSafe('submit_valid', cpaParams, F))
+    plotCpa(getElementSafe('submit_valid', cpaParams, F))
   })
   
   cpaMarkers = reactive({
@@ -288,5 +288,7 @@ cpaTabServer = function(input, output, session, previousData,
   ret = reactiveValues()
   
   return(list(
+    cpaMarkers = cpaMarkers,
+    plotCpa = plotCpa
   ))
 }

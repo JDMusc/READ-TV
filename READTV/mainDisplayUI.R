@@ -17,6 +17,10 @@ mainDisplayUI <- function(id) {
         cpaTabUI(ns("cpa"))
       ),
       tabPanel(
+        "CPA Overlay",
+        cpaOverlayTabUI(ns("cpaOverlay"))
+      ),
+      tabPanel(
         "Forecasting"
       ),
       tabPanel(
