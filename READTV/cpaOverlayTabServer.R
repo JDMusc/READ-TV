@@ -3,6 +3,7 @@ cpaOverlayTabServer = function(input, output, session, data,
                                isDataLoaded, 
                                cpa, filteredPlotOpts){
   ns = session$ns
+  f = stringr::str_interp
   
   #----Filter Data----
   dataFilter = callModule(dataFilterServer, "dataFilter", data)
@@ -24,7 +25,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     fd = filteredData()
     p = generateTimePlot(fd, customizeDisplay)
     
-    if(cpa$plotCpa())
+    if(showMarkers())
       p = addCpaMarkersToPlot(p, cpa$cpaMarkers(),
                               fd, customizeDisplay$yColumn)
     
@@ -54,10 +55,20 @@ cpaOverlayTabServer = function(input, output, session, data,
   #----Side Panel ----
   output$sidePanel = renderUI({
     req(isDataLoaded())
-    
+    marker_message_id = ns("cpaMarkerMessage")
     tabsetPanel(
       tabPanel("Display", 
-               customizeDisplayUI(ns("customizeDisplay")))
+               customizeDisplayUI(ns("customizeDisplay"))),
+      tabPanel("CPA Markers",
+               div(
+                 tags$style(
+                   type="text/css", 
+                   f("#${marker_message_id} 
+                     {white-space: pre-wrap;}")),
+                 uiOutput(ns("cpaMarkerDisplay")),
+                 uiOutput(marker_message_id)
+                 )
+               )
     )
   })
   
@@ -89,5 +100,26 @@ cpaOverlayTabServer = function(input, output, session, data,
     pg = facetPageControl$page
     if(!is.null(pg))
       customizeDisplay$facetPage = facetPageControl$page
+  })
+  
+  #----CPA Markers Overlay----
+  output$cpaMarkerDisplay = renderUI({
+    req(cpa$plotCpa())
+    
+    selectInput(ns("cpaMarkerDisplayInput"), "Display Markers",
+                choices = c("Yes", "No"))
+  })
+  
+  showMarkers = reactive({
+    if(is.null(input$cpaMarkerDisplayInput)) cpa$plotCpa()
+    else input$cpaMarkerDisplayInput == "Yes"
+  })
+  
+  output$cpaMarkerMessage = renderText({
+    if(!cpa$plotCpa())
+      "CPA input changed or CPA output not yet calculated.
+      (Re)calculate CPA to see results."
+    else
+      NULL
   })
 }
