@@ -100,7 +100,10 @@ customizeDisplayServer = function(input, output, session, data) {
     data() %>%
       validColumns(function(co) 
         all(
-          class(co) %in% c("numeric", "integer", "POSIXct", "POSIXt", "difftime")
+          class(co) %in% c("numeric", "integer", 
+                           "POSIXct", "POSIXt", 
+                           "difftime",
+                           "Date")
           )
       ) 
   })
