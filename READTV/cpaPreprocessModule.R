@@ -31,13 +31,29 @@ cpaPreprocessServer = function(input, output, session, previousData,
     previousPlotOpts$yColumn
   })
   
+  isYcolAnyEvent = reactive(
+    yColumn() == previousPlotOpts$no_selection
+  )
+  
+  eventFrequency = "Event Frequency"
+  
+  validCpaInputs = reactive({
+    vals = c(eventFrequency)
+    
+    if(isYcolAnyEvent()) vals
+    else yColumn() %>% 
+      append(vals) %>% 
+      displayNoSelectionAsAnyEvent(
+        previousPlotOpts$anyEvent,
+        previousPlotOpts$no_selection
+      )
+  })
+  
   output$doSmooth = renderUI({
+    selected = if(isYcolAnyEvent()) eventFrequency else yColumn()
     selectInput(ns("doSmoothSelect"), "CPA Input",
-                     choices = displayNoSelectionAsAnyEvent(
-                       c(yColumn(), "Event Frequency"),
-                       previousPlotOpts$anyEvent,
-                       previousPlotOpts$no_selection),
-                     selected = yColumn())
+                     choices = validCpaInputs(),
+                     selected = selected)
   })
   
   smoothInputUIs = c("windowWidth", "smoothStride", "aggFn", "preprocessSubmit")
