@@ -10,9 +10,9 @@ loadEvents = function(f_name) {
     tolower %>% 
     {. == 'rds'}
   if(is_rds)
-    readRDS(f_name)
+    read_rds(f_name)
   else
-    read.csv(f_name, stringsAsFactors = F)
+    read_csv(f_name, stringsAsFactors = F)
 }
 
 
