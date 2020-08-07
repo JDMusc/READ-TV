@@ -21,9 +21,6 @@ mainDisplayUI <- function(id) {
         cpaOverlayTabUI(ns("cpaOverlay"))
       ),
       tabPanel(
-        "Forecasting"
-      ),
-      tabPanel(
         "Source Code",
       	div(
       	  sourceCodeUI(ns("sourcecode"))

@@ -12,7 +12,7 @@ loadEvents = function(f_name) {
   if(is_rds)
     read_rds(f_name)
   else
-    read_csv(f_name, stringsAsFactors = F)
+    read_csv(f_name)
 }
 
 
