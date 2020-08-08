@@ -182,10 +182,10 @@ cpaTabServer = function(input, output, session, previousData,
       no_selection = previousPlotOpts$no_selection)
     
     fluidRow(
-      column(selectInput(ns("markerDirection"), 
-                         "Change-point Marker Direction",
-                         choices = c("Vertical", "Horizontal", "Both")),
-             width = 4),
+#      column(selectInput(ns("markerDirection"), 
+#                         "Change-point Marker Direction",
+#                         choices = c("Vertical", "Horizontal", "Both")),
+#             width = 4),
       if(doSmooth())
         column(selectInput(ns("y_column"), "Y-axis",
                          choices = yColumns,
