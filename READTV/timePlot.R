@@ -29,9 +29,17 @@ generateTimePlot <- function(data, plot_opts) {
   show_data = data
   if(y_col == no_selection) {
     show_data = show_data %>% 
-      mutate(Event = TRUE)
+      mutate(Event = T)
     y_col = 'Event'
   }
+  
+  is_y_bool = show_data %>% 
+    pull(y_col) %>% 
+    is.logical
+  
+  if(is_y_bool)
+    show_data[[y_col]] = as.numeric(show_data[[y_col]])
+  
   if(shape_col != no_selection)
     show_data = show_data %>% 
       mutate(!!shape_col := factor(!!sym(shape_col)))
@@ -89,6 +97,10 @@ generateTimePlot <- function(data, plot_opts) {
     }
     else p = p + facet_grid(fm)
   }
+  
+  #----Scale for event pulse----
+  if(is_y_bool)
+    p = p + scale_y_continuous(breaks = 1)
   
   #----Return----
   return(p)

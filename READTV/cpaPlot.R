@@ -33,7 +33,14 @@ addCpaMarkersToPlot <- function(time_plot, cpa_df, plot_data, y_column = NULL,
 
 
 addEventFrequencyToPlot = function(time_plot, cpa_input_data, x, y,
-                                   frequency_type = 'rate')
+                                   frequency_col = 'rate') {
+  f = stringr::str_interp
+  original_lab = time_plot$labels$y
+  
 	cpa_input_data %>% 
-  mutate(color = frequency_type) %>%
-  {time_plot + geom_line(aes(x = !!sym(x), y = !!sym(y), color=color), data = .)}
+  {time_plot + 
+      geom_line(aes(x = !!sym(x), y = !!sym(y)), data = .,
+                linetype = "dotdash") + 
+      scale_y_continuous() +
+      ylab(f("${original_lab}; ${frequency_col} of ${original_lab}"))}
+}
