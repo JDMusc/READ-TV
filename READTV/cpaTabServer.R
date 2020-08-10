@@ -8,57 +8,16 @@ cpaTabServer = function(input, output, session, previousData,
   timePlot <- reactive({
     req(previousData())
     
-    prev_data = previousData()
-    plot_opts = plotOptions
-    
-    if(showSmoothed()) {
-      cpa_input_data = cpaInputData()
-      cpa_plot_opts = smoothedPlotOptions
-    }
-    
-    if(!showOriginal()) {
-      p = generateTimePlot(cpa_input_data, cpa_plot_opts)
-    }
-    else
-      p = generateTimePlot(prev_data, plot_opts)
-    
-    show_both = showOriginalAndEventFrequency()
-    if(show_both & !showSmoothed()) browser()
-    if(show_both){
-      p = addEventFrequencyToPlot(
-        p, cpa_input_data, 
-        cpa_plot_opts$xColumn, cpa_plot_opts$yColumn,
-        preprocess$agg_fn_label
-      )
-    }
-    
-    if(plotCpa()) {
-      use_cpa_y = !showOriginal()
-      if(show_both) {
-        mx_cpa = cpa_input_data %>% 
-          pull(!!sym(cpa_plot_opts$yColumn)) %>% 
-          max(na.rm = T)
-        
-        mx_prev = prev_data %>% 
-          getElementSafe(plot_opts$yColumn, 1) %>% 
-          max(na.rm = T)
-        
-        use_cpa_y = mx_cpa > mx_prev
-      }
-      
-      if(use_cpa_y) {
-        plot_data = cpa_input_data
-        y_col = cpa_plot_opts$yColumn
-      } else {
-        plot_data = prev_data
-        y_col = plot_opts$yColumn
-      }
-      
-      p = addCpaMarkersToPlot(p, cpaMarkers(),
-                              plot_data, y_col)
-    }
-    
-    p
+    cpaTabLogic.timePlot(cpa_input_data = cpaInputData(),
+                        cpa_markers = cpaMarkers(),
+                        cpa_plot_opts = smoothedPlotOptions,
+                        do_plot_cpa = doPlotCpa(),
+                        orig_data = previousData(),
+                        plot_opts = plotOptions,
+                        show_original = showOriginal(),
+                        show_original_and_event_frequency = showOriginalAndEventFrequency(),
+                        smooth_fn_name = preprocess$agg_fn_label,
+                        smoothed_plot_opts = smoothedPlotOptions)
   })
   
   output$eventPlot = renderPlot({
@@ -223,13 +182,13 @@ cpaTabServer = function(input, output, session, previousData,
   #----CPA----
   cpaParams = callModule(cpaParamsServer, "cpaParams", cpaInputData)
   
-  plotCpa = reactiveVal(F)
+  doPlotCpa = reactiveVal(F)
   observeEvent(cpaInputData(), {
-    plotCpa(F)
+    doPlotCpa(F)
   })
   
   observe({
-    plotCpa(getElementSafe('submit_valid', cpaParams, F))
+    doPlotCpa(getElementSafe('submit_valid', cpaParams, F))
   })
   
   cpaMarkers = reactive({
@@ -289,6 +248,6 @@ cpaTabServer = function(input, output, session, previousData,
   
   return(list(
     cpaMarkers = cpaMarkers,
-    plotCpa = plotCpa
+    doPlotCpa = doPlotCpa
   ))
 }

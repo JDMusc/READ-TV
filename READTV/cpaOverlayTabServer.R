@@ -104,19 +104,19 @@ cpaOverlayTabServer = function(input, output, session, data,
   
   #----CPA Markers Overlay----
   output$cpaMarkerDisplay = renderUI({
-    req(cpa$plotCpa())
+    req(cpa$doPlotCpa())
     
     selectInput(ns("cpaMarkerDisplayInput"), "Display Markers",
                 choices = c("Yes", "No"))
   })
   
   showMarkers = reactive({
-    if(is.null(input$cpaMarkerDisplayInput)) cpa$plotCpa()
+    if(is.null(input$cpaMarkerDisplayInput)) cpa$doPlotCpa()
     else input$cpaMarkerDisplayInput == "Yes"
   })
   
   output$cpaMarkerMessage = renderText({
-    if(!cpa$plotCpa())
+    if(!cpa$doPlotCpa())
       "CPA input changed or CPA output not yet calculated.
       (Re)calculate CPA to see results."
     else
