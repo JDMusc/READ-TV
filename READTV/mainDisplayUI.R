@@ -20,12 +20,6 @@ mainDisplayUI <- function(id) {
         "CPA Overlay",
         cpaOverlayTabUI(ns("cpaOverlay"))
       ),
-      tabPanel(
-        "Source Code",
-      	div(
-      	  sourceCodeUI(ns("sourcecode"))
-      	)
-      ),
     id = ns("tabs")
     )
   )

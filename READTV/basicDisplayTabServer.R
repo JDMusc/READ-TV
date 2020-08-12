@@ -80,7 +80,8 @@ basicDisplayTabServer = function(input, output, session, data,
                customizeDisplayUI(ns("customizeDisplay"))),
       tabPanel("Event Statistics", 
                uiOutput(ns("showEventStats"), label = "Basic Statistics")),
-      tabPanel("Download Data", uiOutput(ns("downloadDataOutput")))
+      tabPanel("Download Data", uiOutput(ns("downloadDataOutput"))),
+      tabPanel("Source Code")
     )
   })
   
