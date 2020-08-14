@@ -68,7 +68,8 @@ cpaOverlayTabServer = function(input, output, session, data,
                  uiOutput(ns("cpaMarkerDisplay")),
                  uiOutput(marker_message_id)
                  )
-               )
+               ),
+      tabPanel("Source Code")
     )
   })
   

@@ -105,7 +105,8 @@ cpaTabServer = function(input, output, session, previousData,
                  cpaParamsUI(ns("cpaParams"))
                  )
                ),
-      tabPanel("Display", uiOutput(ns("display")))
+      tabPanel("Display", uiOutput(ns("display"))),
+      tabPanel("Source Code")
     )
   })
   
