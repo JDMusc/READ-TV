@@ -22,7 +22,7 @@ generatePlotDefaults = function(no_selection, overrides = list()){
     facetPage = 1,
     plotHeight = 400,
     doStemPlot = T,
-    geomFunction = geom_point
+    geomFunction = "geom_point"
     )
 
   for(n in names(overrides)) ret[[n]] = overrides[[n]]

@@ -2,9 +2,14 @@
 basicDisplayTabServer = function(input, output, session, data, 
                               headerMinimalInformation, isDataLoaded){
   ns = session$ns
+  f = stringr::str_interp
   
   #----Filter Data----
-  dataFilter = callModule(dataFilterServer, "dataFilter", data)
+  filter_in = "data"
+  selected_out = 'selected_data'
+  filter_out = "filtered_data"
+  dataFilter = callModule(dataFilterServer, "dataFilter", data,
+                          filter_in, selected_out, filter_out)
   
   output$dataFilter = renderUI({
     if(isDataLoaded()) dataFilterUI(ns("dataFilter"))
@@ -32,8 +37,41 @@ basicDisplayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
     
-    generateTimePlot(filteredData(), customizeDisplay)
+    eval_tidy(plotCode(), env = env(plot_data = plotInput()))
   })
+  
+  plotCode = reactive({
+    plot_data = plotInput()
+    generateTimePlotCode(plot_data, customizeDisplay)
+  })
+  
+  plot_in = 'filtered_data'
+  plot_out = 'plot_data'
+  
+  makeDataMask = function(filtered_data) {
+    mask = list()
+    mask[[plot_in]] = filtered_data
+    mask
+  }
+  plotInput = reactive({
+    req(isDataLoaded())
+    req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
+    
+    code = plotInputCode()
+    eval_tidy(code, data = makeDataMask(filteredData()))
+  })
+  
+  plotInputCode = reactive({
+    req(isDataLoaded())
+    
+    filtered_data = filteredData()
+    generatePreparePlotCode(quo(filtered_data), 
+                            customizeDisplay,
+                            sym(plot_in),
+                            sym(plot_out)
+                            )
+  })
+  
   
   plotHeight = reactive({
     if(is.null(customizeDisplay$plotHeight)) 400
@@ -81,7 +119,7 @@ basicDisplayTabServer = function(input, output, session, data,
       tabPanel("Event Statistics", 
                uiOutput(ns("showEventStats"), label = "Basic Statistics")),
       tabPanel("Download Data", uiOutput(ns("downloadDataOutput"))),
-      tabPanel("Source Code")
+      tabPanel("Source Code", uiOutput(ns("sourceCodeSubTab")))
     )
   })
   
@@ -141,6 +179,42 @@ basicDisplayTabServer = function(input, output, session, data,
   output$downloadDataOutput = renderUI({
     if(isDataLoaded())
       downloadButton(ns("downloadData"))
+  })
+  
+  
+  #----Source Code----
+  mySource = reactive({
+    req(isDataLoaded())
+    selected_code = dataFilter$selectedQuery()
+    filtered_code = dataFilter$filteredQuery()
+    plot_input_code = plotInputCode()
+    plot_code = plotCode()
+    f_name = headerMinimalInformation()
+    paste(
+      f("f_name = \"${f_name}\" #specify local path"),
+      f("${filter_in} = loadEventsWithRelativeAndDeltaTime(f_name)"),
+      expr_text(selected_code, width = 50),
+      expr_text(filtered_code, width = 50),
+      expr_text(plot_input_code, width = 50),
+      expr_text(plot_code, width = 50), sep = '\n')
+  })
+  
+  output$sourceCodeSubTab = renderUI({
+    actionButton(ns("showSourceBtn"), "Show Source")
+  })
+  
+  
+  observeEvent(input$showSourceBtn, {
+    showModal(modalDialog(
+      title = "Source Code",
+      size = "l",
+      verbatimTextOutput(ns("mySource")),
+    )
+    )
+  })
+  
+  output$mySource = renderText({
+    mySource()
   })
   
   

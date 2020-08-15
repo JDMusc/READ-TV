@@ -43,8 +43,21 @@ applyQuery = function(qry, data) {
 }
 
 
-doesQueryCompile = function(qry, data) {
-  result = try(applyQuery(qry, data), silent = T)
+applyQuery2 = function(qry_quo, env)
+  eval_tidy(qry_quo, env = env)
+
+
+doesQueryStringCompile = function(qry_string, data) {
+  qry_expr = parse_expr(paste0('filter(',qry_string,' )'))
+  qry_expr = expr(data %>% !!qry_expr)
+  result = try(applyQuery2(qry_expr, env(data = data)), silent = T)
+  
+  return(!(class(result) == "try-error"))
+}
+
+
+doesQueryCompile2 = function(qry_quo, env) {
+  result = try(applyQuery2(qry_quo, env), silent = T)
   
   return(!(class(result) == "try-error"))
 }

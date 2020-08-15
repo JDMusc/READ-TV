@@ -1,5 +1,7 @@
 
-dataFilterServer = function(input, output, session, data) {
+dataFilterServer = function(input, output, session, data,
+                            in_pronoun, selected_pronoun,
+                            out_pronoun) {
   ns = session$ns
   
   selectMods <- reactiveValues()
@@ -8,12 +10,31 @@ dataFilterServer = function(input, output, session, data) {
   
   filteredDataCount = printWithCountGen("filtered data")
 
+  #----Selected----
   selectedVals <- reactive({
     cols = c('Case', 'Event.Type')
 
-    sapply(cols, 
+    ret = lapply(cols, 
 	   function(col) selectMods[[col]]()$selected())
+    names(ret) = cols
+    
+    ret
   })
+  
+  selectedQuery = reactive({
+    req(data())
+    
+    selected_vals = selectedVals()
+    generateSelectedQuery2(sym(in_pronoun),
+                           sym(selected_pronoun),
+                           selected_vals)
+  })
+  
+  createDataMask = function(in_data){
+    mask = list()
+    mask[[in_pronoun]] = in_data
+    mask
+  }
 
   selectedData <- reactive({
     req(data())
@@ -22,9 +43,8 @@ dataFilterServer = function(input, output, session, data) {
     
     #filteredDataCount()
 
-    selected_vals = selectedVals()
-    qry = generateSelectedQuery(selected_vals)
-    df = applyQuery(qry, data())
+    qry = selectedQuery()
+    df = eval_tidy(qry, data = createDataMask(d))
     
     for(col in names(constraints)) {
       fn = constraints[[col]]
@@ -45,8 +65,11 @@ dataFilterServer = function(input, output, session, data) {
 
 	  for(col in cols) {
 		  others = setdiff(cols, col)
-	  	  qry = generateSelectedQuery(selected_vals[others])
-	  	  df = applyQuery(qry, d)
+	  	  qry = generateSelectedQuery2(
+	  	    sym(in_pronoun), sym(out_pronoun),
+	  	    selected_vals[others])
+	  	  
+	  	  df = eval_tidy(qry, data = createDataMask(d))
 
 		  chs = columnValues(df, col)
 
@@ -93,7 +116,10 @@ dataFilterServer = function(input, output, session, data) {
 	  multiSelectUI(ns("extraFilter"), extraFilterName())
   })
 
-  customQuery = callModule(customEventsQueryServer, "customQuery", selectedData)
+  #----Custom Query----
+  customQuery = callModule(customEventsQueryServer, "customQuery", 
+                           selectedData, selected_pronoun,
+                           out_pronoun)
 
   filteredData = reactive({
 	  hvq = customQuery$hasValidQuery()
@@ -103,11 +129,15 @@ dataFilterServer = function(input, output, session, data) {
 		  selectedData()
   })
 
+  
+  #----Return----
   return(list(filteredData = filteredData,
 	      hasValidQuery = customQuery$hasValidQuery,
 	      hasQueryInput = customQuery$hasQueryInput,
 	      query = customQuery$query,
 	      selectedVals = selectedVals,
+	      selectedQuery = selectedQuery,
+	      filteredQuery = customQuery$filterQuery,
 	      constraints = constraints))
 }
 

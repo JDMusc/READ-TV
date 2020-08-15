@@ -13,7 +13,8 @@ customEventsQueryUI <- function(id) {
 }
 
 
-customEventsQueryServer = function(input, output, session, data) {
+customEventsQueryServer = function(input, output, session, data,
+                                   in_pronoun, out_pronoun) {
   ns = session$ns
   
   observeEvent(input$queryInclude, {
@@ -109,8 +110,21 @@ customEventsQueryServer = function(input, output, session, data) {
     showSource(d)
   })
   
+  
+  filterQuery = reactive({
+    if(!queryCompiles() | !hasQueryInput())
+      return(expr(!!sym(out_pronoun) <- !!sym(in_pronoun)))
+    
+    
+    qry_expr = parse_expr(paste0('filter(', input$queryInput,' )'))
+    expr(!!sym(out_pronoun) <- !!sym(in_pronoun) %>% !!qry_expr)
+  })
+  
   queryCompiles = reactive({
-    doesQueryCompile(input$queryInput, data())
+    if(!hasQueryInput())
+      return(TRUE)
+    
+    doesQueryStringCompile(input$queryInput, data())
   })
   
   
@@ -131,10 +145,10 @@ customEventsQueryServer = function(input, output, session, data) {
   })
   
   hasQueryInput = reactive({
-    if(is.null(input$queryInput)) return(F)
-    if(input$queryInput == "") return(F)
+    if(is.null(input$queryInput)) return(FALSE)
+    if(input$queryInput == "") return(FALSE)
     
-    T
+    TRUE
   })
 
   query = reactive({
@@ -157,6 +171,7 @@ customEventsQueryServer = function(input, output, session, data) {
   return(list(filteredData = filteredData, 
               hasQueryInput = hasQueryInput,
               hasValidQuery = hasValidQuery,
-	      query = query))
+              filterQuery = filterQuery,
+              query = query))
 
 }
