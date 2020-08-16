@@ -25,14 +25,14 @@ dataFilterServer = function(input, output, session, data,
     req(data())
     
     selected_vals = selectedVals()
-    generateSelectedQuery2(sym(in_pronoun),
-                           sym(selected_pronoun),
+    generateSelectedQuery2(in_pronoun,
+                           selected_pronoun,
                            selected_vals)
   })
   
   createDataMask = function(in_data){
     mask = list()
-    mask[[in_pronoun]] = in_data
+    mask[[as.character(in_pronoun)]] = in_data
     mask
   }
 
@@ -66,7 +66,7 @@ dataFilterServer = function(input, output, session, data,
 	  for(col in cols) {
 		  others = setdiff(cols, col)
 	  	  qry = generateSelectedQuery2(
-	  	    sym(in_pronoun), sym(out_pronoun),
+	  	    in_pronoun, out_pronoun,
 	  	    selected_vals[others])
 	  	  
 	  	  df = eval_tidy(qry, data = createDataMask(d))

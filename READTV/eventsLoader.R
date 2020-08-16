@@ -6,14 +6,16 @@ eventsLoaderUI = function(id) {
 }
 
 
-eventsLoader = function(input, output, session) {
+eventsLoader = function(input, output, session, output_sym) {
   ns = session$ns
+  f = stringr::str_interp
   
   eventDataF = callModule(fileWellServer, "filewell", "Event Data", 
                           '../data/tc_prepped_events.csv')
   
   name = reactive({
     req(eventDataF())
+    
     eventDataF()$name
   })
   
@@ -26,17 +28,28 @@ eventsLoader = function(input, output, session) {
     req(datapath())
     datap = datapath()
     
-    if(config.testing) {
-      d = datap %>% loadSugicalEvents
-    } else {
-      d = datap %>% loadEventsWithRelativeAndDeltaTime
-    }
-    
-    d
+    datap %>% 
+      generateLoadFileCode %>% 
+      eval_tidy
   })
+  
+  mySourceString = reactive({
+    req(name())
+    f_name = name()
+    f_name_var = "f_name"
+    
+    expressionsToString(
+      f("${f_name_var} = \"${f_name}\" #update local file path"),
+      sym(f_name_var) %>% generateLoadFileCode
+    )
+  })
+  
+  generateLoadFileCode = function(filename_sym)
+    expr(!!(output_sym) <- !!(filename_sym) %>% loadEventsWithRelativeAndDeltaTime)
 
   return(
     list(name = name, data = data,
-         datapath = datapath)
+         datapath = datapath,
+         mySourceString = mySourceString)
     )
 }

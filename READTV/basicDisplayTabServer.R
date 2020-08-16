@@ -1,15 +1,15 @@
 
 basicDisplayTabServer = function(input, output, session, data, 
-                              headerMinimalInformation, isDataLoaded){
+                              fileName, isDataLoaded, previousSourceString,
+                              input_sym = sym('data'),
+                              select_output_sym = sym('selected_data'),
+                              output_sym = sym('filtered_data')){
   ns = session$ns
   f = stringr::str_interp
   
   #----Filter Data----
-  filter_in = "data"
-  selected_out = 'selected_data'
-  filter_out = "filtered_data"
   dataFilter = callModule(dataFilterServer, "dataFilter", data,
-                          filter_in, selected_out, filter_out)
+                          input_sym, select_output_sym, output_sym)
   
   output$dataFilter = renderUI({
     if(isDataLoaded()) dataFilterUI(ns("dataFilter"))
@@ -45,7 +45,7 @@ basicDisplayTabServer = function(input, output, session, data,
     generateTimePlotCode(plot_data, customizeDisplay)
   })
   
-  plot_in = 'filtered_data'
+  plot_in = as.character(output_sym)
   plot_out = 'plot_data'
   
   makeDataMask = function(filtered_data) {
@@ -165,12 +165,7 @@ basicDisplayTabServer = function(input, output, session, data,
   
   #----Download Data----
   output$downloadData <- downloadHandler(
-    filename = function() {
-      hmi = headerMinimalInformation() %>% 
-        {gsub(', ?', '-', .)} %>%
-        {gsub('.csv','', .)}
-      paste0(hmi, "-", Sys.Date(), ".csv", sep="")
-    },
+    filename = fileName,
     content = function(file) {
       write.csv(filteredData(), file, row.names = F)
     }
@@ -183,20 +178,32 @@ basicDisplayTabServer = function(input, output, session, data,
   
   
   #----Source Code----
-  mySource = reactive({
+  myFilterSource = reactive({
     req(isDataLoaded())
+    
     selected_code = dataFilter$selectedQuery()
     filtered_code = dataFilter$filteredQuery()
+    
+    expressionsToString(
+      previousSourceString(),
+      "",
+      selected_code,
+      filtered_code
+    )
+  })
+  
+  
+  mySourceString = reactive({
+    req(isDataLoaded())
+    
     plot_input_code = plotInputCode()
     plot_code = plotCode()
-    f_name = headerMinimalInformation()
-    paste(
-      f("f_name = \"${f_name}\" #specify local path"),
-      f("${filter_in} = loadEventsWithRelativeAndDeltaTime(f_name)"),
-      expr_text(selected_code, width = 50),
-      expr_text(filtered_code, width = 50),
-      expr_text(plot_input_code, width = 50),
-      expr_text(plot_code, width = 50), sep = '\n')
+    expressionsToString(
+      myFilterSource(),
+      "",
+      plot_input_code,
+      plot_code
+    )
   })
   
   output$sourceCodeSubTab = renderUI({
@@ -214,7 +221,7 @@ basicDisplayTabServer = function(input, output, session, data,
   })
   
   output$mySource = renderText({
-    mySource()
+    mySourceString()
   })
   
   

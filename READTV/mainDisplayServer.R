@@ -3,17 +3,21 @@ mainDisplayServer = function(input, output, session){
   ns = session$ns
   
   #------------Data Upload--------
-  dataUploadTab = callModule(dataUploadTabServer, "dataUpload")
+  dataUploadOutputSym = sym('data')
+  dataUploadTab = callModule(dataUploadTabServer, "dataUpload",
+                             dataUploadOutputSym)
   data = reactive({dataUploadTab$data()})
   eventsInformation = dataUploadTab$eventsInformation
-  headerMinimalInformation = 
-    dataUploadTab$headerMinimalInformation
+  fileName = dataUploadTab$fileName
   isDataLoaded = dataUploadTab$isDataLoaded
   
   #------------Data Filter--------
+  basicDisplayOutputSym = sym('filtered_data')
   basicDisplay = callModule(basicDisplayTabServer, "basicDisplay",
-                            data, headerMinimalInformation,
-                            isDataLoaded)
+                            data, fileName, isDataLoaded,
+                            dataUploadTab$mySourceString,
+                            input_sym = dataUploadOutputSym,
+                            output_sym = basicDisplayOutputSym)
   dataFilter = basicDisplay$dataFilter
   customizeDisplay = basicDisplay$customizeDisplay
   filteredData = basicDisplay$filteredData

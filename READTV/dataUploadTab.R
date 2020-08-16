@@ -10,13 +10,19 @@ dataUploadTabUI = function(id) {
         fluidRow(
           metaQueryLoaderUI(ns("loadMetaData")),
           metaQueryUI(ns("metaqueryui"))
+        ),
+        fluidRow(
+          column(uiOutput(ns("sidePanel")),
+                 width = 12)
         )
     )
   )
 }
 
 
-dataUploadTabServer = function(input, output, session) {
+dataUploadTabServer = function(input, output, session,
+                               output_sym = sym('data')) {
+  ns = session$ns
 
   #------------Header--------
   isHeaderMinimized = reactiveVal(F)
@@ -53,7 +59,8 @@ dataUploadTabServer = function(input, output, session) {
   })
   
   #---Data--------
-  eventsInformation = callModule(eventsLoader, "loadData")
+  eventsInformation = callModule(eventsLoader, "loadData",
+                                 output_sym)
   isDataLoaded = reactiveVal(F)
   data <- reactive({
     req(eventsInformation$name())
@@ -78,11 +85,37 @@ dataUploadTabServer = function(input, output, session) {
   })
   
   
+  #----Side Panel----
+  output$sidePanel = renderUI({
+    
+    tabsetPanel(
+      tabPanel("Source Code", 
+               verbatimTextOutput(ns("sourceCodeSubTab")))
+    )
+  })
+  
+  
+  #----Source Code----
+  mySourceString = reactive({
+    req(eventsInformation$mySource())
+    
+    eventsInformation$mySource()
+  })
+  
+  output$sourceCodeSubTab = renderText({
+    req(mySourceString())
+    
+    mySourceString()
+  }
+  )
+  
   #---Return----
   return(list(
     data = data,
     eventsInformation = eventsInformation,
+    fileName = eventsInformation$name,
     headerMinimalInformation = headerMinimalInformation,
-    isDataLoaded = isDataLoaded
+    isDataLoaded = isDataLoaded,
+    mySourceString = mySourceString
   ))
 }

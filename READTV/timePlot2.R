@@ -47,11 +47,13 @@ generatePreparePlotCode <- function(data_quo, plot_opts,
   
   
   #----Shape Column----
-  if(shape_col != no_selection)
+  if(shape_col != no_selection) {
+    data = eval_tidy(data_quo)
     if(!is.factor(data[[shape_col]]))
       pre_plot_rhs = expr(
         !!pre_plot_rhs %>% 
           mutate(!!sym(shape_col) := factor(!!sym(shape_col))))
+  }
   
   
   #----Facet----

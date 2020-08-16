@@ -70,3 +70,6 @@ getElementSafe = function(item_name, obj, default = NULL) {
 
 `%not in%` = function(item, collection) {!(item %in% collection)}
 
+expressionsToString = function(..., width = 50) list(...) %>% 
+  purrr::map(~ ifelse(is_string(.x), .x, expr_text(.x, width = width))) %>% 
+  purrr::reduce(~ paste(.x, .y, sep = '\n'))

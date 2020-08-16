@@ -16,7 +16,7 @@ loadEvents = function(f_name) {
 }
 
 
-loadEventsWithRelativeAndDeltaTime = function(data_f, index = 'DateTime', key = NULL) 
+loadEventsWithRelativeAndDeltaTime = function(data_f) 
   data_f %>% 
   #loadEventsAsTsibble(index = index, key = key) %>% 
   loadEvents %>%
