@@ -92,7 +92,7 @@ dataFilterServer = function(input, output, session, data,
 
 
   observe({
-	  req(extraFilterName())
+	  req(data())
 
 	  d = data()
 
@@ -108,13 +108,7 @@ dataFilterServer = function(input, output, session, data,
 
 	  colnames(data())[3]
   })
-
-
-  output$extraFilter <- renderUI({
-	  req(extraFilterName())
-
-	  multiSelectUI(ns("extraFilter"), extraFilterName())
-  })
+  
 
   #----Custom Query----
   customQuery = callModule(customEventsQueryServer, "customQuery", 

@@ -99,10 +99,10 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
 
   #----Aggregate Function----
-  aggregateFunction = reactive({
+  aggregateFunctionExpr = reactive({
     agg_fn = input$aggFn
-    if(agg_fn == "count") length
-    else function(values) length(values)/windowWidth()
+    if(agg_fn == "count") expr(length(.values))
+    else expr(length(.values)/!!(windowWidth()))
   })
   
   #----Preprocess Changed----
@@ -118,7 +118,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   
   observeEvent(input$preprocessSubmit, {
     ret$smooth_window_n = as.numeric(input$windowWidthText)
-    ret$agg_fn = aggregateFunction()
+    ret$agg_fn_expr = aggregateFunctionExpr()
     ret$agg_fn_label = input$aggFn
     ret$smooth_stride = as.numeric(input$smoothStrideText)
     ret$do_smooth = doSmooth()

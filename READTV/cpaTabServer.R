@@ -1,7 +1,8 @@
 
 cpaTabServer = function(input, output, session, previousData, 
                         isDataLoaded, previousPlotOpts, 
-                        facetPageN){
+                        facetPageN, previousSourceString,
+                        input_sym = sym("filtered_data")){
   ns = session$ns
   
   #----Plot----
@@ -106,7 +107,8 @@ cpaTabServer = function(input, output, session, previousData,
                  )
                ),
       tabPanel("Display", uiOutput(ns("display"))),
-      tabPanel("Source Code")
+      tabPanel("Source Code",
+               uiOutput(ns("sourceCodeSubTab")))
     )
   })
   
@@ -142,10 +144,6 @@ cpaTabServer = function(input, output, session, previousData,
       no_selection = previousPlotOpts$no_selection)
     
     fluidRow(
-#      column(selectInput(ns("markerDirection"), 
-#                         "Change-point Marker Direction",
-#                         choices = c("Vertical", "Horizontal", "Both")),
-#             width = 4),
       if(doSmooth())
         column(selectInput(ns("y_column"), "Y-axis",
                          choices = yColumns,
@@ -199,27 +197,45 @@ cpaTabServer = function(input, output, session, previousData,
     if(is.null(cpa_params)) return(NULL)
     
     plot_opts = smoothedPlotOptions
-    cpaInputData() %>% cpaPipeline(
-      time_column = cpaIndexColumn(),
-      values_column = cpaInputColumn(), 
-      facet_column = facetColumn(),
-      cpa_params = cpa_params, preprocess = F)
+    cpa_input = cpaInputData()
+    eval_tidy(cpaCode(), data = list(cpa_input = cpa_input))
   })
   
   cpaInputData = reactive({
     req(previousData())
-    #print("cpa data about to be set")
+    eval_tidy(cpaInputDataCode(), data = makeDataMask(previousData()))
+  })
+  
+  cpa_input_sym = sym("cpa_input")
+  cpaInputDataCode = reactive({
+    req(previousData())
     
     ds = doSmooth()
     if(ds)
-      previousData() %>% 
-        preprocessForCpa(
-          preprocess$smooth_window_n, 
-          agg_fn = preprocess$agg_fn,
-          index_col = cpaIndexColumn(),
-          facet_col = facetColumn())
+      expr(cpa_input <- !!sym(input_sym) %>% 
+             preprocessForCpa(
+               !!(preprocess$smooth_window_n), 
+               agg_fn_expr = !!(preprocess$agg_fn_expr),
+               stride = !!(preprocess$smooth_stride),
+               index_col = !!(cpaIndexColumn()),
+               facet_col = !!(facetColumn())
+             )
+      )
     else
-      previousData()
+      expr(!!cpa_input_sym <- !!sym(input_sym))
+  })
+  
+  cpaCode = reactive({
+    if(!doPlotCpa())
+      return("")
+    
+    facet_col_sym = facetColumn()
+    if(!is.null(facet_col_sym)) facet_col_sym = sym(facet_col_sym)
+    
+    cpa_params = reactiveValuesToList(cpaParams)
+    cpa_params$submit_valid = NULL
+    cpaPipelineCode(cpa_input_sym, sym(cpaIndexColumn()), sym(cpaInputColumn()), 
+                    facet_column = facet_col_sym, !!!cpa_params)
   })
 
   observeEvent(doSmooth(), {print("do smooth changed")})
@@ -243,6 +259,42 @@ cpaTabServer = function(input, output, session, previousData,
     else ppo$facetColumn
   })
   
+  
+  #----Source Code----
+  mySourceString = reactive({
+    req(previousSourceString())
+    
+    expressionsToString(
+      previousSourceString(),
+      "",
+      cpaInputDataCode(),
+      "",
+      cpaCode()
+    )
+  })
+  
+  output$sourceCodeSubTab = renderUI({
+    actionButton(ns("showSourceBtn"), "Show Source")
+  })
+  
+  observeEvent(input$showSourceBtn, {
+    showModal(modalDialog(
+      title = "Source Code",
+      size = "l",
+      verbatimTextOutput(ns("mySource")),
+    )
+    )
+  })
+  
+  output$mySource = renderText({
+    mySourceString()
+  })
+  
+  makeDataMask = function(data) {
+    mask = list()
+    mask[[input_sym]] = data
+    mask
+  }
   
   #----Return----
   ret = reactiveValues()

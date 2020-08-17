@@ -13,20 +13,23 @@ mainDisplayServer = function(input, output, session){
   
   #------------Data Filter--------
   basicDisplayOutputSym = sym('filtered_data')
-  basicDisplay = callModule(basicDisplayTabServer, "basicDisplay",
-                            data, fileName, isDataLoaded,
-                            dataUploadTab$mySourceString,
-                            input_sym = dataUploadOutputSym,
-                            output_sym = basicDisplayOutputSym)
-  dataFilter = basicDisplay$dataFilter
-  customizeDisplay = basicDisplay$customizeDisplay
-  filteredData = basicDisplay$filteredData
-  facetPageN = basicDisplay$facetPageN
+  basicDisplayTab = callModule(basicDisplayTabServer, 
+                               "basicDisplay", 
+                               data, fileName, isDataLoaded,
+                               dataUploadTab$mySourceString,
+                               input_sym = dataUploadOutputSym,
+                               output_sym = basicDisplayOutputSym)
+  dataFilter = basicDisplayTab$dataFilter
+  customizeDisplay = basicDisplayTab$customizeDisplay
+  filteredData = basicDisplayTab$filteredData
+  facetPageN = basicDisplayTab$facetPageN
   
   #----CPA----
   cpa = callModule(cpaTabServer, "cpa",
                    filteredData, isDataLoaded, 
-                   customizeDisplay, facetPageN)
+                   customizeDisplay, facetPageN,
+                   basicDisplayTab$mySourceString,
+                   input_sym = basicDisplayOutputSym)
   
   #----CPA Overlay----
   cpaOverlay = callModule(cpaOverlayTabServer, "cpaOverlay",

@@ -29,28 +29,49 @@ cpaToVerticalSegment = function(cpa_df) cpa_df %>%
 
 
 cpaPipeline = function(data, time_column, values_column, facet_column = NULL, 
-                       cpa_params, agg_fn = sum, preprocess = T) {
+                       cpa_params) {
   is_facet = !is.null(facet_column)
   if(is_facet) data %<>% 
     group_by(!!sym(facet_column))
-
-  if(preprocess) {
-    data %<>%
-      group_modify(~ preprocessForCpa(.x, cpa_params$smooth_window_n,
-                                      index_col = time_column, 
-                                      agg_fn = agg_fn,
-                                      values_col = values_column,
-                                      facet_col = facet_column)
-    )
-    
-    values_column = 'CpaInput'
-  }
   
   data %>% 
     group_modify(~ cpaPtsAndValues(
-      calcCpa(as_tsibble(.x, index = time_column), 
-              cpa_params = cpa_params, values_col = values_column), 
-      .x))
+      .x, calcCpa(as_tsibble(.x, index = time_column), 
+                  cpa_params = cpa_params, values_col = values_column)
+      ))
+}
+
+
+cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, facet_column_sym = NULL,
+                           ...) {
+  rhs = data_sym
+  is_facet = !is.null(facet_column_sym)
+  if(is_facet)
+    rhs = expr(!!rhs %>% group_by(!!facet_column_sym))
+  
+  cpa_params = list2(...)
+  
+  rhs = expr(!!rhs %>% 
+               group_modify(~ cpaPtsAndValues(
+                 .x,
+                 !!(cptMeanCode(.x, !!(time_column_sym), !!(values_column_sym), !!!cpa_params))
+                 ))
+             )
+  
+  return(expr(result <- !!rhs))
+}
+
+cptMeanCode = function(data_ensym, index_col_ensym, values_col_ensym, ...) {
+  cpa_params = list2(...)
+  if(is_empty(cpa_params)) cpa = expr(cpt.mean)
+  else cpa = expr(cpt.mean(!!!cpa_params))
+  
+  expr(!!ensym(data_ensym) %>% 
+         as_tsibble(index = !!ensym(index_col_ensym)) %>% 
+         arrange(!!ensym(index_col_ensym)) %>% 
+         pull(!!ensym(values_col_ensym)) %>% 
+         !!cpa
+  )
 }
 
 
@@ -60,16 +81,13 @@ preprocessForCpa = function(data, smooth_window_n,
                             output_col = 'CpaInput',
                             facet_col = NULL,
                             stride = 1,
-                            agg_fn = sum) {
+                            agg_fn_expr = sum(.values)) {
   if(is.null(values_col)) {
     data$IsEvent = 1
     values_col = 'IsEvent'
   }
-
- #input_select_fn = function(data) data %>% 
- #  select(!!sym(index_col), !!sym(values_col)) %>% 
- #  distinct
   
+  agg_fn = new_function(exprs(.values = ), enexpr(agg_fn_expr))
   mutate_fn = function(data) data %>% 
     {withinTimeSeries(.[[index_col]], .[[values_col]],
                      n = smooth_window_n, agg_fn = agg_fn, stride = stride)} %>% 
@@ -114,7 +132,7 @@ quickPlotCpa = function(data, smooth_window_n,
   
   geom_input = smoothed_data %>% 
     calcCpa(cpa_params = cpa_params) %>% 
-     cpaPtsAndValues(smoothed_data) %>% 
+     {cpaPtsAndValues(smoothed_data, .)} %>% 
     cpaToHorizontalSegment
   
   p + geom_segment(data = geom_input, 
@@ -129,7 +147,7 @@ cpaPenalties = function() c("None", "SIC", "BIC", "MBIC", "AIC",
 cpaMethods = function() c("AMOC", "PELT", "SegNeigh", "BinSeg")
 
 
-cpaPtsAndValues = function(cpt_out, data, time_col = 'RelativeTime') {
+cpaPtsAndValues = function(data, cpt_out, time_col = 'RelativeTime') {
   cpts = data %>% 
     arrange(!!sym(time_col)) %>% 
     {.[[time_col]][cpt_out@cpts]}

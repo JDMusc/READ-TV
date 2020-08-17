@@ -22,7 +22,7 @@ generateTimePlot <- function(data, plot_opts) {
   facet_rows_per_pg = getSafe('facetRowsPerPage')
   facet_page = getSafe('facetPage', 1)
   do_stem_plot = getSafe('doStemPlot', T)
-  geom_function = getSafe('geomFunction', geom_point)
+  geom_function = getSafe('geomFunction', "geom_point")
 
   
   #----Plot Data----
@@ -66,7 +66,7 @@ generateTimePlot <- function(data, plot_opts) {
   #----Base Plot----
   p = show_data %>%
     ggplot(aes_string(x = x_col)) + 
-    geom_function(data_aes)
+    eval_tidy(expr((!!geom_function)(data_aes)))
   
   y_class = class(show_data[[y_col]])
   if(y_class == "logical")

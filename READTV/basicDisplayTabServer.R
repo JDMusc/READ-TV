@@ -53,6 +53,8 @@ basicDisplayTabServer = function(input, output, session, data,
     mask[[plot_in]] = filtered_data
     mask
   }
+  
+  
   plotInput = reactive({
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
@@ -178,7 +180,7 @@ basicDisplayTabServer = function(input, output, session, data,
   
   
   #----Source Code----
-  myFilterSource = reactive({
+  mySourceString = reactive({
     req(isDataLoaded())
     
     selected_code = dataFilter$selectedQuery()
@@ -192,17 +194,17 @@ basicDisplayTabServer = function(input, output, session, data,
     )
   })
   
-  
-  mySourceString = reactive({
+  myPlotSourceString = reactive({
     req(isDataLoaded())
     
     plot_input_code = plotInputCode()
     plot_code = plotCode()
     expressionsToString(
-      myFilterSource(),
+      mySourceString(),
       "",
       plot_input_code,
-      plot_code
+      plot_code,
+      "plot(p)"
     )
   })
   
@@ -215,13 +217,13 @@ basicDisplayTabServer = function(input, output, session, data,
     showModal(modalDialog(
       title = "Source Code",
       size = "l",
-      verbatimTextOutput(ns("mySource")),
+      verbatimTextOutput(ns("myPlotSource")),
     )
     )
   })
   
-  output$mySource = renderText({
-    mySourceString()
+  output$myPlotSource = renderText({
+    myPlotSourceString()
   })
   
   
@@ -230,6 +232,7 @@ basicDisplayTabServer = function(input, output, session, data,
     customizeDisplay = customizeDisplay,
     dataFilter = dataFilter,
     filteredData = filteredData,
-    facetPageN = facetPageN
+    facetPageN = facetPageN,
+    mySourceString = mySourceString
   ))
 }
