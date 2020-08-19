@@ -42,7 +42,7 @@ cpaPipeline = function(data, time_column, values_column, facet_column = NULL,
 }
 
 
-cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, facet_column_sym = NULL,
+cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, output_sym = sym("cpa_markers"), facet_column_sym = NULL,
                            ...) {
   rhs = data_sym
   is_facet = !is.null(facet_column_sym)
@@ -58,7 +58,7 @@ cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, facet_c
                  ))
              )
   
-  return(expr(result <- !!rhs))
+  return(expr(!!output_sym <- !!rhs))
 }
 
 cptMeanCode = function(data_ensym, index_col_ensym, values_col_ensym, ...) {

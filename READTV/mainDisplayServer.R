@@ -34,7 +34,8 @@ mainDisplayServer = function(input, output, session){
   #----CPA Overlay----
   cpaOverlay = callModule(cpaOverlayTabServer, "cpaOverlay",
                           data, isDataLoaded,
-                          cpa, customizeDisplay)
+                          cpa, customizeDisplay,
+                          cpa$mySourceString)
   
   #-----Source Code----
   sourceCode <- callModule(sourceCodeServer, "sourcecode", 

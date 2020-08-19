@@ -1,5 +1,5 @@
 generatePreparePlotCode <- function(data_quo, plot_opts,
-                                    in_pronoun_sym, out_pronoun_sym) {
+                                    df_out_sym = sym("plot_data")) {
   #----Field Extractors---
   no_selection = getElementSafe('no_selection', plot_opts, '_None_')
   getSafe = function(item_name, default = no_selection)
@@ -75,11 +75,12 @@ generatePreparePlotCode <- function(data_quo, plot_opts,
       pre_plot_rhs = base_facet()
   
   
-  return(expr(plot_data <- !!pre_plot_rhs))
+  return(expr(!!df_out_sym <- !!pre_plot_rhs))
 }
 
 
-generateTimePlotCode <- function(plot_data, plot_opts) {
+generateTimePlotCode <- function(plot_data, plot_opts,
+                                 plot_data_pronoun = ensym(plot_data)) {
   #----Field Extractors---
   no_selection = getElementSafe('no_selection', plot_opts, '_None_')
   getSafe = function(item_name, default = no_selection)
@@ -109,19 +110,20 @@ generateTimePlotCode <- function(plot_data, plot_opts) {
   
   
   #---Color & Shape----
-  aes_inputs = list(y = sym(y_col), x = sym(x_col))
+  aes_base_inputs = list(y = sym(y_col), x = sym(x_col))
   #data_aes = aes_string(y = y_col)
+  aes_extra_inputs = list()
   if(!(shape_col == no_selection))
-    aes_inputs$shape = sym(shape_col)
+    aes_extra_inputs$shape = sym(shape_col)
   if(!(color_col == no_selection))
-    aes_inputs$colour = sym(color_col)
+    aes_extra_inputs$colour = sym(color_col)
   
   
   #----Base Plot----
   p_rhs = expr(
-    !!enexpr(plot_data) %>%
-      ggplot(aes(!!!aes_inputs)) + 
-      (!!geom_function)())
+    !!plot_data_pronoun %>%
+      ggplot(aes(!!!aes_base_inputs)) + 
+      (!!geom_function)(aes(!!!aes_extra_inputs)))
   
   if(is.logical(plot_data[[y_col]]))
     p_rhs = expr(!!p_rhs + 

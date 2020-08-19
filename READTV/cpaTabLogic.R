@@ -1,42 +1,72 @@
-cpaTabLogic.timePlot = function(cpa_input_data = NULL, cpa_markers = NULL, 
-                               cpa_plot_opts = NULL, do_plot_cpa = F, 
-                               orig_data = NULL, plot_opts = NULL, 
-                               show_original = F, 
-                               show_original_and_event_frequency = F,
-                               smooth_fn_name = NULL,
-                               smoothed_plot_opts = NULL) {
+cpaTabLogic.basePlotCode = function(cpa_plot_df = NULL, 
+                                    cpa_plot_opts = NULL,
+                                    cpa_plot_df_pronoun = sym("cpa_plot_df"),
+                                    base_plot_df = NULL, 
+                                    plot_opts = NULL, 
+                                    base_plot_df_pronoun = sym("base_plot_df"),
+                                    show_original = F) {
+  if(is.null(cpa_plot_df) & is.null(base_plot_df))
+    stop("either cpa_plot_df or base_plot_df must be set")
   
-  if(is.null(cpa_input_data) & is.null(orig_data))
-    stop("either cpa_input_data or orig_data must be set")
+  if(!is.null(base_plot_df) & is.null(plot_opts))
+    stop("plot_opts must be set if base_plot_df is set")
   
-  if(!is.null(orig_data) & is.null(plot_opts))
-    stop("plot_opts must be set if orig_data is set")
+  if(!is.null(cpa_plot_df) & is.null(cpa_plot_opts))
+    stop("cpa_plot_opts must be set if cpa_plot_df is set")
   
-  if(!is.null(cpa_input_data) & is.null(cpa_plot_opts))
-    stop("cpa_plot_opts must be set if cpa_input_data is set")
-  
-  if(!show_original) {
-    p = generateTimePlot(cpa_input_data, cpa_plot_opts)
-  }
+  if(show_original)
+    generateTimePlotCode(base_plot_df, plot_opts, plot_data_pronoun = base_plot_df_pronoun)
   else
-    p = generateTimePlot(orig_data, plot_opts)
+    generateTimePlotCode(cpa_plot_df, cpa_plot_opts, plot_data_pronoun = cpa_plot_df_pronoun)
+}
+
+
+cpaTabLogic.addEventFrequencyCode = function(plot_opts,
+                                             p_pronoun,
+                                             cpa_plot_opts,
+                                             cpa_plot_df_pronoun,
+                                             show_original_and_event_frequency,
+                                             smooth_fn_name) {
   
-  if(show_original_and_event_frequency){
-    p = addEventFrequencyToPlot(
-      p, cpa_input_data, 
-      cpa_plot_opts$xColumn, cpa_plot_opts$yColumn,
-      smooth_fn_name
-    )
+  rhs = p_pronoun
+  original_y = if(plot_opts$yColumn != plot_opts$no_selection) plot_opts$yColumn else "Any Event"
+  if(show_original_and_event_frequency) {
+    f = stringr::str_interp
+    
+    ylabel = f("${original_y}; ${smooth_fn_name} of ${original_y}")
+    rhs = expr(!!p_pronoun + 
+                 geom_line(aes(x = !!(sym(cpa_plot_opts$xColumn)), 
+                               y= !!(sym(cpa_plot_opts$yColumn))), 
+                           data = !!(cpa_plot_df_pronoun),
+                           linetype = 'dotdash') +
+                 scale_y_continuous() +
+                 ylab(!!ylabel)
+               )
   }
   
-  if(do_plot_cpa) {
+  expr(p <- !!rhs)
+}
+
+
+cpaTabLogic.addCpaMarkersCode = function(
+  p_pronoun, 
+  cpa_plot_df, 
+  cpa_plot_opts, 
+  cpa_plot_df_pronoun, 
+  base_plot_df, 
+  plot_opts, 
+  base_plot_df_pronoun, 
+  cpa_markers_pronoun, 
+  add_markers, show_original, show_original_and_event_frequency) {
+  
+  if(add_markers) {
     use_cpa_y = !show_original
     if(show_original_and_event_frequency) {
-      mx_cpa = cpa_input_data %>% 
+      mx_cpa = cpa_plot_df %>% 
         pull(!!sym(cpa_plot_opts$yColumn)) %>% 
         max(na.rm = T)
       
-      mx_prev = orig_data %>% 
+      mx_prev = base_plot_df %>% 
         getElementSafe(plot_opts$yColumn, 1) %>% 
         max(na.rm = T)
       
@@ -44,16 +74,20 @@ cpaTabLogic.timePlot = function(cpa_input_data = NULL, cpa_markers = NULL,
     }
     
     if(use_cpa_y) {
-      plot_data = cpa_input_data
+      ref_data = cpa_plot_df_pronoun
       y_col = cpa_plot_opts$yColumn
     } else {
-      plot_data = orig_data
+      ref_data = base_plot_df_pronoun
       y_col = plot_opts$yColumn
     }
     
-    p = addCpaMarkersToPlot(p, cpa_markers,
-                            plot_data, y_col)
+    rhs = expr(addCpaMarkersToPlot(!!p_pronoun, !!cpa_markers_pronoun,
+                                   !!ref_data, !!y_col)
+    )
   }
+  else
+    rhs = expr(!!p_pronoun)
   
-  p
+  expr(p <- !!rhs)
 }
+

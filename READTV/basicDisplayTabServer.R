@@ -68,9 +68,7 @@ basicDisplayTabServer = function(input, output, session, data,
     
     filtered_data = filteredData()
     generatePreparePlotCode(quo(filtered_data), 
-                            customizeDisplay,
-                            sym(plot_in),
-                            sym(plot_out)
+                            customizeDisplay
                             )
   })
   
