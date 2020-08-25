@@ -37,7 +37,13 @@ basicDisplayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
     
-    eval_tidy(plotCode(), env = env(plot_data = plotInput()))
+    full_code = myFullCode()
+    mask = list(data = data())
+    for(i in seq_along(full_code)) {
+      nm = names(full_code)[[i]]
+      mask[[nm]] = eval_tidy(full_code[[i]], data = mask)
+    }
+    mask$p
   })
   
   plotCode = reactive({
@@ -66,7 +72,7 @@ basicDisplayTabServer = function(input, output, session, data,
   plotInputCode = reactive({
     req(isDataLoaded())
     
-    filtered_data = filteredData()
+    filtered_data = eval_tidy(mySourceCode(), env(data = data()))
     generatePreparePlotCode(quo(filtered_data), 
                             customizeDisplay
                             )
@@ -181,29 +187,37 @@ basicDisplayTabServer = function(input, output, session, data,
   mySourceString = reactive({
     req(isDataLoaded())
     
+    expressionsToString(previousSourceString(),
+                        "", mySourceCode()
+                        )
+  })
+  
+  mySourceCode = reactive({
+    req(isDataLoaded())
+    
     selected_code = dataFilter$selectedQuery()
     filtered_code = dataFilter$filteredQuery()
     
-    expressionsToString(
-      previousSourceString(),
-      "",
-      selected_code,
-      filtered_code
+    exprs(selected_data = !!selected_code, 
+          filtered_data = !!filtered_code)
+  })
+  
+  myFullCode = reactive({
+    req(isDataLoaded())
+    
+    append(mySourceCode(), 
+           exprs(
+             plot_data = !!plotInputCode(),
+             p = !!plotCode())
     )
   })
   
-  myPlotSourceString = reactive({
+  myFullSourceString = reactive({
     req(isDataLoaded())
     
-    plot_input_code = plotInputCode()
-    plot_code = plotCode()
-    expressionsToString(
-      mySourceString(),
-      "",
-      plot_input_code,
-      plot_code,
-      "plot(p)"
-    )
+    expressionsToString(previousSourceString(),
+                        "", myFullCode(),
+                        "", list(plot = "plot(p)"))
   })
   
   output$sourceCodeSubTab = renderUI({
@@ -221,7 +235,7 @@ basicDisplayTabServer = function(input, output, session, data,
   })
   
   output$myPlotSource = renderText({
-    myPlotSourceString()
+    myFullSourceString()
   })
   
   

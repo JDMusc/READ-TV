@@ -89,7 +89,7 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   
   #----Mandatory Fields----
   x_col = getSafe("xColumn")
-  stopifnot(!(x_col == no_selection))
+  if(x_col == no_selection) stop("x column must be set")
   
   
   #----Optional Fields----
@@ -124,11 +124,6 @@ generateTimePlotCode <- function(plot_data, plot_opts,
     !!plot_data_pronoun %>%
       ggplot(aes(!!!aes_base_inputs)) + 
       (!!geom_function)(aes(!!!aes_extra_inputs)))
-  
-  if(is.logical(plot_data[[y_col]]))
-    p_rhs = expr(!!p_rhs + 
-                   theme(axis.text.y = element_blank(), 
-                         axis.ticks.y = element_blank()))
   
   
   #----Do Stem----
