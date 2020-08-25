@@ -72,7 +72,13 @@ basicDisplayTabServer = function(input, output, session, data,
   plotInputCode = reactive({
     req(isDataLoaded())
     
-    filtered_data = eval_tidy(mySourceCode(), env(data = data()))
+    mask = list(data = data())
+    my_s_code = mySourceCode()
+    for(i in seq_along(my_s_code)) {
+      nm = names(my_s_code)[[i]]
+      mask[[nm]] = eval_tidy(my_s_code[[i]], data = mask)
+    }
+    filtered_data = mask$filtered_data
     generatePreparePlotCode(quo(filtered_data), 
                             customizeDisplay
                             )
