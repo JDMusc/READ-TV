@@ -37,12 +37,7 @@ basicDisplayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
     
-    full_code = myFullCode()
-    mask = list(data = data())
-    for(i in seq_along(full_code)) {
-      nm = names(full_code)[[i]]
-      mask[[nm]] = eval_tidy(full_code[[i]], data = mask)
-    }
+    mask = runExpressions(myFullCode(), list(data = data()))
     mask$p
   })
   
@@ -72,16 +67,10 @@ basicDisplayTabServer = function(input, output, session, data,
   plotInputCode = reactive({
     req(isDataLoaded())
     
-    mask = list(data = data())
-    my_s_code = mySourceCode()
-    for(i in seq_along(my_s_code)) {
-      nm = names(my_s_code)[[i]]
-      mask[[nm]] = eval_tidy(my_s_code[[i]], data = mask)
-    }
+    mask = runExpressions(mySourceCode(), list(data = data()))
     filtered_data = mask$filtered_data
-    generatePreparePlotCode(quo(filtered_data), 
-                            customizeDisplay
-                            )
+    
+    generatePreparePlotCode(quo(filtered_data), customizeDisplay)
   })
   
   

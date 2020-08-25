@@ -80,3 +80,12 @@ expressionsToString = function(..., width = 50)
                       )
              ) %>% 
   purrr::reduce(~ paste(.x, .y, sep = '\n'))
+
+
+runExpressions = function(exs, mask) {
+  for(i in seq_along(exs)) {
+    nm = names(exs)[[i]]
+    mask[[nm]] = eval_tidy(exs[[i]], data = mask)
+  }
+  mask
+}
