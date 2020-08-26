@@ -37,7 +37,7 @@ basicDisplayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
     
-    mask = runExpressions(myFullCode(), list(data = data()))
+    mask = runExpressions(currentTabWithPlotCode(), list(data = data()))
     mask$p
   })
   
@@ -67,7 +67,7 @@ basicDisplayTabServer = function(input, output, session, data,
   plotInputCode = reactive({
     req(isDataLoaded())
     
-    mask = runExpressions(mySourceCode(), list(data = data()))
+    mask = runExpressions(currentTabCode(), list(data = data()))
     filtered_data = mask$filtered_data
     
     generatePreparePlotCode(quo(filtered_data), customizeDisplay)
@@ -179,15 +179,19 @@ basicDisplayTabServer = function(input, output, session, data,
   
   
   #----Source Code----
-  mySourceString = reactive({
+  annotateSourceString = function(tab_code)
+    expressionsToString(previousSourceString(),
+                        "",
+                        "#Basic Filter",
+                        tab_code)
+  
+  fullSourceString = reactive({
     req(isDataLoaded())
     
-    expressionsToString(previousSourceString(),
-                        "", mySourceCode()
-                        )
+    annotateSourceString(currentTabCode())
   })
   
-  mySourceCode = reactive({
+  currentTabCode = reactive({
     req(isDataLoaded())
     
     selected_code = dataFilter$selectedQuery()
@@ -197,22 +201,25 @@ basicDisplayTabServer = function(input, output, session, data,
           filtered_data = !!filtered_code)
   })
   
-  myFullCode = reactive({
+  currentTabWithPlotCode = reactive({
     req(isDataLoaded())
     
-    append(mySourceCode(), 
+    append(currentTabCode(), 
            exprs(
              plot_data = !!plotInputCode(),
              p = !!plotCode())
     )
   })
   
-  myFullSourceString = reactive({
+  fullSourceWithPlotString = reactive({
     req(isDataLoaded())
     
-    expressionsToString(previousSourceString(),
-                        "", myFullCode(),
-                        "", list(plot = "plot(p)"))
+    expressionsToString(
+      annotateSourceString(
+        currentTabWithPlotCode()
+        ),
+      "",
+      "plot(p)")
   })
   
   output$sourceCodeSubTab = renderUI({
@@ -224,13 +231,13 @@ basicDisplayTabServer = function(input, output, session, data,
     showModal(modalDialog(
       title = "Source Code",
       size = "l",
-      verbatimTextOutput(ns("myPlotSource")),
+      verbatimTextOutput(ns("fullSourceWithPlot")),
     )
     )
   })
   
-  output$myPlotSource = renderText({
-    myFullSourceString()
+  output$fullSourceWithPlot = renderText({
+    fullSourceWithPlotString()
   })
   
   
@@ -240,6 +247,6 @@ basicDisplayTabServer = function(input, output, session, data,
     dataFilter = dataFilter,
     filteredData = filteredData,
     facetPageN = facetPageN,
-    mySourceString = mySourceString
+    fullSourceString = fullSourceString
   ))
 }

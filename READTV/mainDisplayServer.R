@@ -28,14 +28,14 @@ mainDisplayServer = function(input, output, session){
   cpa = callModule(cpaTabServer, "cpa",
                    filteredData, isDataLoaded, 
                    customizeDisplay, facetPageN,
-                   basicDisplayTab$mySourceString,
+                   basicDisplayTab$fullSourceString,
                    input_sym = basicDisplayOutputSym)
   
   #----CPA Overlay----
   cpaOverlay = callModule(cpaOverlayTabServer, "cpaOverlay",
                           data, isDataLoaded,
                           cpa, customizeDisplay,
-                          cpa$mySourceString)
+                          cpa$fullSourceString)
   
   #-----Source Code----
   sourceCode <- callModule(sourceCodeServer, "sourcecode", 

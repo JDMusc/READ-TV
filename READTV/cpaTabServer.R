@@ -20,16 +20,16 @@ cpaTabServer = function(input, output, session, previousData,
     mask = list()
     mask[[et(input_sym)]] = previousData()
     
-    mask = runExpressions(myTabCode(), mask)
+    mask = runExpressions(currentTabWithPlotCode(), mask)
     
     mask$p
   })
   
   
-  myTabCode = reactive({
+  currentTabWithPlotCode = reactive({
     req(isDataLoaded())
     
-    append(mySourceCode(), plotCodes())
+    append(currentTabCode(), plotCodes())
   })
   
   plotCodes = reactive({
@@ -342,21 +342,25 @@ cpaTabServer = function(input, output, session, previousData,
   
   
   #----Source Code----
-  myTabAndPreviousSourceString = reactive({
+  annotateSourceString = function(tab_code)
+    expressionsToString(previousSourceString(),
+                        "",
+                        "#CPA",
+                        tab_code)
+  
+  fullSourceWithPlotString = reactive({
     req(previousSourceString())
     
     expressionsToString(
-      "#Previous Tabs",
-      previousSourceString(),
-      "",
-      "#Current Tab",
-      myTabCode(),
+      annotateSourceString(
+        currentTabWithPlotCode())
+      ,
       "",
       "plot(p)"
     )
   })
   
-  mySourceCode = reactive({
+  currentTabCode = reactive({
     req(isDataLoaded())
     
     codes = list()
@@ -366,12 +370,10 @@ cpaTabServer = function(input, output, session, previousData,
     codes
   })
   
-  mySourceString = reactive({
-    expressionsToString(
-      previousSourceString(),
-      "",
-      mySourceCode()
-    )
+  fullSourceString = reactive({
+    req(isDataLoaded())
+    
+    annotateSourceString(currentTabCode())
   })
   
   output$sourceCodeSubTab = renderUI({
@@ -382,13 +384,13 @@ cpaTabServer = function(input, output, session, previousData,
     showModal(modalDialog(
       title = "Source Code",
       size = "l",
-      verbatimTextOutput(ns("mySource")),
+      verbatimTextOutput(ns("fullSourceWithPlot")),
     )
     )
   })
   
-  output$mySource = renderText({
-    myTabAndPreviousSourceString()
+  output$fullSourceWithPlot = renderText({
+    fullSourceWithPlotString()
   })
   
   
@@ -398,6 +400,6 @@ cpaTabServer = function(input, output, session, previousData,
   return(list(
     cpaMarkers = cpaMarkers,
     doPlotCpa = doPlotCpa,
-    mySourceString = mySourceString
+    fullSourceString = fullSourceString
   ))
 }
