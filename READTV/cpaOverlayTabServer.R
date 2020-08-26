@@ -3,16 +3,17 @@ cpaOverlayTabServer = function(input, output, session, data,
                                isDataLoaded, 
                                cpa, filteredPlotOpts,
                                previousSourceString,
-                               input_sym = sym("filtered_data"),
+                               input_sym = sym("data"),
                                select_output_sym = sym("selected_data2"),
                                output_sym = sym("filtered_data2")){
   ns = session$ns
-  f = stringr::str_interp
   
+  #----Code Gen Symbols and Pronouns----
+  f = stringr::str_interp
   prepare_in = as.character(output_sym)
   plot_in = sym("plot_df")
-  p_pronoun = sym("p")
   cpa_markers_pronoun = sym("cpa_markers")
+  et = expr_text
   
   #----Filter Data----
   dataFilter = callModule(dataFilterServer, "dataFilter", data,
@@ -34,52 +35,53 @@ cpaOverlayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
     
-    #fd = filteredData()
-    #p = generateTimePlot(fd, customizeDisplay)
-    plot_codes = plotCodes()
+    mask = list()
+    mask[[et(input_sym)]] = data()
+    mask = runExpressions(currentTabWithPlotCode(), mask)
     
-    p = eval_tidy(plot_codes$base_plot, env = env(plot_df = plotInput()))
-    
-    if(showMarkers())
-      p = eval_tidy(plot_codes$add_markers, 
-                    data = list(cpa_markers = cpa$cpaMarkers(), p = p))
-    
-    p
-  })
-    
-  
-  plotCode = reactive({
-    plot_df = plotInput()
-    generateTimePlotCode(plot_df, customizeDisplay)
+    mask$p
   })
   
+  
+  currentTabWithPlotCode = reactive({
+    req(isDataLoaded())
+    
+    append(currentTabCode(), plotCodes())
+  })
+
   
   plotCodes = reactive({
     req(data())
     
     codes = list()
     
-    filtered_data2 <- filteredData()
-    
     plot_opts = customizeDisplay
     
-    prepare_plot_input = plotInputCode()
-    codes$prepare_plot_input = prepare_plot_input
+    filtered_data2 = filteredData()
+    codes[[et(plot_in)]] = generatePreparePlotCode(
+      quo(filtered_data2), 
+      customizeDisplay,
+      df_out_sym = plot_in)
     
-    plot_df = plotInput()
+    plot_df = eval_tidy(codes[[et(plot_in)]],
+                        data = list(filtered_data2 = filteredData()))
     
-    base_plot_code = generateTimePlotCode(plot_df, plot_opts)
-    
-    codes$base_plot = base_plot_code
+    base_p_pronoun = sym("base_p")
+    base_plot_code = generateTimePlotCode(plot_df, plot_opts,
+                                          plot_data_pronoun = plot_in,
+                                          out_p_pronoun = base_p_pronoun)
+    codes[[et(base_p_pronoun)]] = base_plot_code
     
     y_col = plot_opts$yColumn
     if(y_col == filteredPlotOpts$no_selection) y_col = NULL
     add_markers_code = expr(
-      !!p_pronoun <- addCpaMarkersToPlot(!!p_pronoun, !!cpa_markers_pronoun,
+      p <- addCpaMarkersToPlot(!!base_p_pronoun, !!cpa_markers_pronoun,
                           !!output_sym, y_column = !!(y_col)))
     
     if(showMarkers())
-      codes$add_markers = add_markers_code
+      codes$p = add_markers_code
+    else
+      codes$p = expr(p <- !!base_p_pronoun)
     
     codes
   })
@@ -90,24 +92,6 @@ cpaOverlayTabServer = function(input, output, session, data,
     mask[[prepare_in]] = filtered_data
     mask
   }
-  
-  plotInput = reactive({
-    req(isDataLoaded())
-    req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
-    
-    code = plotInputCode()
-    eval_tidy(code, data = makeDataMask(filteredData()))
-  })
-  
-  
-  plotInputCode = reactive({
-    req(isDataLoaded())
-    
-    filtered_data2 = filteredData()
-    generatePreparePlotCode(quo(filtered_data2), 
-                            customizeDisplay,
-                            df_out_sym = plot_in)
-  })
   
   plotHeight = reactive({
     if(is.null(customizeDisplay$plotHeight)) 400
@@ -201,6 +185,12 @@ cpaOverlayTabServer = function(input, output, session, data,
   
   
   #---Source Code----
+  annotateSourceString = function(tab_code)
+    expressionsToString(previousSourceString(),
+                        "",
+                        "#CPA Overlay",
+                        tab_code)
+  
   output$sourceCodeSubTab = renderUI({
     actionButton(ns("showSourceBtn"), "Show Source")
   })
@@ -209,41 +199,45 @@ cpaOverlayTabServer = function(input, output, session, data,
     showModal(modalDialog(
       title = "Source Code",
       size = "l",
-      verbatimTextOutput(ns("myPlotSource")),
+      verbatimTextOutput(ns("fullSourceWithPlot")),
     )
     )
   })
   
-  mySourceString = reactive({
+  fullSourceString = reactive({
     req(isDataLoaded())
     
-    selected_code = dataFilter$selectedQuery()
-    filtered_code = dataFilter$filteredQuery()
-    
-    expressionsToString(
-      previousSourceString(),
-      "",
-      selected_code,
-      filtered_code
-    )
+    annotateSourceString(currentTabCode())
   })
   
-  myPlotSourceString = reactive({
+  currentTabCode = reactive({
     req(isDataLoaded())
     
-    plot_input_code = plotInputCode()
+    list(
+      selected_data2 = dataFilter$selectedQuery(),
+      filtered_data2 = dataFilter$filteredQuery())
+  })
+  
+  fullSourceWithPlotString = reactive({
+    req(isDataLoaded())
+    
     plot_codes = plotCodes()
     expressionsToString(
-      mySourceString(),
+      fullSourceString(),
       "",
-      plot_input_code,
-      plot_codes$base_plot,
-      plot_codes$add_markers,
+      plotCodes(),
+      "",
       "plot(p)"
     )
   })
   
-  output$myPlotSource = renderText({
-    myPlotSourceString()
+  currentTabWithPlotCode = reactive({
+    req(isDataLoaded())
+    
+    append(currentTabCode(), plotCodes())
+  })
+  
+  output$fullSourceWithPlot = renderText({
+    fullSourceWithPlotString()
   })
 }

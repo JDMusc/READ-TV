@@ -22,7 +22,7 @@ customEventsQueryServer = function(input, output, session, data,
     d = data()
     
     fieldClass = reactive({
-      class(d[, input$field])
+      d %>% pull(input$field) %>% class
     })
     
     output$fieldOptions = renderUI({
@@ -74,7 +74,6 @@ customEventsQueryServer = function(input, output, session, data,
     ))
     
     observeEvent(input$modalSubmit, {
-      
       field_value = input$fieldValue
       if(fieldClass() == "character")
         field_value = paste0("'", field_value, "'")

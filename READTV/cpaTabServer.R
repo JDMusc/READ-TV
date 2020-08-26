@@ -284,7 +284,11 @@ cpaTabServer = function(input, output, session, previousData,
   
   cpaInputData = reactive({
     req(previousData())
-    eval_tidy(cpaInputDataCode())
+    
+    mask = list()
+    mask[[et(input_sym)]] = previousData()
+    
+    eval_tidy(cpaInputDataCode(), data = mask)
   })
   
   cpaInputDataCode = reactive({
