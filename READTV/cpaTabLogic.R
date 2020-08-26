@@ -4,7 +4,8 @@ cpaTabLogic.basePlotCode = function(cpa_plot_df = NULL,
                                     base_plot_df = NULL, 
                                     plot_opts = NULL, 
                                     base_plot_df_pronoun = sym("base_plot_df"),
-                                    show_original = F) {
+                                    show_original = F,
+                                    out_p_pronoun = sym("p")) {
   if(is.null(cpa_plot_df) & is.null(base_plot_df))
     stop("either cpa_plot_df or base_plot_df must be set")
   
@@ -14,10 +15,14 @@ cpaTabLogic.basePlotCode = function(cpa_plot_df = NULL,
   if(!is.null(cpa_plot_df) & is.null(cpa_plot_opts))
     stop("cpa_plot_opts must be set if cpa_plot_df is set")
   
+  gtp = function(plot_df, opts, plot_df_pronoun)
+    generateTimePlotCode(plot_df, opts, plot_data_pronoun = plot_df_pronoun,
+                         out_p_pronoun = out_p_pronoun)
+  
   if(show_original)
-    generateTimePlotCode(base_plot_df, plot_opts, plot_data_pronoun = base_plot_df_pronoun)
+    gtp(base_plot_df, plot_opts, base_plot_df_pronoun)
   else
-    generateTimePlotCode(cpa_plot_df, cpa_plot_opts, plot_data_pronoun = cpa_plot_df_pronoun)
+    gtp(cpa_plot_df, cpa_plot_opts, cpa_plot_df_pronoun)
 }
 
 
@@ -26,7 +31,8 @@ cpaTabLogic.addEventFrequencyCode = function(plot_opts,
                                              cpa_plot_opts,
                                              cpa_plot_df_pronoun,
                                              show_original_and_event_frequency,
-                                             smooth_fn_name) {
+                                             smooth_fn_name,
+                                             out_p_pronoun = sym("p")) {
   
   rhs = p_pronoun
   original_y = if(plot_opts$yColumn != plot_opts$no_selection) plot_opts$yColumn else "Any Event"
@@ -44,7 +50,7 @@ cpaTabLogic.addEventFrequencyCode = function(plot_opts,
                )
   }
   
-  expr(p <- !!rhs)
+  expr(!!out_p_pronoun <- !!rhs)
 }
 
 

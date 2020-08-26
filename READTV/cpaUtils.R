@@ -42,7 +42,8 @@ cpaPipeline = function(data, time_column, values_column, facet_column = NULL,
 }
 
 
-cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, output_sym = sym("cpa_markers"), facet_column_sym = NULL,
+cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, 
+                           output_sym = sym("cpa_markers"), facet_column_sym = NULL,
                            ...) {
   rhs = data_sym
   is_facet = !is.null(facet_column_sym)

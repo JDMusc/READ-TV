@@ -80,7 +80,8 @@ generatePreparePlotCode <- function(data_quo, plot_opts,
 
 
 generateTimePlotCode <- function(plot_data, plot_opts,
-                                 plot_data_pronoun = ensym(plot_data)) {
+                                 plot_data_pronoun = ensym(plot_data),
+                                 out_p_pronoun = sym("p")) {
   #----Field Extractors---
   no_selection = getElementSafe('no_selection', plot_opts, '_None_')
   getSafe = function(item_name, default = no_selection)
@@ -172,5 +173,5 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   
   
   #----Return----
-  return(expr(p <- !!p_rhs))
+  return(expr(!!out_p_pronoun <- !!p_rhs))
 }

@@ -7,46 +7,29 @@ cpaTabServer = function(input, output, session, previousData,
   
   
   #----Code Gen Symbols and Pronouns----
+  et = expr_text
   base_plot_df_pronoun = sym("base_plot_df")
   cpa_markers_pronoun = sym("cpa_markers")
-  cpa_plot_df_pronoun = sym("cpa_plot_df")
-  p_pronoun = sym("p")
+  cpa_input_df_pronoun = sym("cpa_input_df")
   
   
   #----Plot----
   timePlot <- reactive({
     req(previousData())
     
-    plot_codes = plotCodes()
-    cpa_plot_df = cpaInputData()
-    base_plot_df = previousData()
+    mask = list()
+    mask[[et(input_sym)]] = previousData()
     
-    plot_opts = plotOptions
-    cpa_plot_opts = smoothedPlotOptions
+    mask = runExpressions(myTabCode(), mask)
     
-    plot_df = eval_tidy(plot_codes$prepare_plot_input, 
-                        data = list(filtered_data = base_plot_df))
+    mask$p
+  })
+  
+  
+  myTabCode = reactive({
+    req(isDataLoaded())
     
-    base_plot_mask = list()
-    base_plot_mask[[expr_text(base_plot_df_pronoun)]] = plot_df
-    base_plot_mask[[expr_text(cpa_plot_df_pronoun)]] = cpa_plot_df
-    p = eval_tidy(plot_codes$base_plot, data = base_plot_mask)
-    
-    event_freq_mask = list()
-    event_freq_mask[[expr_text(p_pronoun)]] = p
-    event_freq_mask[[expr_text(cpa_plot_df_pronoun)]] = cpa_plot_df
-    p = eval_tidy(plot_codes$add_event_freq, data = event_freq_mask)
-    
-    
-    add_markers_mask = list()
-    add_markers_mask[[expr_text(p_pronoun)]] = p
-    add_markers_mask[[expr_text(base_plot_df_pronoun)]] = base_plot_df
-    add_markers_mask[[expr_text(cpa_plot_df_pronoun)]] = cpa_plot_df
-    add_markers_mask[[expr_text(cpa_markers_pronoun)]] = cpaMarkers()
-    
-    p = eval_tidy(plot_codes$add_markers, data = add_markers_mask)
-    
-    p
+    append(mySourceCode(), plotCodes())
   })
   
   plotCodes = reactive({
@@ -54,9 +37,9 @@ cpaTabServer = function(input, output, session, previousData,
     
     codes = list()
     
-    cpa_plot_df = cpaInputData()
-    base_plot_df = previousData()
-    filtered_data <- base_plot_df
+    cpa_input_df = cpaInputData()
+    prev_data_df = previousData()
+    filtered_data <- prev_data_df
     show_original = showOriginal()
     show_original_and_event_frequency = showOriginalAndEventFrequency()
     
@@ -67,38 +50,40 @@ cpaTabServer = function(input, output, session, previousData,
                                                  plot_opts,
                                                  base_plot_df_pronoun)
     
-    codes$prepare_plot_input = prepare_plot_input
+    codes[[et(base_plot_df_pronoun)]] = prepare_plot_input
     
-    plot_df = eval_tidy(prepare_plot_input, 
-                        data = list(orig_data = base_plot_df))
+    plot_df = eval_tidy(prepare_plot_input)
     
+    base_p_pronoun = sym("base_p")
     base_plot_code = cpaTabLogic.basePlotCode(
-      cpa_plot_df = cpa_plot_df,
+      cpa_plot_df = cpa_input_df,
       cpa_plot_opts = cpa_plot_opts,
+      cpa_plot_df_pronoun = cpa_input_df_pronoun,
       base_plot_df = plot_df,
       plot_opts = plot_opts,
-      show_original = show_original,
       base_plot_df_pronoun = base_plot_df_pronoun,
-      cpa_plot_df_pronoun = cpa_plot_df_pronoun
+      show_original = show_original,
+      out_p_pronoun = base_p_pronoun
     )
+    codes[[et(base_p_pronoun)]] = base_plot_code
     
-    codes$base_plot = base_plot_code
     
+    add_ef_p_pronoun = sym("event_freq_p")
     add_event_freq_code = cpaTabLogic.addEventFrequencyCode(
       plot_opts, 
-      p_pronoun,
-      cpa_plot_df_pronoun = cpa_plot_df_pronoun,
+      base_p_pronoun,
+      cpa_plot_df_pronoun = cpa_input_df_pronoun,
       cpa_plot_opts = cpa_plot_opts,
       show_original_and_event_frequency = show_original_and_event_frequency,
-      smooth_fn_name = preprocess$agg_fn_label)
-    
-    codes$add_event_freq = add_event_freq_code
+      smooth_fn_name = preprocess$agg_fn_label,
+      out_p_pronoun = add_ef_p_pronoun)
+    codes[[et(add_ef_p_pronoun)]] = add_event_freq_code
     
     add_markers_code = cpaTabLogic.addCpaMarkersCode(
-      p_pronoun = p_pronoun, 
-      cpa_plot_df = cpa_plot_df, 
+      p_pronoun = add_ef_p_pronoun, 
+      cpa_plot_df = cpa_input_df, 
       cpa_plot_opts = cpa_plot_opts, 
-      cpa_plot_df_pronoun = cpa_plot_df_pronoun, 
+      cpa_plot_df_pronoun = cpa_input_df_pronoun, 
       base_plot_df = plot_df, 
       plot_opts = plot_opts, 
       base_plot_df_pronoun = base_plot_df_pronoun, 
@@ -108,7 +93,7 @@ cpaTabServer = function(input, output, session, previousData,
       show_original_and_event_frequency = show_original_and_event_frequency
     )
     
-    codes$add_markers = add_markers_code
+    codes$p = add_markers_code
     
     codes
   })
@@ -118,6 +103,7 @@ cpaTabServer = function(input, output, session, previousData,
     req(isDataLoaded())
     timePlot()
   })
+  
   
   output$eventPlotContainer = renderUI({
     print("rerender event plot container")
@@ -292,13 +278,13 @@ cpaTabServer = function(input, output, session, previousData,
     plot_opts = smoothedPlotOptions
     cpa_input = cpaInputData()
     mask = list()
-    mask[[expr_text(cpa_plot_df_pronoun)]] = cpa_input
+    mask[[expr_text(cpa_input_df_pronoun)]] = cpa_input
     eval_tidy(cpaMarkersCode(), data = mask)
   })
   
   cpaInputData = reactive({
     req(previousData())
-    eval_tidy(cpaInputDataCode(), data = makeDataMask(previousData()))
+    eval_tidy(cpaInputDataCode())
   })
   
   cpaInputDataCode = reactive({
@@ -306,7 +292,7 @@ cpaTabServer = function(input, output, session, previousData,
     
     ds = doSmooth()
     if(ds)
-      expr(!!cpa_plot_df_pronoun <- !!sym(input_sym) %>% 
+      expr(!!cpa_input_df_pronoun <- !!sym(input_sym) %>% 
              preprocessForCpa(
                !!(preprocess$smooth_window_n), 
                agg_fn_expr = !!(preprocess$agg_fn_expr),
@@ -316,7 +302,7 @@ cpaTabServer = function(input, output, session, previousData,
              )
       )
     else
-      expr(!!cpa_plot_df_pronoun <- !!sym(input_sym))
+      expr(!!cpa_input_df_pronoun <- !!sym(input_sym))
   })
   
   cpaMarkersCode = reactive({
@@ -328,9 +314,9 @@ cpaTabServer = function(input, output, session, previousData,
     
     cpa_params = reactiveValuesToList(cpaParams)
     cpa_params$submit_valid = NULL
-    cpaPipelineCode(cpa_plot_df_pronoun, sym(cpaIndexColumn()), sym(cpaInputColumn()), 
-                    output_sym = sym(expr_text(cpa_markers_pronoun)),
-                    facet_column = facet_col_sym, !!!cpa_params)
+    cpaPipelineCode(cpa_input_df_pronoun, sym(cpaIndexColumn()), sym(cpaInputColumn()), 
+                    output_sym = cpa_markers_pronoun, facet_column = facet_col_sym, 
+                    !!!cpa_params)
   })
 
   observeEvent(doSmooth(), {print("do smooth changed")})
@@ -356,37 +342,35 @@ cpaTabServer = function(input, output, session, previousData,
   
   
   #----Source Code----
-  myPlotSourceString = reactive({
+  myTabAndPreviousSourceString = reactive({
     req(previousSourceString())
     
-    plot_codes = plotCodes()
-    
     expressionsToString(
-      mySourceString(),
+      "#Previous Tabs",
+      previousSourceString(),
       "",
-      "#Prepare Plot Input",
-      plot_codes$prepare_plot_input,
+      "#Current Tab",
+      myTabCode(),
       "",
-      "#Base Plot",
-      plot_codes$base_plot,
-      "",
-      "#Plot Event Frequency Overlay",
-      plot_codes$add_event_freq,
-      "",
-      "#Plot CPA Markers",
-      plot_codes$add_markers
+      "plot(p)"
     )
+  })
+  
+  mySourceCode = reactive({
+    req(isDataLoaded())
+    
+    codes = list()
+    codes[[et(cpa_input_df_pronoun)]] = cpaInputDataCode()
+    codes[[et(cpa_markers_pronoun)]] = cpaMarkersCode()
+    
+    codes
   })
   
   mySourceString = reactive({
     expressionsToString(
       previousSourceString(),
       "",
-      "#CPA Plot DF",
-      cpaInputDataCode(),
-      "",
-      "#CPA Markers",
-      cpaMarkersCode()
+      mySourceCode()
     )
   })
   
@@ -404,14 +388,9 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   output$mySource = renderText({
-    myPlotSourceString()
+    myTabAndPreviousSourceString()
   })
   
-  makeDataMask = function(data) {
-    mask = list()
-    mask[[input_sym]] = data
-    mask
-  }
   
   #----Return----
   ret = reactiveValues()
