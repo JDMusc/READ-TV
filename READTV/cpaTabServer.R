@@ -38,21 +38,23 @@ cpaTabServer = function(input, output, session, previousData,
     codes = list()
     
     cpa_input_df = cpaInputData()
-    prev_data_df = previousData()
-    filtered_data <- prev_data_df
     show_original = showOriginal()
     show_original_and_event_frequency = showOriginalAndEventFrequency()
     
     plot_opts = plotOptions
     cpa_plot_opts = smoothedPlotOptions
     
-    prepare_plot_input = generatePreparePlotCode(quo(filtered_data),
-                                                 plot_opts,
-                                                 base_plot_df_pronoun)
+    prepare_plot_input = generatePreparePlotCode(
+      previousData(),
+      plot_opts,
+      df_in_pronoun = input_sym,
+      df_out_sym = base_plot_df_pronoun)
     
     codes[[et(base_plot_df_pronoun)]] = prepare_plot_input
     
-    plot_df = eval_tidy(prepare_plot_input)
+    mask = list()
+    mask[[et(input_sym)]] = previousData()
+    plot_df = eval_tidy(prepare_plot_input, data = mask)
     
     base_p_pronoun = sym("base_p")
     base_plot_code = cpaTabLogic.basePlotCode(

@@ -6,6 +6,7 @@ basicDisplayTabServer = function(input, output, session, data,
                               output_sym = sym('filtered_data')){
   ns = session$ns
   f = stringr::str_interp
+  et = expr_text
   
   #----Filter Data----
   dataFilter = callModule(dataFilterServer, "dataFilter", data,
@@ -68,9 +69,9 @@ basicDisplayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     
     mask = runExpressions(currentTabCode(), list(data = data()))
-    filtered_data = mask$filtered_data
     
-    generatePreparePlotCode(quo(filtered_data), customizeDisplay)
+    generatePreparePlotCode(mask[[et(output_sym)]], customizeDisplay, 
+                            df_in_pronoun = output_sym)
   })
   
   
@@ -194,11 +195,11 @@ basicDisplayTabServer = function(input, output, session, data,
   currentTabCode = reactive({
     req(isDataLoaded())
     
-    selected_code = dataFilter$selectedQuery()
-    filtered_code = dataFilter$filteredQuery()
+    codes = list()
+    codes[[et(select_output_sym)]] = dataFilter$selectedQuery()
+    codes[[et(output_sym)]] = dataFilter$filteredQuery()
     
-    exprs(selected_data = !!selected_code, 
-          filtered_data = !!filtered_code)
+    codes
   })
   
   currentTabWithPlotCode = reactive({

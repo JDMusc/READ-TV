@@ -4,6 +4,7 @@ cpaOverlayTabServer = function(input, output, session, data,
                                cpa, filteredPlotOpts,
                                previousSourceString,
                                input_sym = sym("data"),
+                               cpa_markers_pronoun = sym("cpa_markers"),
                                select_output_sym = sym("selected_data2"),
                                output_sym = sym("filtered_data2")){
   ns = session$ns
@@ -11,8 +12,7 @@ cpaOverlayTabServer = function(input, output, session, data,
   #----Code Gen Symbols and Pronouns----
   f = stringr::str_interp
   prepare_in = as.character(output_sym)
-  plot_in = sym("plot_df")
-  cpa_markers_pronoun = sym("cpa_markers")
+  plot_in_sym = sym("plot_df")
   et = expr_text
   
   #----Filter Data----
@@ -37,6 +37,8 @@ cpaOverlayTabServer = function(input, output, session, data,
     
     mask = list()
     mask[[et(input_sym)]] = data()
+    mask[[et(cpa_markers_pronoun)]] = cpa$cpaMarkers()
+    
     mask = runExpressions(currentTabWithPlotCode(), mask)
     
     mask$p
@@ -57,18 +59,18 @@ cpaOverlayTabServer = function(input, output, session, data,
     
     plot_opts = customizeDisplay
     
-    filtered_data2 = filteredData()
-    codes[[et(plot_in)]] = generatePreparePlotCode(
-      quo(filtered_data2), 
+    codes[[et(plot_in_sym)]] = generatePreparePlotCode(
+      filteredData(), 
       customizeDisplay,
-      df_out_sym = plot_in)
+      df_in_pronoun = output_sym,
+      df_out_sym = plot_in_sym)
     
-    plot_df = eval_tidy(codes[[et(plot_in)]],
+    plot_df = eval_tidy(codes[[et(plot_in_sym)]],
                         data = list(filtered_data2 = filteredData()))
     
     base_p_pronoun = sym("base_p")
     base_plot_code = generateTimePlotCode(plot_df, plot_opts,
-                                          plot_data_pronoun = plot_in,
+                                          plot_data_pronoun = plot_in_sym,
                                           out_p_pronoun = base_p_pronoun)
     codes[[et(base_p_pronoun)]] = base_plot_code
     
@@ -86,12 +88,6 @@ cpaOverlayTabServer = function(input, output, session, data,
     codes
   })
   
-  
-  makeDataMask = function(filtered_data) {
-    mask = list()
-    mask[[prepare_in]] = filtered_data
-    mask
-  }
   
   plotHeight = reactive({
     if(is.null(customizeDisplay$plotHeight)) 400

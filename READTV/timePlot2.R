@@ -1,4 +1,5 @@
-generatePreparePlotCode <- function(data_quo, plot_opts,
+generatePreparePlotCode <- function(data, plot_opts,
+                                    df_in_pronoun = sym("data"),
                                     df_out_sym = sym("plot_data")) {
   #----Field Extractors---
   no_selection = getElementSafe('no_selection', plot_opts, '_None_')
@@ -25,8 +26,7 @@ generatePreparePlotCode <- function(data_quo, plot_opts,
   
   
   #----Y Column----
-  pre_plot_rhs = get_expr(data_quo)
-  
+  pre_plot_rhs = df_in_pronoun
   
   if(y_col == no_selection) {
     pre_plot_rhs = expr(!!pre_plot_rhs %>% 
@@ -35,7 +35,7 @@ generatePreparePlotCode <- function(data_quo, plot_opts,
     is_y_bool = FALSE
     y_col = 'Event'
   } else
-    is_y_bool = eval_tidy(data_quo) %>% 
+    is_y_bool = data %>% 
     pull(y_col) %>% 
     is.logical
   
@@ -47,13 +47,11 @@ generatePreparePlotCode <- function(data_quo, plot_opts,
   
   
   #----Shape Column----
-  if(shape_col != no_selection) {
-    data = eval_tidy(data_quo)
+  if(shape_col != no_selection)
     if(!is.factor(data[[shape_col]]))
       pre_plot_rhs = expr(
         !!pre_plot_rhs %>% 
           mutate(!!sym(shape_col) := factor(!!sym(shape_col))))
-  }
   
   
   #----Facet----
