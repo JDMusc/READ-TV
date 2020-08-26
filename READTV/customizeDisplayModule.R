@@ -234,7 +234,9 @@ customizeDisplayServer = function(input, output, session, data) {
         return()
       
       sliderInput(ns("facetRowsPerPage"), "Items Per Page",
-                  min = 2, max = 20, value = 10)
+                  min = 2, max = 20, 
+                  value = ifelse(ret$facetRowsPerPage == no_selection, 
+                                 10, ret$facetRowsPerPage))
     })
     
     observeEvent(input$modalSubmit, {
