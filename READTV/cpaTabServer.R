@@ -2,14 +2,15 @@
 cpaTabServer = function(input, output, session, previousData, 
                         isDataLoaded, previousPlotOpts, 
                         facetPageN, previousSourceString,
-                        input_sym = sym("filtered_data")){
+                        input_sym = sym("filtered_data"),
+			cpa_markers_sym = sym("cpa_markers")){
   ns = session$ns
   
   
   #----Code Gen Symbols and Pronouns----
   et = expr_text
   base_plot_df_pronoun = sym("base_plot_df")
-  cpa_markers_pronoun = sym("cpa_markers")
+  cpa_markers_sym = sym("cpa_markers")
   cpa_input_df_pronoun = sym("cpa_input_df")
   
   
@@ -89,7 +90,7 @@ cpaTabServer = function(input, output, session, previousData,
       base_plot_df = plot_df, 
       plot_opts = plot_opts, 
       base_plot_df_pronoun = base_plot_df_pronoun, 
-      cpa_markers_pronoun = cpa_markers_pronoun, 
+      cpa_markers_pronoun = cpa_markers_sym, 
       add_markers = doPlotCpa(), 
       show_original = show_original, 
       show_original_and_event_frequency = show_original_and_event_frequency
@@ -321,7 +322,7 @@ cpaTabServer = function(input, output, session, previousData,
     cpa_params = reactiveValuesToList(cpaParams)
     cpa_params$submit_valid = NULL
     cpaPipelineCode(cpa_input_df_pronoun, sym(cpaIndexColumn()), sym(cpaInputColumn()), 
-                    output_sym = cpa_markers_pronoun, facet_column = facet_col_sym, 
+                    output_sym = cpa_markers_sym, facet_column = facet_col_sym, 
                     !!!cpa_params)
   })
 
@@ -371,7 +372,7 @@ cpaTabServer = function(input, output, session, previousData,
     
     codes = list()
     codes[[et(cpa_input_df_pronoun)]] = cpaInputDataCode()
-    codes[[et(cpa_markers_pronoun)]] = cpaMarkersCode()
+    codes[[et(cpa_markers_sym)]] = cpaMarkersCode()
     
     codes
   })

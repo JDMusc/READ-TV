@@ -4,14 +4,13 @@ cpaOverlayTabServer = function(input, output, session, data,
                                cpa, filteredPlotOpts,
                                previousSourceString,
                                input_sym = sym("data"),
-                               cpa_markers_pronoun = sym("cpa_markers"),
+                               cpa_markers_sym = sym("cpa_markers"),
                                select_output_sym = sym("selected_data2"),
                                output_sym = sym("filtered_data2")){
   ns = session$ns
   
   #----Code Gen Symbols and Pronouns----
   f = stringr::str_interp
-  prepare_in = as.character(output_sym)
   plot_in_sym = sym("plot_df")
   et = expr_text
   
@@ -37,7 +36,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     
     mask = list()
     mask[[et(input_sym)]] = data()
-    mask[[et(cpa_markers_pronoun)]] = cpa$cpaMarkers()
+    mask[[et(cpa_markers_sym)]] = cpa$cpaMarkers()
     
     mask = runExpressions(currentTabWithPlotCode(), mask)
     
@@ -59,14 +58,15 @@ cpaOverlayTabServer = function(input, output, session, data,
     
     plot_opts = customizeDisplay
     
+    mask = list()
+    mask[[et(output_sym)]] = filteredData()
     codes[[et(plot_in_sym)]] = generatePreparePlotCode(
-      filteredData(), 
+      mask[[et(output_sym)]], 
       customizeDisplay,
       df_in_pronoun = output_sym,
       df_out_sym = plot_in_sym)
     
-    plot_df = eval_tidy(codes[[et(plot_in_sym)]],
-                        data = list(filtered_data2 = filteredData()))
+    plot_df = eval_tidy(codes[[et(plot_in_sym)]], data = mask)
     
     base_p_pronoun = sym("base_p")
     base_plot_code = generateTimePlotCode(plot_df, plot_opts,
@@ -77,7 +77,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     y_col = plot_opts$yColumn
     if(y_col == filteredPlotOpts$no_selection) y_col = NULL
     add_markers_code = expr(
-      p <- addCpaMarkersToPlot(!!base_p_pronoun, !!cpa_markers_pronoun,
+      p <- addCpaMarkersToPlot(!!base_p_pronoun, !!cpa_markers_sym,
                           !!output_sym, y_column = !!(y_col)))
     
     if(showMarkers())
@@ -209,9 +209,11 @@ cpaOverlayTabServer = function(input, output, session, data,
   currentTabCode = reactive({
     req(isDataLoaded())
     
-    list(
-      selected_data2 = dataFilter$selectedQuery(),
-      filtered_data2 = dataFilter$filteredQuery())
+    codes = list()
+    codes[[et(select_output_sym)]] = dataFilter$selectedQuery()
+    codes[[et(output_sym)]] = dataFilter$filteredQuery()
+
+    codes
   })
   
   fullSourceWithPlotString = reactive({

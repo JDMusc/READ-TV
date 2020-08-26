@@ -25,17 +25,21 @@ mainDisplayServer = function(input, output, session){
   facetPageN = basicDisplayTab$facetPageN
   
   #----CPA----
+  cpaMarkersSym = sym("cpa_markers")
   cpa = callModule(cpaTabServer, "cpa",
                    filteredData, isDataLoaded, 
                    customizeDisplay, facetPageN,
                    basicDisplayTab$fullSourceString,
-                   input_sym = basicDisplayOutputSym)
+                   input_sym = basicDisplayOutputSym,
+                   cpa_markers_sym = cpaMarkersSym)
   
   #----CPA Overlay----
   cpaOverlay = callModule(cpaOverlayTabServer, "cpaOverlay",
                           data, isDataLoaded,
                           cpa, customizeDisplay,
-                          cpa$fullSourceString)
+                          cpa$fullSourceString,
+                          input_sym = dataUploadOutputSym,
+                          cpa_markers_sym = cpaMarkersSym)
   
   #-----Source Code----
   sourceCode <- callModule(sourceCodeServer, "sourcecode", 
