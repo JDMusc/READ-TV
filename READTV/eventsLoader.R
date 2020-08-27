@@ -26,30 +26,39 @@ eventsLoader = function(input, output, session, output_sym) {
   
   data = reactive({
     req(datapath())
-    datap = datapath()
     
-    datap %>% 
-      generateLoadFileCode %>% 
-      eval_tidy
+    eval_tidy(currentCode(), data = list(f_name = datapath()))
   })
   
-  mySourceString = reactive({
+  
+  quickInspect = reactive({
+    req(datapath())
+    
+    quickLoad(datapath())
+  })
+  
+  
+  sourceString = reactive({
     req(name())
     f_name = name()
     f_name_var = "f_name"
     
     expressionsToString(
       f("${f_name_var} = \"${f_name}\" #update local file path"),
-      sym(f_name_var) %>% generateLoadFileCode
+      currentCode()
     )
   })
   
-  generateLoadFileCode = function(filename_sym)
-    expr(!!(output_sym) <- !!(filename_sym) %>% loadEventsWithRelativeAndDeltaTime)
+  currentCode = reactive({
+    req(datapath())
+    
+    datapath() %>% loadEventsWithRelativeAndDeltaTimeCode(output_sym)
+  })
+  
 
   return(
     list(name = name, data = data,
          datapath = datapath,
-         mySourceString = mySourceString)
+         sourceString = sourceString)
     )
 }

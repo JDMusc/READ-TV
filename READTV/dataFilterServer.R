@@ -25,7 +25,7 @@ dataFilterServer = function(input, output, session, data,
     req(data())
     
     selected_vals = selectedVals()
-    generateSelectedQuery2(in_pronoun,
+    generateSelectedQuery(in_pronoun,
                            selected_pronoun,
                            selected_vals)
   })
@@ -65,7 +65,7 @@ dataFilterServer = function(input, output, session, data,
 
 	  for(col in cols) {
 		  others = setdiff(cols, col)
-	  	  qry = generateSelectedQuery2(
+	  	  qry = generateSelectedQuery(
 	  	    in_pronoun, out_pronoun,
 	  	    selected_vals[others])
 	  	  

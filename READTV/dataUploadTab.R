@@ -96,16 +96,19 @@ dataUploadTabServer = function(input, output, session,
   
   
   #----Source Code----
-  mySourceString = reactive({
-    req(eventsInformation$mySource())
+  fullSourceString = reactive({
+    req(eventsInformation$sourceString())
     
-    eventsInformation$mySource()
+    expressionsToString(
+      "#Load Data",
+      eventsInformation$sourceString()
+    )
   })
   
   output$sourceCodeSubTab = renderText({
-    req(mySourceString())
+    req(fullSourceString())
     
-    mySourceString()
+    fullSourceString()
   }
   )
   
@@ -116,6 +119,6 @@ dataUploadTabServer = function(input, output, session,
     fileName = eventsInformation$name,
     headerMinimalInformation = headerMinimalInformation,
     isDataLoaded = isDataLoaded,
-    mySourceString = mySourceString
+    fullSourceString = fullSourceString
   ))
 }

@@ -16,7 +16,7 @@ mainDisplayServer = function(input, output, session){
   basicDisplayTab = callModule(basicDisplayTabServer, 
                                "basicDisplay", 
                                data, fileName, isDataLoaded,
-                               dataUploadTab$mySourceString,
+                               dataUploadTab$fullSourceString,
                                input_sym = dataUploadOutputSym,
                                output_sym = basicDisplayOutputSym)
   dataFilter = basicDisplayTab$dataFilter
@@ -40,9 +40,4 @@ mainDisplayServer = function(input, output, session){
                           cpa$fullSourceString,
                           input_sym = dataUploadOutputSym,
                           cpa_markers_sym = cpaMarkersSym)
-  
-  #-----Source Code----
-  sourceCode <- callModule(sourceCodeServer, "sourcecode", 
-			   customizeDisplay, dataFilter,
-  			   eventsInformation, isDataLoaded)
 }
