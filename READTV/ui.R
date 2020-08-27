@@ -1,5 +1,5 @@
 function(request)
   fluidPage(
-    bookmarkButton(),
+    #bookmarkButton(),
     uiOutput("mainDisplay")
   )
