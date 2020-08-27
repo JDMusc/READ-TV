@@ -6,11 +6,12 @@ dataUploadTabUI = function(id) {
     uiOutput(ns("headerInformation")),
     div(id = ns("loadDataHeader"),
         fluidRow(
-          eventsLoaderUI(ns("loadData"))),
-        fluidRow(
-          metaQueryLoaderUI(ns("loadMetaData")),
-          metaQueryUI(ns("metaqueryui"))
+          eventsLoaderUI(ns("loadData"))
         ),
+        #fluidRow(
+        #  metaQueryLoaderUI(ns("loadMetaData")),
+        #  metaQueryUI(ns("metaqueryui"))
+        #),
         fluidRow(
           column(uiOutput(ns("sidePanel")),
                  width = 12)
