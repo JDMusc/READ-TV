@@ -10,8 +10,9 @@ eventsLoader = function(input, output, session, output_sym) {
   ns = session$ns
   f = stringr::str_interp
   
-  eventDataF = callModule(fileWellServer, "filewell", "Event Data", 
-                          '../data/tc_prepped_events.csv')
+  pre_transform_data_sym = sym("pre_transform_data")
+  
+  eventDataF = callModule(fileWellServer, "filewell", "Event Data")
   
   name = reactive({
     req(eventDataF())
@@ -25,16 +26,36 @@ eventsLoader = function(input, output, session, output_sym) {
   })
   
   data = reactive({
-    req(datapath())
+    if(!isValidRaw())
+      req(dataTransform$ready())
     
-    eval_tidy(currentCode(), data = list(f_name = datapath()))
+    c_code = currentCode()
+    
+    eval_tidy(c_code, list(f_name = datapath()))
   })
   
   
   quickInspect = reactive({
     req(datapath())
     
-    quickLoad(datapath())
+    quickLoad(datapath(), n_max = 100)
+  })
+  
+  isValidData = function(df) {
+    has_cols = ('Case' %in% colnames(df)) &
+      ('Time' %in% colnames(df))
+    
+    if(!has_cols)
+      return(FALSE)
+    
+    is.timepoint(df$Time) | is.numeric(df$Time)
+  }
+  
+  
+  isValidRaw = reactive({
+    req(datapath())
+    
+    isValidData(quickInspect())
   })
   
   
@@ -52,13 +73,32 @@ eventsLoader = function(input, output, session, output_sym) {
   currentCode = reactive({
     req(datapath())
     
-    datapath() %>% loadEventsWithRelativeAndDeltaTimeCode(output_sym)
+    run_data_transform = dataTransform$ready()
+    
+    if(run_data_transform)
+      datapath() %>% 
+        loadEventsWithRelativeAndDeltaTimeCode(output_sym, 
+                                               cols = dataTransform$mutateCols())
+    else
+      datapath() %>% 
+        loadEventsWithRelativeAndDeltaTimeCode(output_sym)
+  })
+  
+  dataTransform = callModule(dataTransformServer, 'dataTransform',
+                             quickInspect, 
+                             pre_transform_data_sym, output_sym)
+  
+  showTransformPopup = reactive({
+    dataTransform$popup(TRUE)
   })
   
 
   return(
     list(name = name, data = data,
          datapath = datapath,
-         sourceString = sourceString)
+         sourceString = sourceString,
+         showTransformPopup = dataTransform$popup,
+         quickInspect = quickInspect,
+         isValidRaw = isValidRaw)
     )
 }

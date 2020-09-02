@@ -6,7 +6,7 @@ fileWellUI = function(id) {
 }
 
 
-fileWellServer = function(input, output, session, fileType, testFile){
+fileWellServer = function(input, output, session, fileType, testFile = ""){
   ns = session$ns
   
   isMinimized = reactiveVal(F)
@@ -22,7 +22,7 @@ fileWellServer = function(input, output, session, fileType, testFile){
     else
       wellPanel(
         uiOutput(ns("minimize")),
-        fileInput(ns("loadF"), label, accept = c('.csv', '.rds', '.RDS')),
+        fileInput(ns("loadF"), label, accept = c('.csv', '.rds', '.RDS', '.CSV')),
         uiOutput(ns("filename")))
   })
   

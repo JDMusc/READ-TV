@@ -4,46 +4,56 @@ validTypes = function()
   c('COO', 'COM', 'EXT', 'TRN', 'EQ', 'ENV', 'PF', 'SDM', 'IC')
 
 
-loadFileExpr = function(f_name) f_name %>% 
-  file_ext %>% 
-  tolower %>% 
-  switch(
-    'rds' = expr(read_rds),
-    'csv' = expr(read_csv)
+loadFileExpr = function(f_name, ...) {
+  n_args = nargs()
+  
+  f_name %>% 
+    file_ext %>% 
+    tolower %>% 
+    switch(
+      'rds' = expr(read_rds),
+      'csv' = if(n_args > 1)
+        expr(read_csv(!!!(rlang::list2(...))))
+      else
+        expr(read_csv)
     )
+}
 
 
-loadEvents = function(f_name) f_name %>% 
-  loadEventsCode %>% 
-  eval_tidy(data = list(f_name = f_name))
-
-
-quickLoadEventsCode = function(f_name, ...)
-  expr(f_name %>% (!!(loadFileExpr(f_name)))(!!!(rlang::list2(...))))
+quickLoadEventsCode = function(f_name, n_max = 100, cols = list(),
+                               ...) {
+  args = rlang::list2(n_max = n_max) %>% append(rlang::list2(...))
+  expr(f_name %>% 
+         (!!(loadFileExpr(f_name, !!!args))) %>% 
+         slice(1:!!n_max)) %>% 
+    appendColsRhs(cols)
+}
 
 quickLoad = function(f_name, n_max = 100, ...)
   eval_tidy(quickLoadEventsCode(f_name, n_max = n_max, ...), 
             data = list(f_name = f_name))
 
 
-loadEventsCodeRhs = function(f_name, time_col = NULL, case_col = NULL) {
+loadEventsCodeRhs = function(f_name, cols = list(), ...) {
   rhs <- expr(f_name %>% !!(loadFileExpr(f_name)))
   
-  rhs
+  appendColsRhs(rhs, cols)
 }
 
 
-loadEventsWithRelativeAndDeltaTime = function(data_f) 
-  data_f %>% 
-  #loadEventsAsTsibble(index = index, key = key) %>% 
-  loadEvents %>%
-  deltaTimes %>% 
-  relativeTimes %>%
-  filter(RelativeTime >= 0)
+appendColsRhs = function(code, cols) {
+  for(i in seq_along(cols)) {
+    nm = names(cols)[[i]]
+    val = cols[[i]]
+    code = expr(!!code %>% mutate(!!sym(nm) := !!val))
+  }
+  
+  code
+}
 
 
-loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym) {
-  base = loadEventsCodeRhs(data_f)
+loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym, cols = list()) {
+  base = loadEventsCodeRhs(data_f, cols)
   expr(!!output_sym <- !!base %>% 
          group_by(Case) %>% 
          group_modify(~ .x %>% mutate(deltaTime = Time - lag(Time),
@@ -64,33 +74,12 @@ loadEventsAsTsibble = function(f_name, index = 'DateTime', key = NULL) {
   return(events) }
 
 
-loadDemo = function(events) events %>% relativeTimes
-
-
-relativeTimes = function(events) events %>% 
-  caseGroupedModify(
-    function(df) df %>% 
-      mutate(RelativeTime = Time - min(Time[!is.na(Time)])))
-
-
-deltaTimes = function(events) events %>% 
-  caseGroupedModify(
-    function(df) df %>% mutate(deltaTime = Time - lag(Time))
-  )
-
-
 deltaTimesCodeRhs = function()
   caseGroupedModifyCodeRhs(.x %>% mutate(deltaTime = Time - lag(Time)))
 
 
 relativeTimesCodeRhs = function()
   caseGroupedModifyCodeRhs(.x %>% mutate(RelativeTime = Time - min(Time[!is.na(Time)])))
-
-
-caseGroupedModify = function(events, modify_fn) events %>%
-  group_by(Case) %>% 
-  group_modify(~ modify_fn(.x)) %>% 
-  ungroup
 
 
 caseGroupedModifyCodeRhs = function(modify_expr)

@@ -60,11 +60,11 @@ dataUploadTabServer = function(input, output, session,
   })
   
   #---Data--------
-  eventsInformation = callModule(eventsLoader, "loadData",
-                                 output_sym)
+  eventsInformation = callModule(eventsLoader, "loadData", output_sym)
+  
   isDataLoaded = reactiveVal(F)
   data <- reactive({
-    req(eventsInformation$name())
+    req(eventsInformation$data())
     
     tbl = eventsInformation$data()
     if(isMetaDataLoaded()) {
@@ -72,6 +72,14 @@ dataUploadTabServer = function(input, output, session,
     }
     isDataLoaded(T)
     tbl
+  })
+  
+  
+  observe({
+    req(eventsInformation$quickInspect())
+    
+    if(!eventsInformation$isValidRaw())
+      eventsInformation$showTransformPopup(TRUE)
   })
   
   

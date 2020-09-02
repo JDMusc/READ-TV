@@ -3,8 +3,10 @@ selectableChoices = function(choices) c("All" = "All", choices)
 
 
 #https://stackoverflow.com/questions/8197559/emulate-ggplot2-default-color-palette
-eventTypeColors <- function() {
-  types = sort(validTypes())
+eventTypeColors <- function(types, do_sort = TRUE) {
+  if(do_sort) 
+    types = sort(types)
+  
   n_types = length(types)
   hues = seq(15, 375, length = n_types + 1)
   colors = hcl(h = hues, l = 65, c = 100)[1:n_types]
@@ -93,3 +95,29 @@ runExpressions = function(exs, mask) {
   }
   mask
 }
+
+
+not_equals = function(e1, e2)
+  !(equals(e1, e2))
+
+equals_null_safe = function(e1, e2) {
+  e1_null = is.null(e1)
+  e2_null = is.null(e2)
+  
+  if(e1_null != e2_null)
+    FALSE
+  else if(e1_null & e2_null)
+    TRUE
+  else
+    equals(e1, e2)
+}
+
+not_equals_null_safe = function(e1, e2)
+  !equals_null_safe(e1, e2)
+
+str_un_title = function(string) string %>% 
+  str_sub(1, 1) %>% 
+  str_to_lower %>% 
+  paste0(str_sub(string, 2))
+  
+  

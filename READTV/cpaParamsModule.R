@@ -32,8 +32,27 @@ cpaParamsServer = function(input, output, session, cpaData) {
   
   #----Number of Change Points----
   output$qSelect = renderUI({
-    q = defaultOrRet('Q')
-    selectInput(ns("qSelect"), "# Change Pts", 1:6, selected = q)
+    req(cpaData())
+
+    grs = groups(cpaData())
+    if(!is.null(grs))
+      nrow_safe = group_map(~ nrow(.x))
+    else
+      nrow_safe = nrow
+    
+    max_n = cpaData() %>% 
+      nrow_safe %>% 
+      as.integer %>% 
+      discard(~ is.na(.x)) %>% 
+      max
+    
+    default = max_n/10 %>% 
+      as.integer %>% 
+      {if(. == 0) 1 else .}
+    
+    q = defaultOrRet('Q', default)
+
+    selectInput(ns("qSelect"), "# Change Pts", 1:max_n, selected = q)
   })
   
   
@@ -54,8 +73,8 @@ cpaParamsServer = function(input, output, session, cpaData) {
   #----Submit----
   ret = reactiveValues(submit_valid = F)
   
-  defaultOrRet = function(field) 
-    getElementSafe(field, ret, defaults[[field]])
+  defaultOrRet = function(field, def = defaults[[field]]) 
+    getElementSafe(field, ret, def)
   
   observeEvent(input$cpaSubmit, {
     ret$Q = as.numeric(input$qSelect)
