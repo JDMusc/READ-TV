@@ -72,7 +72,8 @@ cpaPreprocessServer = function(input, output, session, previousData,
     
     value = previousData() %>% 
       pull(!!sym(previousPlotOpts$xColumn)) %>% 
-      {. - dplyr::lag(., default = 0)} %>% 
+      {. - dplyr::lag(.)} %>% 
+      replace_na(0) %>% 
       {.[.>=0]} %>% 
       mean %>% 
       round(2)
