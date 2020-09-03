@@ -66,8 +66,6 @@ dataTransformServer = function(input, output, session, quickInspect,
   quickInspectPreview = reactive({
     req(quickInspect())
     
-    #mask = list()
-    #mask[[expr_text(pre_transform_sym)]] = quickInspect()
     qi = eval_tidy(quickInspectPreviewCode(), data = list(data = quickInspect()))
     
     desired_cols %>% 
