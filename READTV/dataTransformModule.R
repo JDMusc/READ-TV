@@ -30,7 +30,7 @@ dataTransformServer = function(input, output, session, quickInspect,
                                  'Event.Type' = mock_event_type_val)
   doCreateColumn = desired_cols %>% 
     set_names %>% 
-    purrr::map(~ FALSE) %>% 
+    purrr::map(~ .x == 'Case') %>% 
     {do.call(reactiveValues, .)}
   
   #----Return Value----

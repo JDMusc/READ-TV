@@ -35,8 +35,8 @@ cpaParamsServer = function(input, output, session, cpaData) {
     req(cpaData())
 
     grs = groups(cpaData())
-    if(!is.null(grs))
-      nrow_safe = group_map(~ nrow(.x))
+    if(!is_empty(grs))
+      nrow_safe = group_modify(nrow)
     else
       nrow_safe = nrow
     
