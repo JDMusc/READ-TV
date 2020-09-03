@@ -34,17 +34,6 @@ interEventTime = function(data, event_type, prev_event_type){
 }
 
 
-eventCount = function(data, time_n) {
-  n_rows = nrow(data)
-  data$WithinN = sapply(1:n_rows, 
-                        function(i) {
-                          nrow(withinTime(data, data$Time[i], time_n))
-                        }
-                        )
-  return(data)
-}
-
-
 cusum = function(arr) arr %>% {. - mean(.)} %>% cumsum %>% {append(0, .)}
 cusumDiff = function(arr) arr %>% cusum %>% {max(.) - min(.)}
 

@@ -1,9 +1,4 @@
 
-
-validTypes = function()
-  c('COO', 'COM', 'EXT', 'TRN', 'EQ', 'ENV', 'PF', 'SDM', 'IC')
-
-
 loadFileExpr = function(f_name, ...) {
   n_args = nargs()
   
@@ -61,17 +56,6 @@ loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym, cols = lis
          ungroup %>% 
          filter(RelativeTime > 0))
 }
-
-
-loadEventsAsTsibble = function(f_name, index = 'DateTime', key = NULL) {
-  events = read.csv(f_name, stringsAsFactors = F)
-  
-  if(!is.numeric(events[[index]]))
-  	events[[index]] = as.POSIXct(events[[index]])
-
-  events = as_tsibble(events, index = index, key = key, regular=F)
-  
-  return(events) }
 
 
 deltaTimesCodeRhs = function()
