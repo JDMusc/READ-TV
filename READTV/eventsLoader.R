@@ -6,13 +6,13 @@ eventsLoaderUI = function(id) {
 }
 
 
-eventsLoader = function(input, output, session, output_sym) {
+eventsLoader = function(input, output, session, output_sym, eventsPath = NULL) {
   ns = session$ns
   f = stringr::str_interp
   
   pre_transform_data_sym = sym("pre_transform_data")
   
-  eventDataF = callModule(fileWellServer, "filewell", "Event Data")
+  eventDataF = callModule(fileWellServer, "filewell", "Event Data", eventsPath)
   
   name = reactive({
     req(eventDataF())

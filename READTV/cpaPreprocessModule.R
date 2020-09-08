@@ -66,6 +66,45 @@ cpaPreprocessServer = function(input, output, session, previousData,
     smoothInputUIs %>% sapply(toggleSmoothControl)
   })
   
+  
+  #----Time Options----
+  showTimeOptions = reactive({
+    req(previousData())
+    
+    previousData() %>% 
+      pull(previousPlotOpts$xColumn) %>% 
+      {is.difftime(.) | is.timepoint(.)}
+  })
+  
+  timeChoices = c(
+    "nanoseconds",
+    "microseconds",
+    "milliseconds",
+    "picoseconds",
+    "seconds",
+    "minutes",
+    "hours",
+    "days",
+    "weeks",
+    "months",
+    "years"
+  )
+  
+  timeUnitsTextInput = function(tag, text_label, value) {
+    ti = textInput(ns(f("${tag}Text")), text_label,
+                   value = value)
+    
+    if(showTimeOptions())
+      fluidRow(
+        ti,
+        selectInput(ns(f("${tag}Units")), "Units",
+                    choices = timeChoices)
+      )
+    else
+      ti
+  }
+  
+  
   #----Window Width----
   output$windowWidth = renderUI({
     req(previousData())
@@ -80,7 +119,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
     
     value = getElementSafe("smooth_window_n", ret, value)
     
-    textInput(ns("windowWidthText"), "Interval Width",
+    timeUnitsTextInput("windowWidth", "Interval Width",
               value = value)
   })
   
@@ -90,13 +129,14 @@ cpaPreprocessServer = function(input, output, session, previousData,
     as.numeric(input$windowWidthText)
   })
   
+  
   #----Smooth Stride----
   output$smoothStride = renderUI({
     req(previousData())
     value = getElementSafe("smooth_stride", ret, 5)
     
-    textInput(ns("smoothStrideText"), "Interval Stride",
-              value = value)
+    timeUnitsTextInput("smoothStride", "Interval Stride",
+                       value = value)
   })
 
   #----Aggregate Function----

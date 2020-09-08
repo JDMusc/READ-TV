@@ -6,43 +6,58 @@ fileWellUI = function(id) {
 }
 
 
-fileWellServer = function(input, output, session, fileType, testFile = ""){
+fileWellServer = function(input, output, session, fileType, filepath = NULL){
   ns = session$ns
+  f = stringr::str_interp
   
   isMinimized = reactiveVal(F)
   
+  isFilePassed = reactive({
+    !is_empty(filepath)
+  })
+  
+  fileinfo = reactive({
+    if(isFilePassed())
+      list(name = basename(filepath), datapath = filepath)
+    else
+      input$loadF
+  })
+  
   fileLoaded = reactive({
-    return(!is.null(input$loadF))
+    return(!is.null(fileinfo))
   })
   
   output$loadData = renderUI({
-    label = paste("Load", fileType)
-    if(config.testing)
-      actionButton(inputId = ns("loadDataTest"), label = label)
-    else
+    if(!isFilePassed()) {
+      label = paste("Load", fileType)
       wellPanel(
         uiOutput(ns("minimize")),
         fileInput(ns("loadF"), label, accept = c('.csv', '.rds', '.RDS', '.CSV')),
         uiOutput(ns("filename")))
+    }
+    else
+      column(wellPanel(textOutput(ns("loadMessage"))), width = 12)
+  })
+  
+  output$loadMessage = renderText({
+    f("Passed ${filepath} for input data")
   })
   
   minimizeLabel = reactive({
-    if(isMinimized()) {
-      label = paste("Load", fileType)
-      if(fileLoaded()) label = paste("Load New", fileType)
-    }
-    else {
-      label = "Minimize"
-    }
-    
-    return(label)
+    if(isMinimized())
+      if_else(fileLoaded(), 
+              paste("Load New", fileType),
+              paste("Load", fileType)
+              )
+    else
+      "Minimize"
   })
   
   output$filename = renderText({
     req(isMinimized())
-    req(input$loadF)
+    req(fileinfo())
     
-    input$loadF$name
+    fileinfo()$name
   })
   
   output$minimize = renderUI({
@@ -60,11 +75,8 @@ fileWellServer = function(input, output, session, fileType, testFile = ""){
   })
   
   return(reactive({
-    if(config.testing){
-      list(name = testFile, datapath = testFile)
-    } else {
-      req(input$loadF)
-      input$loadF
-    }
+    req(fileinfo())
+    
+    fileinfo()
   }))
 }
