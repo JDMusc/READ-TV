@@ -36,15 +36,14 @@ cpaParamsServer = function(input, output, session, cpaData) {
 
     grs = groups(cpaData())
     if(!is_empty(grs))
-      nrow_safe = group_modify(nrow)
+      nrow_safe = function(df) group_map(df, ~ nrow(.x))
     else
       nrow_safe = nrow
     
     max_n = cpaData() %>% 
       nrow_safe %>% 
       as.integer %>% 
-      discard(~ is.na(.x)) %>% 
-      max
+      max(na.rm = TRUE)
     
     default = max_n/10 %>% 
       as.integer %>% 

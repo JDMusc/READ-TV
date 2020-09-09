@@ -12,7 +12,7 @@ generatePlotDefaults = function(no_selection, overrides = list()){
     shapeColumn = no_selection,
     colorColumn = no_selection,
     yColumn = no_selection,
-    xColumn = 'RelativeTime',
+    xColumn = 'Time',
     facetColumn = no_selection,
     facetOrder = no_selection,
     facetLabels = no_selection,

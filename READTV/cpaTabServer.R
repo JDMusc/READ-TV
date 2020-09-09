@@ -290,7 +290,6 @@ cpaTabServer = function(input, output, session, previousData,
     
     mask = list()
     mask[[et(input_sym)]] = previousData()
-    
     eval_tidy(cpaInputDataCode(), data = mask)
   })
   

@@ -65,6 +65,7 @@ cpaTabLogic.addCpaMarkersCode = function(
   cpa_markers_pronoun, 
   add_markers, show_original, show_original_and_event_frequency) {
   
+  x_col = plot_opts$xColumn
   if(add_markers) {
     use_cpa_y = !show_original
     if(show_original_and_event_frequency) {
@@ -82,13 +83,14 @@ cpaTabLogic.addCpaMarkersCode = function(
     if(use_cpa_y) {
       ref_data = cpa_plot_df_pronoun
       y_col = cpa_plot_opts$yColumn
+      x_col = cpa_plot_opts$xColumn
     } else {
       ref_data = base_plot_df_pronoun
       y_col = plot_opts$yColumn
     }
     
     rhs = expr(addCpaMarkersToPlot(!!p_pronoun, !!cpa_markers_pronoun,
-                                   !!ref_data, !!y_col)
+                                   !!ref_data, !!x_col, !!y_col)
     )
   }
   else

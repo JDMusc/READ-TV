@@ -52,7 +52,7 @@ loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym, cols = lis
   expr(!!output_sym <- !!base %>% 
          group_by(Case) %>% 
          group_modify(~ .x %>% mutate(deltaTime = Time - lag(Time),
-                                      RelativeTime = Time - min(Time[!is.na(Time)]))) %>% 
+                                      RelativeTime = Time - min(Time, na.rm = TRUE))) %>% 
          ungroup %>% 
          filter(RelativeTime > 0))
 }
@@ -63,7 +63,7 @@ deltaTimesCodeRhs = function()
 
 
 relativeTimesCodeRhs = function()
-  caseGroupedModifyCodeRhs(.x %>% mutate(RelativeTime = Time - min(Time[!is.na(Time)])))
+  caseGroupedModifyCodeRhs(.x %>% mutate(RelativeTime = Time - min(Time, na.rm = TRUE)))
 
 
 caseGroupedModifyCodeRhs = function(modify_expr)

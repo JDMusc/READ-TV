@@ -28,20 +28,6 @@ cpaToVerticalSegment = function(cpa_df) cpa_df %>%
   )
 
 
-cpaPipeline = function(data, time_column, values_column, facet_column = NULL, 
-                       cpa_params) {
-  is_facet = !is.null(facet_column)
-  if(is_facet) data %<>% 
-    group_by(!!sym(facet_column))
-  
-  data %>% 
-    group_modify(~ cpaPtsAndValues(
-      .x, calcCpa(as_tsibble(.x, index = time_column), 
-                  cpa_params = cpa_params, values_col = values_column)
-      ))
-}
-
-
 cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym, 
                            output_sym = sym("cpa_markers"), facet_column_sym = NULL,
                            ...) {
@@ -53,26 +39,15 @@ cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym,
   cpa_params = list2(...)
   
   rhs = expr(!!rhs %>% 
-               group_modify(~ cpaPtsAndValues(
-                 .x,
-                 !!(cptMeanCode(.x, !!(time_column_sym), !!(values_column_sym), !!!cpa_params))
-                 ))
+               filter(n() > 1) %>% 
+               group_modify(~ arrange(.x, !!time_column_sym)) %>% 
+               group_modify(~ cpt.mean(pull(.x, !!values_column_sym), 
+                                       !!!cpa_params) %>% 
+                              {data.frame(cpts = pull(.x, !!time_column_sym)[.@cpts], vals = .@param.est$mean)}
+               )
              )
   
   return(expr(!!output_sym <- !!rhs))
-}
-
-cptMeanCode = function(data_ensym, index_col_ensym, values_col_ensym, ...) {
-  cpa_params = list2(...)
-  if(is_empty(cpa_params)) cpa = expr(cpt.mean)
-  else cpa = expr(cpt.mean(!!!cpa_params))
-  
-  expr(!!ensym(data_ensym) %>% 
-         as_tsibble(index = !!ensym(index_col_ensym)) %>% 
-         arrange(!!ensym(index_col_ensym)) %>% 
-         pull(!!ensym(values_col_ensym)) %>% 
-         !!cpa
-  )
 }
 
 
@@ -106,19 +81,53 @@ preprocessForCpa = function(data, smooth_window_n,
     #facet_col = groups(data)[[1]] #only supports one facet column for now
     data %<>% 
       group_by(!!sym(facet_col)) %>% 
-      #group_modify ~ input_select_fn(.x) %>% 
       group_modify(~ mutate_fn(.x)) %>%
       group_modify(~ output_select_fn(.x)) %>% 
-      as_tsibble(index = !!sym(index_col), key = !!facet_col)
+      group_modify(~ as_tsibble(.x, index = index_col))
   }
   else
     data %<>%
-      #input_select_fn %>% 
       mutate_fn %>% 
       output_select_fn %>% 
       as_tsibble_fn
   
   data
+}
+
+
+preprocessForCpaCode = function(data, smooth_window_n, 
+                                index_col = 'RelativeTime', 
+                                values_col = NULL,
+                                output_col = 'CpaInput',
+                                stride = 1,
+                                agg_fn_expr = sum(.values)) {
+  rhs = expr(data)
+  
+  if(is.null(values_col)) 
+    rhs = expr(!!rhs %>% mutate(IsEvent = 1))
+  
+  agg_fn = new_function(exprs(.values = ), enexpr(agg_fn_expr))
+  
+  mutate_expr = expr(!!rhs %>% 
+    {withinTimeSeries(!!index_col, !!values_col,
+                      n = !!smooth_window_n, 
+                      agg_fn = agg_fn, 
+                      stride = !!stride)} %>% 
+      select(!!sym(output_col) := Value, !!sym(index_col) := Time)
+  )
+  
+  output_select_fn = function(data) data %>% 
+    select(!!sym(index_col), !!sym(output_col)) %>% 
+    distinct
+  
+  as_tsibble_fn = function(data) data %>% 
+    as_tsibble(index = !!sym(index_col))
+  
+  data %<>%
+    #input_select_fn %>% 
+    mutate_fn %>% 
+    output_select_fn %>% 
+    as_tsibble_fn
 }
 
 
@@ -155,38 +164,3 @@ cpaPtsAndValues = function(data, cpt_out, time_col = 'RelativeTime') {
   data.frame(cpts = cpts, vals = cpt_out@param.est$mean)
 }
 
-
-arrowDfFromCpaDf = function(cpa_df, yend, n_heads = 3) {
-  arrow_data = cpa_df
-  #for(i in 1:n_heads) {
-  #  arrow_data[paste0('_a', i)] = i/n_heads * yend
-  #}
-  
-  start_col = ncol(cpa_df) + 1
-  end_col = ncol(arrow_data)
-  mutate_fn = function(df) df %>% 
-    mutate(increases = (lead(vals, default = 0) - vals) > 0)
-  filter_last_fn = function(df) df %>% slice(-n())
-  arrow_data %>% 
-    group_modify(~ mutate_fn(.x)) %>% 
-    group_modify(~ filter_last_fn(.x)) %>% 
-    #pivot_longer(cols = start_col:end_col, values_to = 'yend') %>% 
-    rename(x = cpts) %>%
-    mutate(xend = x, y = if_else(increases, 0, yend),
-           yend = if_else(increases, yend, 0))
-}
-
-
-textDfFromCpaDf = function(cpa_df, y_offset = 1.1) {
-  calc_midpoint = function(cpts) {
-    starts = lag(cpts, default = 0)
-    (cpts - starts)/2 + starts
-  }
-  mutate_fn = function(df) df %>% 
-    mutate(midpoint = calc_midpoint(cpts))
-  
-  cpa_df %>% 
-    group_modify(~ mutate_fn(.x)) %>% 
-    rename(x = midpoint, label = vals) %>% 
-    mutate(y = y_offset)
-}

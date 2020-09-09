@@ -5,16 +5,26 @@ withinTime = function(time_data, time, n) time_data %>%
 
 withinTimeSeries = function(time_data, values_data, 
                             n = 4, agg_fn = sum, stride = 1) {
-  if(is.difftime(time_data))
-    time_data = as.numeric(time_data)
+  un_sequenced_time = time_data
   
-  time_pts = seq(from = min(time_data), to = max(time_data),
+  is_diff_time_input = is.difftime(time_data)
+  if(is_diff_time_input) {
+    base = lubridate::parse_date_time('01/01/1970', 'mdy')
+    units = attr(time_data, 'units')
+    un_sequenced_time = as.duration(time_data) + base
+  }
+  
+  time_pts_seq = seq(from = min(un_sequenced_time), to = max(un_sequenced_time),
                  by = stride)
-  vals = sapply(
-    time_pts, 
-    function(t) agg_fn(values_data[abs(time_data - t) <= n]))
   
-  data.frame(Time = time_pts, Value = vals)
+  vals = sapply(
+    time_pts_seq, 
+    function(t) agg_fn(values_data[abs(un_sequenced_time - t) <= n]))
+  
+  if(is_diff_time_input)
+    time_pts_seq = as.numeric(time_pts_seq - base, units)
+  
+  data.frame(Time = time_pts_seq, Value = vals)
 }
 
 
@@ -28,7 +38,7 @@ interEventTime = function(data, event_type, prev_event_type){
     arrange(Case, Time) %>%
     group_by(Case) %>%
     mutate(TimeDiff = Time - lag(Time)) %>%
-    filter(!is.na(TimeDiff)) %>%
+    drop_na(TimeDiff) %>%
     summarise(mnTime = weighted.mean(mean(TimeDiff), n_case),
               sdTime = weighted.mean(sd(TimeDiff), n_case))
 }

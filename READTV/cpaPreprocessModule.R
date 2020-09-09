@@ -77,17 +77,17 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   timeChoices = c(
-    "nanoseconds",
-    "microseconds",
-    "milliseconds",
-    "picoseconds",
-    "seconds",
-    "minutes",
-    "hours",
-    "days",
-    "weeks",
-    "months",
-    "years"
+    "dnanoseconds",
+    "dmicroseconds",
+    "dmilliseconds",
+    "dpicoseconds",
+    "dseconds",
+    "dminutes",
+    "dhours",
+    "ddays",
+    "dweeks",
+    "dmonths",
+    "dyears"
   )
   
   timeUnitsTextInput = function(tag, text_label, value) {
@@ -102,6 +102,20 @@ cpaPreprocessServer = function(input, output, session, previousData,
       )
     else
       ti
+  }
+  
+  
+  extractTimeValue = function(tag) {
+    val = input %>% extract2(f("${tag}Text")) %>% as.numeric
+    
+    if(showTimeOptions()) {
+      units = input %>% extract2(f('${tag}Units'))
+      
+      expr(!!val %>% !!parse_expr(units)) %>% 
+        eval_tidy
+    }
+    else
+      val
   }
   
   
@@ -126,7 +140,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   windowWidth = reactive({
     req(input$windowWidthText)
     
-    as.numeric(input$windowWidthText)
+    extractTimeValue('windowWidth')
   })
   
   
@@ -137,6 +151,13 @@ cpaPreprocessServer = function(input, output, session, previousData,
     
     timeUnitsTextInput("smoothStride", "Interval Stride",
                        value = value)
+  })
+  
+  
+  smoothStride = reactive({
+    req(input$smoothStrideText)
+    
+    extractTimeValue('smoothStride')
   })
 
   #----Aggregate Function----
@@ -158,10 +179,10 @@ cpaPreprocessServer = function(input, output, session, previousData,
   ret = reactiveValues()
   
   observeEvent(input$preprocessSubmit, {
-    ret$smooth_window_n = as.numeric(input$windowWidthText)
+    ret$smooth_window_n = windowWidth()
     ret$agg_fn_expr = aggregateFunctionExpr()
     ret$agg_fn_label = input$aggFn
-    ret$smooth_stride = as.numeric(input$smoothStrideText)
+    ret$smooth_stride = smoothStride()
     ret$do_smooth = doSmooth()
     shinyjs::disable("preprocessSubmit")
   })
