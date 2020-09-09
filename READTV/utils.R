@@ -35,38 +35,26 @@ printWithCountGen <- function(msg) {
 }
 
 
-applyQuery = function(qry, data) {
+applyQuery = function(filter_criterion, data)
+  filter_criterion %>%
+  makeFullQuery %>%
+  eval_tidy(data = list(data = data))
+
+
+makeFullQuery = function(filter_criterion, data_sym = sym('data')) {
+  f = stringr::str_interp
+  qry_expr = parse_expr(f('filter(${filter_criterion} )'))
+  expr(data %>% !!qry_expr)
+}
+
+
+doesFilterCompile = function(filter_criterion, data)
   try(
-    qry %>%
-      {paste0('data %>% filter(', ., ')')} %>%
-      {parse(text = .)} %>%
-      eval, 
-    silent = T)
-}
-
-
-applyQuery2 = function(qry_quo, env)
-  eval_tidy(qry_quo, env = env)
-
-
-doesQueryStringCompile = function(qry_string, data) {
-  result = try(
-    {
-      qry_expr = parse_expr(paste0('filter(',qry_string,' )'))
-      qry_expr = expr(data %>% !!qry_expr)
-      applyQuery2(qry_expr, env(data = data))
-    }, 
-    silent = T)
-  
-  return(!(class(result) == "try-error"))
-}
-
-
-doesQueryCompile2 = function(qry_quo, env) {
-  result = try(applyQuery2(qry_quo, env), silent = T)
-  
-  return(!(class(result) == "try-error"))
-}
+    applyQuery(filter_criterion, data),
+    silent = T) %>%
+  class %>%
+  not_equals('try-error') %>% 
+  all #can be more than one class
 
 
 getElementSafe = function(item_name, obj, default = NULL) {

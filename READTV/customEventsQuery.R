@@ -123,7 +123,7 @@ customEventsQueryServer = function(input, output, session, data,
     if(!hasQueryInput())
       return(TRUE)
     
-    doesQueryStringCompile(input$queryInput, data())
+    doesFilterCompile(input$queryInput, data())
   })
   
   
@@ -159,6 +159,7 @@ customEventsQueryServer = function(input, output, session, data,
   
   filteredData = reactive({
     req(hasQueryInput())
+    req(queryCompiles())
     
     return(applyQuery(query(), data()))
   })
