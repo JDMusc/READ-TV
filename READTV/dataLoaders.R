@@ -49,6 +49,12 @@ appendColsRhs = function(code, cols) {
 
 loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym, cols = list()) {
   base = loadEventsCodeRhs(data_f, cols)
+  appendEventsWithRelativeAndDeltaTimeCode(base, output_sym)
+}
+
+
+appendEventsWithRelativeAndDeltaTimeCode = function(input_expr, output_sym, cols = list()) {
+  base = appendColsRhs(input_expr, cols)
   expr(!!output_sym <- !!base %>% 
          group_by(Case) %>% 
          group_modify(~ .x %>% mutate(deltaTime = Time - lag(Time),

@@ -1010,7 +1010,7 @@ time,latitude,longitude,depth,mag,magType,nst,gap,dmin,rms,net,id,updated,place,
 2011-03-11T05:58:07.490Z,37.623,142.155,50.7,6.3,mb,98,99.7,,0.95,us,usp000hvnx,2015-07-13T17:02:24.000Z,"off the east coast of Honshu, Japan",earthquake,,6.8,,44,reviewed,us,us
 2011-03-11T05:55:45.480Z,37.359,143.351,35,6.4,mb,108,71.7,,1.42,us,usp000hvnw,2015-07-13T17:02:24.000Z,"off the east coast of Honshu, Japan",earthquake,,,,50,reviewed,us,us
 2011-03-11T05:54:31.940Z,37.712,141.184,32.3,6.3,mb,120,106.2,,0.75,us,usp000hvnv,2020-04-18T00:26:51.722Z,"near the east coast of Honshu, Japan",earthquake,,13.5,,66,reviewed,us,us
-2011-03-11T05:46:24.120Z,38.297,142.373,29,9.1,mww,541,9.5,,1.16,official,official20110311054624120_30,2020-07-07T22:42:26.661Z,"2011 Great Tohoku Earthquake, Japan",earthquake,,,,,reviewed,us,official
+2011-03-11T05:46:24.120Z,38.297,142.373,29,9.1,mww,541,9.5,,1.16,official,official20110311054624120_30,2020-08-14T22:28:34.170Z,"2011 Great Tohoku Earthquake, Japan",earthquake,,,,,reviewed,us,official
 2011-03-11T04:12:32.680Z,38.191,143.154,32.2,4.2,mb,24,118.6,,1,us,usp000hvnq,2014-11-07T01:43:54.462Z,"off the east coast of Honshu, Japan",earthquake,,23.5,,1,reviewed,us,us
 2011-03-11T01:41:26.930Z,38.517,143.381,10.9,4.2,mb,34,131.8,,0.56,us,usp000hvnk,2014-11-07T01:43:54.445Z,"off the east coast of Honshu, Japan",earthquake,,13.3,,8,reviewed,us,us
 2011-03-10T22:45:09.090Z,38.654,143.392,35,4.4,mb,10,138.9,,0.42,us,usp000hvnc,2014-11-07T01:43:54.418Z,"off the east coast of Honshu, Japan",earthquake,,,,2,reviewed,us,us

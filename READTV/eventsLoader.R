@@ -6,18 +6,31 @@ eventsLoaderUI = function(id) {
 }
 
 
-eventsLoader = function(input, output, session, output_sym, eventsPath = NULL) {
+eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
+                        inputData = NULL) {
   ns = session$ns
   f = stringr::str_interp
   
   pre_transform_data_sym = sym("pre_transform_data")
   
-  eventDataF = callModule(fileWellServer, "filewell", "Event Data", eventsPath)
+  isInputDataSet = reactive({
+    !is_null(inputData)
+  })
+  
+  if(!isInputDataSet())
+    eventDataF = callModule(
+      fileWellServer, "filewell", "Event Data", eventsPath)
+  else
+    eventDataF = reactive({NULL})
+  
   
   name = reactive({
-    req(eventDataF())
-    
-    eventDataF()$name
+    if(!isInputDataSet()) {
+      req(eventDataF())
+      eventDataF()$name
+    }
+    else
+      'inputData'
   })
   
   datapath = reactive({
@@ -31,14 +44,21 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL) {
     
     c_code = currentCode()
     
-    eval_tidy(c_code, list(f_name = datapath()))
+    if(!isInputDataSet())
+      eval_tidy(c_code, list(f_name = datapath()))
+    else
+      eval_tidy(c_code, list(inputData = inputData))
   })
   
   
   quickInspect = reactive({
-    req(datapath())
+    n_max = 100
     
-    quickLoad(datapath(), n_max = 100)
+    if(!isInputDataSet()) {
+      req(datapath())
+      quickLoad(datapath(), n_max = n_max)
+    } 
+    else inputData %>% head(n_max)
   })
   
   isValidData = function(df) {
@@ -53,7 +73,8 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL) {
   
   
   isValidRaw = reactive({
-    req(datapath())
+    if(!isInputDataSet())
+      req(datapath())
     
     isValidData(quickInspect())
   })
@@ -64,24 +85,35 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL) {
     f_name = name()
     f_name_var = "f_name"
     
+    top_row = if(isInputDataSet())
+      "#user set input data" 
+    else
+      f("${f_name_var} = \"${f_name}\" #update local file path")
+    
     expressionsToString(
-      f("${f_name_var} = \"${f_name}\" #update local file path"),
+      top_row,
       currentCode()
     )
   })
   
   currentCode = reactive({
-    req(datapath())
+    if(!isInputDataSet()) {
+      req(datapath())
+      
+      input = datapath()
+      fn = loadEventsWithRelativeAndDeltaTimeCode
+    } else {
+      input = sym('inputData')
+      fn = appendEventsWithRelativeAndDeltaTimeCode
+    }
     
     run_data_transform = dataTransform$ready()
     
     if(run_data_transform)
-      datapath() %>% 
-        loadEventsWithRelativeAndDeltaTimeCode(output_sym, 
-                                               cols = dataTransform$mutateCols())
+      input %>% 
+        fn(output_sym, cols = dataTransform$mutateCols())
     else
-      datapath() %>% 
-        loadEventsWithRelativeAndDeltaTimeCode(output_sym)
+      input %>% fn(output_sym)
   })
   
   dataTransform = callModule(dataTransformServer, 'dataTransform',

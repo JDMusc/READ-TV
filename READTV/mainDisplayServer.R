@@ -1,11 +1,12 @@
 
-mainDisplayServer = function(input, output, session, eventsPath = NULL){
+mainDisplayServer = function(input, output, session, eventsPath = NULL,
+                             inputData = NULL){
   ns = session$ns
   
   #------------Data Upload--------
   dataUploadOutputSym = sym('data')
   dataUploadTab = callModule(dataUploadTabServer, "dataUpload", 
-                             eventsPath, dataUploadOutputSym)
+                             eventsPath, inputData, dataUploadOutputSym)
   data = dataUploadTab$data
   fileName = dataUploadTab$fileName
   isDataLoaded = dataUploadTab$isDataLoaded

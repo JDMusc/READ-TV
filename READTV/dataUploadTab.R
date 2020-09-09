@@ -23,6 +23,7 @@ dataUploadTabUI = function(id) {
 
 dataUploadTabServer = function(input, output, session,
                                eventsPath = NULL,
+                               inputData = NULL,
                                output_sym = sym('data')) {
   ns = session$ns
 
@@ -61,7 +62,8 @@ dataUploadTabServer = function(input, output, session,
   })
   
   #---Data--------
-  eventsInformation = callModule(eventsLoader, "loadData", output_sym, eventsPath)
+  eventsInformation = callModule(eventsLoader, "loadData", output_sym, 
+                                 eventsPath, inputData)
   
   isDataLoaded = reactiveVal(F)
   data <- reactive({
