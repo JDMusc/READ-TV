@@ -73,8 +73,16 @@ preprocessForCpa = function(data, smooth_window_n,
     select(!!sym(index_col), !!sym(output_col)) %>% 
     distinct
   
-  as_tsibble_fn = function(data) data %>% 
-    as_tsibble(index = !!sym(index_col))
+  as_tsibble_fn = function(data) {
+    if(is.duration(stride))
+      interval = stride %>% 
+        as.numeric('seconds') %>% 
+        {new_interval(second = .)}
+    else interval = new_interval(unit = stride)
+    
+    data %>% 
+      build_tsibble(index = !!sym(index_col), interval = interval)
+  }
   
   is_facet = !is.null(facet_col)
   if(is_facet) {

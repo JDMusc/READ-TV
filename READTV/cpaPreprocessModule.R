@@ -57,7 +57,15 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   smoothInputUIs = c("windowWidth", "smoothStride", "aggFn", "preprocessSubmit")
-  smoothInputs = c("windowWidthText", "smoothStrideText", "aggFn")
+  smoothInputs = reactive({
+    base = c("windowWidthText", "smoothStrideText", "aggFn")
+    
+    if(showTimeOptions())
+      c(base,
+        "windowWidthUnits", "smoothStrideUnits")
+    else
+      base
+  })
   
   toggleSmoothControl = function(id)
     shinyjs::toggle(id = id, condition = doSmooth())
@@ -68,6 +76,11 @@ cpaPreprocessServer = function(input, output, session, previousData,
   
   
   #----Time Options----
+  convValues = reactiveValues(windowWidth = 5,
+                               smoothStride = 2)
+  convUnits = reactiveValues(windowWidth = NULL,
+                             smoothStride = NULL)
+  
   showTimeOptions = reactive({
     req(previousData())
     
@@ -76,30 +89,70 @@ cpaPreprocessServer = function(input, output, session, previousData,
       {is.difftime(.) | is.timepoint(.)}
   })
   
-  timeChoices = c(
-    "dnanoseconds",
-    "dmicroseconds",
-    "dmilliseconds",
-    "dpicoseconds",
-    "dseconds",
-    "dminutes",
-    "dhours",
-    "ddays",
-    "dweeks",
-    "dmonths",
-    "dyears"
+  
+  timePrefixes = list(
+    pico = 1e-12,
+    nano = 1e-9,
+    micro = 1e-6,
+    milli = 1e-3
   )
+  
+  timeUnits = c(
+    "seconds",
+    "minutes",
+    "hours",
+    "days",
+    "weeks",
+    "months",
+    "years"
+  )
+  
+  timeChoices = append(
+    timePrefixes %>% names %>% purrr::map(~ paste0(.x, 'seconds')),
+    timeUnits
+  ) %>% 
+    purrr::map(~ paste0('d', .x))
+  
+  
+  defaultUnits = function(times) {
+    tdiff = max(times) - min(times)
+    range_units = attr(tdiff, 'units')
+    
+    if(range_units == 'secs')
+      range_units = 'seconds'
+    else if(range_units == 'mins')
+      range_units = 'minutes'
+    else if(range_units == 'auto')
+      return('seconds')
+    
+    ix = which(timeUnits == range_units)
+    
+    if(ix > 1) return(timeUnits[[ix - 1]])
+    
+    tdiff_sec = as.numeric(tdiff, 'secs')
+    ret = timePrefixes %>% 
+      keep(~ .x < tdiff_sec) %>% 
+      names %>% 
+      map(~ paste0(.x, 'seconds')) %>% 
+      head(1)
+    
+    if(is_empty(ret)) 'picoseconds'
+    else ret
+  }
+  
   
   timeUnitsTextInput = function(tag, text_label, value) {
     ti = textInput(ns(f("${tag}Text")), text_label,
                    value = value)
     
-    if(showTimeOptions())
+    if(showTimeOptions()) {
       fluidRow(
         ti,
         selectInput(ns(f("${tag}Units")), "Units",
-                    choices = timeChoices)
+                    choices = timeChoices,
+                    selected = convUnits[[tag]])
       )
+    }
     else
       ti
   }
@@ -134,7 +187,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
     value = getElementSafe("smooth_window_n", ret, value)
     
     timeUnitsTextInput("windowWidth", "Interval Width",
-              value = value)
+              value = convValues$windowWidth)
   })
   
   windowWidth = reactive({
@@ -144,13 +197,48 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   
+  observe({
+    req(showTimeOptions())
+    
+    for(tag in names(convUnits)) {
+      val = input %>% extract2(f('${tag}Units'))
+      if(is.null(val))
+        val = previousData() %>% 
+          pull(previousPlotOpts$xColumn) %>% 
+          defaultUnits %>% 
+          {paste0('d', .)}
+      
+      orig = convUnits[[tag]]
+      if(not_equals_null_safe(orig, val))
+        convUnits[[tag]] = val
+    }
+  })
+  
+  observe({
+    for(tag in names(convValues)) {
+      val = input %>% extract2(f('${tag}Text')) %>% as.numeric
+      if(is_null_or_empty(val))
+        next
+      
+      orig = convValues[[tag]]
+      if(not_equals(orig, val))
+        convValues[[tag]] = val
+    }
+  })
+  
+  windowWidthUnits = reactive({
+    req(showTimeOptions())
+    units = input %>% extract2(f('${tag}Units'))
+  })
+  
+  
   #----Smooth Stride----
   output$smoothStride = renderUI({
     req(previousData())
     value = getElementSafe("smooth_stride", ret, 5)
     
     timeUnitsTextInput("smoothStride", "Interval Stride",
-                       value = value)
+                       value = convValues$smoothStride)
   })
   
   
@@ -169,7 +257,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   
   #----Preprocess Changed----
   observe({
-    for(si in setdiff(smoothInputs, "preprocessSubmit")) 
+    for(si in setdiff(smoothInputs(), "preprocessSubmit")) 
       tmp = input[[si]]
     
     shinyjs::enable('preprocessSubmit')

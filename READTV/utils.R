@@ -85,12 +85,15 @@ runExpressions = function(exs, mask) {
 }
 
 
+is_null_or_empty = function(e)
+  is_null(e) | is_empty(e)
+
 not_equals = function(e1, e2)
   !(equals(e1, e2))
 
 equals_null_safe = function(e1, e2) {
-  e1_null = is.null(e1)
-  e2_null = is.null(e2)
+  e1_null = is_null_or_empty(e1)
+  e2_null = is_null_or_empty(e2)
   
   if(e1_null != e2_null)
     FALSE
