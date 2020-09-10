@@ -130,15 +130,6 @@ dataTransformServer = function(input, output, session, quickInspect,
     
     req(quickInspect())
     
-    qip = quickInspectPreview()
-    qip_cols = quickInspectColumns()
-    
-    must_chose = 'Must Chose a Column'
-    
-    time_choices = qip_cols %>% 
-      keep(~ is.numeric(qip[[.x]]) | is.timepoint(qip[[.x]])) %>% 
-      columnChoices(must_chose, top_selection_val = un_selected_column_const)
-    
     showModal(modalDialog(
       title = "Data Preview & Load",
       easyClose = FALSE,
@@ -146,42 +137,65 @@ dataTransformServer = function(input, output, session, quickInspect,
       tabsetPanel(
         tabPanel(
           "Data Transform",
-          selectInput(
-            ns("rowSkip"),
-            "Row Skip (assumes top row contains column names)",
-            choices = 0:100,
-            selected = 0
+          uiOutput(ns("dataTransformTab"))
           ),
-          uiOutput(ns("TimeColumnSection")),
-          uiOutput(ns("CaseColumnSection")),
-          uiOutput(ns("Event.TypeColumnSection")),
-          selectInput(
-            ns("columnChoices"),
-            "Columns",
-            colnames(qip),
-            multiple = T,
-            selected = top5PreviewCols()
-          ),
-          fluidRow(
-            column(
-              actionButton(ns("preview"), "Preview"),
-              width = 2,
-              offset = 0
-            ),
-            column(
-              actionButton(ns("done"), "Done"),
-              width = 2,
-              offset = 0
-            )
-          ),
-          renderDataTable(qip[, input$columnChoices])
+        tabPanel(
+          "Glimpse into Data",
+          verbatimTextOutput(ns("dataGlimpseTab"))
+          )
         )
       )
-    ))
+    )
+  })
+  
+  #----Data Glimpse Tab----
+  output$dataGlimpseTab = renderPrint({
+    req(quickInspect())
+    
+    str(quickInspect())
+  })
+  
+  #----Data Transform Tab----
+  output$dataTransformTab = renderUI({
+    req(quickInspect())
+    
+    qip = quickInspectPreview()
+    
+    div(
+      selectInput(
+        ns("rowSkip"),
+        "Row Skip (assumes top row contains column names)",
+        choices = 0:100,
+        selected = 0
+      ),
+      uiOutput(ns("TimeColumnSection")),
+      uiOutput(ns("CaseColumnSection")),
+      uiOutput(ns("Event.TypeColumnSection")),
+      selectInput(
+        ns("columnChoices"),
+        "Columns",
+        colnames(qip),
+        multiple = T,
+        selected = top5PreviewCols()
+      ),
+      fluidRow(
+        column(
+          actionButton(ns("preview"), "Preview"),
+          width = 2,
+          offset = 0
+        ),
+        column(
+          actionButton(ns("done"), "Done"),
+          width = 2,
+          offset = 0
+        )
+      ),
+      renderDataTable(qip[, input$columnChoices])
+    )
   })
   
   
-  #----Mockable Columns
+  #----Mockable Columns----
   data_column_choice = "Data Column"
   mock_value_choice = "Mock Value"
   
@@ -255,6 +269,17 @@ dataTransformServer = function(input, output, session, quickInspect,
   
   #----Time Column----
   output$TimeColumnSection = renderUI({
+    req(quickInspect())
+    
+    qip = quickInspectPreview()
+    qip_cols = quickInspectColumns()
+    
+    must_chose = 'Must Chose a Column'
+    
+    time_choices = qip_cols %>% 
+      keep(~ is.numeric(qip[[.x]]) | is.timepoint(qip[[.x]])) %>% 
+      columnChoices(must_chose, top_selection_val = un_selected_column_const)
+    
     if('Time' %in% missingCols())
       selectInput(
         ns("Time"),

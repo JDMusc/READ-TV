@@ -3,7 +3,7 @@ genServerFn = function(data = NULL, eventsPath = NULL)
     
     output$mainDisplay = renderUI({
       id = "mainDisplay"
-      callModule(mainDisplayServer, id, eventsPath, data)
+      callModule(mainDisplayServer, id, eventsPath = eventsPath, inputData = data)
       
       div(
         mainDisplayUI(id)
