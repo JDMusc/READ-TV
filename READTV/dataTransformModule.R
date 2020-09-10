@@ -10,25 +10,44 @@ dataTransformServer = function(input, output, session, quickInspect,
   f = stringr::str_interp
   
   un_selected_column_const = -1
-  desired_cols = c("Event.Type", "Time", "Case")
+  
+  missingCols = reactive({
+    req(quickInspect())
+    current_cols = colnames(quickInspect())
+    desired_cols = c("Event.Type", "Time", "Case")
+    
+    setdiff(desired_cols, current_cols)
+  })
   
   #----Column Transforms----
-  columnTransforms = desired_cols %>% 
-    set_names %>% 
-    purrr::map(~ un_selected_column_const) %>% 
-    {do.call(reactiveValues, .)}
+  columnTransforms = reactiveValues()
+  
+  observe({
+    req(missingCols())
+    
+    for(n in missingCols())
+      columnTransforms[[n]] = un_selected_column_const
+  })
   
   get_selected = function(col, default_val = un_selected_column_const) 
     getElementSafe(col, columnTransforms, default_val)
   
   
   #----Mock Column Creates----
-  mockable_cols = desired_cols %>% setdiff('Time')
+  mockable_cols = missingCols() %>% setdiff('Time')
   mock_case_val = 1
   mock_event_type_val = 'a'
-  columnCreates = reactiveValues('Case' = mock_case_val, 
-                                 'Event.Type' = mock_event_type_val)
-  doCreateColumn = desired_cols %>% 
+  columnCreates = reactiveValues()
+  observe({
+    req(missingCols())
+    
+    if('Case' %in% missingCols())
+      columnCreates$Case = mock_case_val
+    if('Event.Type' %in% missingCols())
+      columnCreates$Event.Type = mock_event_type_val
+  })
+  
+  doCreateColumn = missingCols() %>% 
     set_names %>% 
     purrr::map(~ .x == 'Case') %>% 
     {do.call(reactiveValues, .)}
@@ -68,7 +87,7 @@ dataTransformServer = function(input, output, session, quickInspect,
     
     qi = eval_tidy(quickInspectPreviewCode(), data = list(data = quickInspect()))
     
-    desired_cols %>% 
+    missingCols() %>% 
       purrr::keep(~ .x %in% names(qi)) %>% 
       purrr::reduce(~ .x %>% select(!!sym(.y), everything()), .init = qi)
   })
@@ -120,29 +139,45 @@ dataTransformServer = function(input, output, session, quickInspect,
       keep(~ is.numeric(qip[[.x]]) | is.timepoint(qip[[.x]])) %>% 
       columnChoices(must_chose, top_selection_val = un_selected_column_const)
     
-    showModal(
-      modalDialog(
-        title = "Data Preview & Load",
-        easyClose = FALSE,
-        footer = NULL,
-        selectInput(ns("rowSkip"), 
-                    "Row Skip (assumes top row contains column names)",
-                    choices = 0:100,
-                    selected = 0),
-        selectInput(ns("Time"),
-                    "Time Column (must pass is.numeric or lubridate::is.datetime)",
-                    choices = time_choices,
-                    selected = get_selected('Time', un_selected_column_const)),
-        uiOutput(ns("CaseColumnSection")),
-        uiOutput(ns("Event.TypeColumnSection")),
-        selectInput(ns("columnChoices"), "Columns", colnames(qip), multiple = T,
-                    selected = top5PreviewCols()),
-        fluidRow(
-          column(actionButton(ns("submit"), "Preview"), width = 2, offset = 0),
-          column(actionButton(ns("done"), "Done"), width = 2, offset = 0)
-        ),
-        renderDataTable(qip[, input$columnChoices])
-      ))
+    showModal(modalDialog(
+      title = "Data Preview & Load",
+      easyClose = FALSE,
+      footer = NULL,
+      tabsetPanel(
+        tabPanel(
+          "Data Transform",
+          selectInput(
+            ns("rowSkip"),
+            "Row Skip (assumes top row contains column names)",
+            choices = 0:100,
+            selected = 0
+          ),
+          uiOutput(ns("TimeColumnSection")),
+          uiOutput(ns("CaseColumnSection")),
+          uiOutput(ns("Event.TypeColumnSection")),
+          selectInput(
+            ns("columnChoices"),
+            "Columns",
+            colnames(qip),
+            multiple = T,
+            selected = top5PreviewCols()
+          ),
+          fluidRow(
+            column(
+              actionButton(ns("preview"), "Preview"),
+              width = 2,
+              offset = 0
+            ),
+            column(
+              actionButton(ns("done"), "Done"),
+              width = 2,
+              offset = 0
+            )
+          ),
+          renderDataTable(qip[, input$columnChoices])
+        )
+      )
+    ))
   })
   
   
@@ -190,7 +225,8 @@ dataTransformServer = function(input, output, session, quickInspect,
   
   #----Case Column----
   output$CaseColumnSection = renderUI({
-    makeMockableInputSection("Case")
+    if('Case' %in% missingCols())
+      makeMockableInputSection("Case")
   })
   
   output$CaseColumn = renderUI({
@@ -204,7 +240,8 @@ dataTransformServer = function(input, output, session, quickInspect,
   
   #----Event.Type Column----
   output$Event.TypeColumnSection = renderUI({
-    makeMockableInputSection("Event.Type")
+    if('Event.Type' %in% missingCols())
+      makeMockableInputSection("Event.Type")
   })
   
   output$Event.TypeColumn = renderUI({
@@ -213,6 +250,19 @@ dataTransformServer = function(input, output, session, quickInspect,
                       choices = quickInspectColumns() %>% 
                         keep(~ is.character(qi[[.x]]) | is.factor(qi[[.x]]))
                       )
+  })
+  
+  
+  #----Time Column----
+  output$TimeColumnSection = renderUI({
+    if('Time' %in% missingCols())
+      selectInput(
+        ns("Time"),
+        "Time Column (must pass is.numeric or lubridate::is.datetime)",
+        choices = time_choices,
+        selected = get_selected('Time', un_selected_column_const)
+        
+      )
   })
   
   
@@ -240,7 +290,11 @@ dataTransformServer = function(input, output, session, quickInspect,
   }
   
   areInputsValid = reactive({
-    time_valid = 'Time' %>% 
+    time_preset = 'Time' %not in% missingCols()
+    
+    time_valid = if(time_preset) 
+      TRUE
+    else 'Time' %>% 
       userSelectedValue %>% 
       not_equals(un_selected_column_const)
     
@@ -248,7 +302,7 @@ dataTransformServer = function(input, output, session, quickInspect,
   })
   
   didAnyInputChange = reactive({
-    desired_cols %>% 
+    missingCols() %>% 
       purrr::reduce(~ .x | didUserUpdateColumn(.y), .init = FALSE)
   })
   
@@ -256,14 +310,14 @@ dataTransformServer = function(input, output, session, quickInspect,
     valid = areInputsValid()
     change = didAnyInputChange()
     
-    shinyjs::toggleState('submit', valid & change)
+    shinyjs::toggleState('preview', valid & change)
     shinyjs::toggleState('done', valid & !change)
   })
   
   
-  #----Submit----
-  observeEvent(input$submit, {
-    update_cols = desired_cols %>% 
+  #----Preview----
+  observeEvent(input$preview, {
+    update_cols = missingCols() %>% 
       keep(didUserUpdateColumn)
     
     for(col in update_cols)
@@ -279,8 +333,7 @@ dataTransformServer = function(input, output, session, quickInspect,
     for(m in mock_updates)
       columnCreates[[m]] = mockColumnValue(m)
     
-    
-    shinyjs::disable('submit')
+    shinyjs::disable('preview')
     shinyjs::enable('done')
   })
   

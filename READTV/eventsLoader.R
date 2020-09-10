@@ -62,8 +62,9 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
   })
   
   isValidData = function(df) {
-    has_cols = ('Case' %in% colnames(df)) &
-      ('Time' %in% colnames(df))
+    has_cols = (
+      c('Case', 'Time', 'Event.Type') %in% colnames(df)
+      ) %>% all
     
     if(!has_cols)
       return(FALSE)
