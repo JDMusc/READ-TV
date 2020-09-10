@@ -229,15 +229,16 @@ basicDisplayTabServer = function(input, output, session, data,
   
   
   observeEvent(input$showSourceBtn, {
-    showModal(modalDialog(
-      title = "Source Code",
-      size = "l",
-      verbatimTextOutput(ns("fullSourceWithPlot")),
-    )
-    )
+    showModal(
+      modalDialog(title = "Source Code",
+                  size = "l",
+                  verbatimTextOutput(ns("fullSourceWithPlot"))
+                  )
+      )
   })
   
   output$fullSourceWithPlot = renderText({
+    browser()
     fullSourceWithPlotString()
   })
   
