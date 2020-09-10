@@ -13,6 +13,7 @@ dataTransformServer = function(input, output, session, quickInspect,
   
   missingCols = reactive({
     req(quickInspect())
+    
     current_cols = colnames(quickInspect())
     desired_cols = c("Event.Type", "Time", "Case")
     
@@ -32,9 +33,13 @@ dataTransformServer = function(input, output, session, quickInspect,
   get_selected = function(col, default_val = un_selected_column_const) 
     getElementSafe(col, columnTransforms, default_val)
   
-  
   #----Mock Column Creates----
-  mockable_cols = missingCols() %>% setdiff('Time')
+  mockableCols = reactive({
+    req(missingCols())
+    
+    missingCols() %>% setdiff('Time')
+  })
+  
   mock_case_val = 1
   mock_event_type_val = 'a'
   columnCreates = reactiveValues()
@@ -47,10 +52,13 @@ dataTransformServer = function(input, output, session, quickInspect,
       columnCreates$Event.Type = mock_event_type_val
   })
   
-  doCreateColumn = missingCols() %>% 
-    set_names %>% 
-    purrr::map(~ .x == 'Case') %>% 
-    {do.call(reactiveValues, .)}
+  doCreateColumn = reactiveValues()
+  observe({
+    req(missingCols())
+    
+    for(n in missingCols()) 
+      doCreateColumn[[n]] = n == 'Case'
+  })
   
   #----Return Value----
   mutateCols = reactive({
@@ -348,10 +356,10 @@ dataTransformServer = function(input, output, session, quickInspect,
     for(col in update_cols)
       columnTransforms[[col]] = input[[col]]
     
-    for(m in mockable_cols)
+    for(m in mockableCols())
       doCreateColumn[[m]] = equals_null_safe(inputColumnType(m), mock_value_choice)
     
-    mock_updates = mockable_cols %>% 
+    mock_updates = mockableCols() %>% 
       keep(~ doCreateColumn[[.x]]) %>% 
       discard(~ equals_null_safe(mockColumnValue(.x), columnCreates[[.x]]))
     
