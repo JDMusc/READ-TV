@@ -390,7 +390,7 @@ cpaTabServer = function(input, output, session, previousData,
     showModal(modalDialog(
       title = "Source Code",
       size = "l",
-      verbatimTextOutput(ns("fullSourceWithPlot")),
+      verbatimTextOutput(ns("fullSourceWithPlot"))
     )
     )
   })

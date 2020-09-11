@@ -195,7 +195,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     showModal(modalDialog(
       title = "Source Code",
       size = "l",
-      verbatimTextOutput(ns("fullSourceWithPlot")),
+      verbatimTextOutput(ns("fullSourceWithPlot"))
     )
     )
   })
