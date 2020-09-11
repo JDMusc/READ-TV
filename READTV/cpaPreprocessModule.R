@@ -18,12 +18,11 @@ cpaPreprocessUI = function(id) {
 cpaPreprocessServer = function(input, output, session, previousData,
                                previousPlotOpts) {
   ns = session$ns
+  f = stringr::str_interp
   
   #----Do Smooth----
   doSmooth = reactive({
-    if(is.null(input$doSmoothSelect)) return(FALSE)
-    
-    return(input$doSmoothSelect == "Event Frequency")
+    input$doSmoothSelect %==% "Event Frequency"
   })
   
   
@@ -65,6 +64,27 @@ cpaPreprocessServer = function(input, output, session, previousData,
         "windowWidthUnits", "smoothStrideUnits")
     else
       base
+  })
+  
+  isSmoothInputValid = reactiveValues()
+  observe({
+    req(smoothInputs())
+    
+    for(si in smoothInputs()) {
+      orig = getElementSafe(si, isSmoothInputValid, FALSE)
+      if(str_detect(si, 'Text')) {
+        val = input %>% 
+          extract2(si) %>% 
+          as.numeric
+        val = if(is_null_or_empty(val)) 
+          FALSE
+        else 
+          (val > 0 & is_integerish(val))
+      } else val = TRUE
+      
+      if(orig != val)
+        isSmoothInputValid[[si]] = val
+    }
   })
   
   toggleSmoothControl = function(id)
@@ -130,21 +150,21 @@ cpaPreprocessServer = function(input, output, session, previousData,
     if(ix > 1) return(timeUnits[[ix - 1]])
     
     tdiff_sec = as.numeric(tdiff, 'secs')
-    ret = timePrefixes %>% 
+    default = timePrefixes %>% 
       keep(~ .x < tdiff_sec) %>% 
       names %>% 
       map(~ paste0(.x, 'seconds')) %>% 
       head(1)
     
-    if(is_empty(ret)) 'picoseconds'
-    else ret
+    if(is_empty(default)) 'picoseconds'
+    else default
   }
   
   
   timeUnitsTextInput = function(tag, text_label, value) {
     ti = textInput(ns(f("${tag}Text")), text_label,
                    value = value)
-    
+      
     if(showTimeOptions()) {
       fluidRow(
         ti,
@@ -176,18 +196,8 @@ cpaPreprocessServer = function(input, output, session, previousData,
   output$windowWidth = renderUI({
     req(previousData())
     
-    value = previousData() %>% 
-      pull(!!sym(previousPlotOpts$xColumn)) %>% 
-      {. - dplyr::lag(.)} %>% 
-      replace_na(0) %>% 
-      {.[.>=0]} %>% 
-      mean %>% 
-      round(2)
-    
-    value = getElementSafe("smooth_window_n", ret, value)
-    
     timeUnitsTextInput("windowWidth", "Interval Width",
-              value = convValues$windowWidth)
+              value = isolate(convValues$windowWidth))
   })
   
   windowWidth = reactive({
@@ -209,7 +219,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
           {paste0('d', .)}
       
       orig = convUnits[[tag]]
-      if(not_equals_null_safe(orig, val))
+      if(orig %!=% val)
         convUnits[[tag]] = val
     }
   })
@@ -221,7 +231,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
         next
       
       orig = convValues[[tag]]
-      if(not_equals(orig, val))
+      if(orig %!=% val)
         convValues[[tag]] = val
     }
   })
@@ -235,10 +245,9 @@ cpaPreprocessServer = function(input, output, session, previousData,
   #----Smooth Stride----
   output$smoothStride = renderUI({
     req(previousData())
-    value = getElementSafe("smooth_stride", ret, 5)
     
     timeUnitsTextInput("smoothStride", "Interval Stride",
-                       value = convValues$smoothStride)
+                       value = isolate(convValues$smoothStride))
   })
   
   
@@ -260,7 +269,31 @@ cpaPreprocessServer = function(input, output, session, previousData,
     for(si in setdiff(smoothInputs(), "preprocessSubmit")) 
       tmp = input[[si]]
     
-    shinyjs::enable('preprocessSubmit')
+    are_smooth_inputs_valid = isSmoothInputValid %>% 
+      reactiveValuesToList %>% 
+      as.logical %>% all
+    
+    shinyjs::toggleState(
+      'preprocessSubmit',
+      condition = are_smooth_inputs_valid)
+    
+    shinyjs::toggleClass(
+      'preprocessSubmit', 'invalid_query',
+      condition = !are_smooth_inputs_valid)
+  })
+  
+  observe({
+    req(smoothInputs())
+    
+    for(si in smoothInputs())
+      tmp = input[[si]]
+    
+    text_inputs = isSmoothInputValid %>% names %>% 
+      purrr::keep(~ str_detect(.x, 'Text'))
+    
+    for(id in text_inputs)
+      shinyjs::toggleClass(id, 'invalid_query',
+                           cond = !isSmoothInputValid[[id]])
   })
   
   #----Return----

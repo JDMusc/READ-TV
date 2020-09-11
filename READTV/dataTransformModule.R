@@ -306,7 +306,7 @@ dataTransformServer = function(input, output, session, quickInspect,
   didUserUpdateColumn = function(col) {
     input_type = inputColumnType(col)
     did_type_change = 
-      equals_null_safe(input_type, mock_value_choice) != doCreateColumn[[col]]
+      (input_type %==% mock_value_choice) != doCreateColumn[[col]]
     
     if(did_type_change)
       return(TRUE)
@@ -319,7 +319,7 @@ dataTransformServer = function(input, output, session, quickInspect,
       current = columnTransforms[[col]]
     }
     
-    !equals_null_safe(user_input, current)
+    user_input %!=% current
   }
   
   areInputsValid = reactive({
@@ -357,11 +357,11 @@ dataTransformServer = function(input, output, session, quickInspect,
       columnTransforms[[col]] = input[[col]]
     
     for(m in mockableCols())
-      doCreateColumn[[m]] = equals_null_safe(inputColumnType(m), mock_value_choice)
+      doCreateColumn[[m]] = inputColumnType(m) %==% mock_value_choice
     
     mock_updates = mockableCols() %>% 
       keep(~ doCreateColumn[[.x]]) %>% 
-      discard(~ equals_null_safe(mockColumnValue(.x), columnCreates[[.x]]))
+      discard(~ mockColumnValue(.x) %==% columnCreates[[.x]])
     
     for(m in mock_updates)
       columnCreates[[m]] = mockColumnValue(m)

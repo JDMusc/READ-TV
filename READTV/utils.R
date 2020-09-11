@@ -86,7 +86,7 @@ runExpressions = function(exs, mask) {
 
 
 is_null_or_empty = function(e)
-  is_null(e) | is_empty(e)
+  is_null(e) | is_empty(e) | is_na(e)
 
 not_equals = function(e1, e2)
   !(equals(e1, e2))
@@ -103,8 +103,12 @@ equals_null_safe = function(e1, e2) {
     equals(e1, e2)
 }
 
+`%==%` = equals_null_safe
+
 not_equals_null_safe = function(e1, e2)
-  !equals_null_safe(e1, e2)
+  !(e1 %==% e2)
+
+`%!=%` = not_equals_null_safe
 
 str_un_title = function(string) string %>% 
   str_sub(1, 1) %>% 
