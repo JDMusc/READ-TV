@@ -102,10 +102,14 @@ dataUploadTabServer = function(input, output, session,
     
     tabsetPanel(
       tabPanel("Source Code", 
-               verbatimTextOutput(ns("sourceCodeSubTab")))
+               verbatimTextOutput(ns("sourceCodeSubTab"))),
+      tabPanel("Data Glimpse",
+               dataGlimpseUI(ns("dataGlimpse")))
     )
   })
   
+  #----Data Glimpse----
+  dataGlimpse = callModule(dataGlimpseServer, 'dataGlimpse', data)
   
   #----Source Code----
   fullSourceString = reactive({

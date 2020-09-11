@@ -149,7 +149,7 @@ dataTransformServer = function(input, output, session, quickInspect,
           ),
         tabPanel(
           "Glimpse into Data",
-          verbatimTextOutput(ns("dataGlimpseTab"))
+          dataGlimpseUI(ns("dataGlimpse"))
           )
         )
       )
@@ -157,11 +157,7 @@ dataTransformServer = function(input, output, session, quickInspect,
   })
   
   #----Data Glimpse Tab----
-  output$dataGlimpseTab = renderPrint({
-    req(quickInspect())
-    
-    str(quickInspect())
-  })
+  dataGlimpse = callModule(dataGlimpseServer, 'dataGlimpse', quickInspect)
   
   #----Data Transform Tab----
   output$dataTransformTab = renderUI({

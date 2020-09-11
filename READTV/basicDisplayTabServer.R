@@ -238,7 +238,6 @@ basicDisplayTabServer = function(input, output, session, data,
   })
   
   output$fullSourceWithPlot = renderText({
-    browser()
     fullSourceWithPlotString()
   })
   
