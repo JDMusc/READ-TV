@@ -22,42 +22,58 @@ customEventsQueryServer = function(input, output, session, data,
     d = data()
     
     fieldClass = reactive({
+      req(input$field)
+      
       d %>% pull(input$field) %>% class
     })
+    
+    choices = reactive({
+      req(input$field)
+      
+      d %>% pull(input$field) %>% unique %>% sort
+    })
+    
+    is_type = function(type_fn)
+      type_fn(d[[input$field]])
     
     output$fieldOptions = renderUI({
       req(input$field)
       
-      filter_choices = c(">", ">=", "<", "<=", "==", "!=")
-      choices = unique(d[,input$field])
-      if(fieldClass() %in% c("character", "logical")) {
-        filter_choices = c("==", "!=")
-        if(fieldClass() == "character")
-          filter_choices = append(c("grepl", "!grepl"), filter_choices)
-      }
-      else
-        choices = sort(choices)
+      fn_choices = exprs(`==`, `!=`) %>% name_expressions
+      if(is_type(is_character))
+        fn_choices = append(
+          list(detect = expr(str_detect), 
+               exclude = function(string, pattern)
+                 expr(str_detect(!!enexpr(string), !!pattern, negate = TRUE))
+               ), 
+          fn_choices)
+      else if(!is_type(is_logical))
+        fn_choices = append(exprs(`>`, `>=`, `<`, `<=`) %>% 
+                              name_expressions,
+                            fn_choices)
       
-      fieldValue = selectizeInput(ns("fieldValue"), "", choices = choices)
-      
-      if(fieldClass() == "character")
+      if(is_type(is_character))
         fieldValue = textInput(ns("fieldValue"), "")
+      else
+        fieldValue = selectizeInput(ns("fieldValue"), "", choices = choices())
       
       fluidRow(
         column(
           selectizeInput(ns("fieldFilter"), "",
-                         choices = filter_choices),
-          width = 2),
+                         choices = fn_choices),
+          width = 4),
         column(
           fieldValue,
-          width = 2)
+          width = 4)
       )
     })
     
     output$appendQueryOptions = renderUI({
       if(!hasQueryInput()) return(NULL)
+      
+      choices = exprs(`&`, `|`) %>% name_expressions
       selectizeInput(ns("appendQueryOption"), "How To Include",
-                     choices = c("&", "|"))
+                     choices = choices)
     })
     
     showModal(modalDialog(
@@ -74,23 +90,30 @@ customEventsQueryServer = function(input, output, session, data,
     ))
     
     observeEvent(input$modalSubmit, {
-      field_value = input$fieldValue
-      if(fieldClass() == "character")
-        field_value = paste0("'", field_value, "'")
+      field_value = if(c(is_numeric, is_logical) %>% 
+                       purrr::map(is_type) %>% 
+                       any & 
+                       !is_type(is.timepoint))
+        parse_expr(input$fieldValue)
+      else
+        input$fieldValue
+      fn_name = parse_expr(input$fieldFilter)
+      field = sym(input$field)
       
-      new_qry = paste(input$field, input$fieldFilter, field_value)
-      
-      if(input$fieldFilter %in% c("grepl", "!grepl"))
-        new_qry = paste0(
-          input$fieldFilter, "(", field_value, ", ", input$field, ")"
-        )
+      if(is_call(fn_name))
+        new_qry = eval_tidy(fn_name)(!!field, field_value)
+      else
+        new_qry = expr((!!fn_name)(!!field, !!field_value))
       
       if(hasQueryInput()) {
-        new_qry = paste(input$queryInput, input$appendQueryOption,
-                        new_qry)
+        join_fn = parse_expr(input$appendQueryOption)
+        iqi = parse_expr(paste0('(', input$queryInput, ')')) #not elegant
+        new_qry = expr((!!join_fn)(!!iqi, !!new_qry))
       }
       
-      updateTextInput(session, "queryInput", value = new_qry)
+      new_qry_txt = expr_text(new_qry)
+      
+      updateTextInput(session, "queryInput", value = new_qry_txt)
       removeModal()
     },
     ignoreInit = TRUE
@@ -111,30 +134,23 @@ customEventsQueryServer = function(input, output, session, data,
   
   
   filterQuery = reactive({
-    if(!queryCompiles() | !hasQueryInput())
-      return(expr(!!sym(out_pronoun) <- !!sym(in_pronoun)))
-    
-    
-    qry_expr = parse_expr(paste0('filter(', input$queryInput,' )'))
-    expr(!!sym(out_pronoun) <- !!sym(in_pronoun) %>% !!qry_expr)
+    if(hasValidQuery())
+      expr(!!out_pronoun <- !!in_pronoun %>% 
+             filter(!!parse_expr(input$queryInput)))
+    else
+      expr(!!out_pronoun <- !!in_pronoun)
   })
   
   queryCompiles = reactive({
-    if(!hasQueryInput())
-      return(TRUE)
-    
-    doesFilterCompile(input$queryInput, data())
+    if(hasQueryInput()) 
+      doesFilterCompile(input$queryInput, data())
+    else
+      TRUE
   })
   
   
   observe({
-    hqi = hasQueryInput()
-    
-    qc = queryCompiles()
-    
-    valid_query = qc | !hqi
-    
-    if(valid_query) {
+    if(hasValidQuery() | !hasQueryInput()) {
       shinyjs::removeClass("queryInput", "invalid_query")
       shinyjs::enable("eventsPreview")
     } else {
@@ -150,28 +166,26 @@ customEventsQueryServer = function(input, output, session, data,
     TRUE
   })
 
-  query = reactive({
-    req(hasQueryInput())
-    req(queryCompiles())
+  hasValidQuery = reactive({
+    hasQueryInput() & queryCompiles()
+  })
 
-    return(input$queryInput)
+  validQuery = reactive({
+    req(hasValidQuery())
+
+    input$queryInput
   })
   
   filteredData = reactive({
-    req(hasQueryInput())
-    req(queryCompiles())
+    req(hasValidQuery())
     
-    return(applyQuery(query(), data()))
-  })
-  
-  hasValidQuery = reactive({
-    hasQueryInput() & queryCompiles()
+    applyQuery(validQuery(), data())
   })
   
   return(list(filteredData = filteredData, 
               hasQueryInput = hasQueryInput,
               hasValidQuery = hasValidQuery,
               filterQuery = filterQuery,
-              query = query))
+              query = validQuery))
 
 }

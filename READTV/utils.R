@@ -42,9 +42,7 @@ applyQuery = function(filter_criterion, data)
 
 
 makeFullQuery = function(filter_criterion, data_sym = sym('data')) {
-  f = stringr::str_interp
-  qry_expr = parse_expr(f('filter(${filter_criterion} )'))
-  expr(data %>% !!qry_expr)
+  expr(!!data_sym %>% filter(!!parse_expr(filter_criterion)))
 }
 
 
@@ -62,7 +60,7 @@ getElementSafe = function(item_name, obj, default = NULL) {
   else default
 }
 
-`%not in%` = function(item, collection) {!(item %in% collection)}
+`%not in%` = function(item, collection) !(item %in% collection)
 
 expressionsToString = function(..., width = 50) 
   list(...) %>% 
@@ -115,4 +113,9 @@ str_un_title = function(string) string %>%
   str_to_lower %>% 
   paste0(str_sub(string, 2))
   
+
+name_expressions = function(xs) xs %>% 
+  purrr::map(expr_text) %>% 
+  purrr::map(~ str_remove_all(.x, '`')) %>% 
+  {set_names(xs, nm = .)}
   
