@@ -91,7 +91,7 @@ is_empty_str = function(e) {
   else is_null(e)
 }
 
-is_set_str = function(e) !(is_empty_str(e))
+is_str_set = function(e) !(is_empty_str(e))
 
 not_equals = function(e1, e2)
   !(equals(e1, e2))

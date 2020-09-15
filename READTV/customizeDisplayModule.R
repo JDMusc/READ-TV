@@ -142,7 +142,8 @@ customizeDisplayServer = function(input, output, session, data) {
                   selected = ret$xColumn),
       sliderInput(ns("plotHeight"), "Plot Height", 
                   value = ret$plotHeight, min = 20, max = 1000, step = 5),
-      selectInput(ns("shapeColumn"), selectText("Shape", props$maxShapeN), 
+      selectInput(ns("shapeColumn"), 
+                  selectText("Shape", props$maxShapeN), 
                   choices = displayEmptyStrAsNone(validShapeColumns()),
                   selected = ret$shapeColumn),
       selectInput(ns("colorColumn"), 
@@ -167,7 +168,7 @@ customizeDisplayServer = function(input, output, session, data) {
     ))
     
     doFacet = reactive({
-      is_set_str(input$facetColumn)
+      is_str_set(input$facetColumn)
     })
     
     output$facetCustomizeCheck = renderUI({

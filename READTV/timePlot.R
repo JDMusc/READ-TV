@@ -7,7 +7,7 @@ generatePreparePlotCode <- function(data, plot_opts,
   
   #----Mandatory Fields----
   x_col = getSafe("xColumn")
-  stopifnot(is_set_str(x_col))
+  stopifnot(is_str_set(x_col))
   
   
   #----Optional Fields----
@@ -45,7 +45,7 @@ generatePreparePlotCode <- function(data, plot_opts,
   
   
   #----Shape Column----
-  if(is_set_str(shape_col))
+  if(is_str_set(shape_col))
     if(!is.factor(data[[shape_col]]))
       pre_plot_rhs = expr(
         !!pre_plot_rhs %>% 
@@ -108,9 +108,9 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   #---Color & Shape----
   aes_base_inputs = list(y = sym(y_col), x = sym(x_col))
   aes_extra_inputs = list()
-  if(is_set_str(shape_col))
+  if(is_str_set(shape_col))
     aes_extra_inputs$shape = sym(shape_col)
-  if(is_set_str(color_col))
+  if(is_str_set(color_col))
     aes_extra_inputs$colour = sym(color_col)
   
   
@@ -123,7 +123,7 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   
   #----Do Stem----
   if(do_stem_plot){
-    if(is_set_str(color_col))
+    if(is_str_set(color_col))
       p_rhs = expr(!!p_rhs + 
                      geom_segment(
                        aes(
@@ -142,7 +142,7 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   
   
   #----Facet Pagination----
-  if(is_set_str(facet_col)) {
+  if(is_str_set(facet_col)) {
     if(is_facet_paginated) {
       p_rhs = expr(!!p_rhs + 
                      facet_grid_paginate(

@@ -196,7 +196,7 @@ cpaTabServer = function(input, output, session, previousData,
   #----Facet----
   doFacet = reactive({
     ppo = previousPlotOpts
-    isDataLoaded() & (is_set_str(ppo$facetRowsPerPage))
+    isDataLoaded() & (is_str_set(ppo$facetRowsPerPage))
   })
   
   output$facetPageControl = renderUI({
@@ -313,7 +313,7 @@ cpaTabServer = function(input, output, session, previousData,
       return("")
     
     facet_col_sym = previousPlotOpts$facetColumn
-    if(!is.null(facet_col_sym)) facet_col_sym = sym(facet_col_sym)
+    if(is_str_set(facet_col_sym)) facet_col_sym = sym(facet_col_sym)
     
     cpa_params = reactiveValuesToList(cpaParams)
     cpa_params$submit_valid = NULL
