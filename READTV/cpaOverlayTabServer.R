@@ -75,7 +75,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     codes[[et(base_p_pronoun)]] = base_plot_code
     
     y_col = plot_opts$yColumn
-    if(y_col == filteredPlotOpts$no_selection) y_col = NULL
+    if(is_empty_str(y_col)) y_col = NULL
     add_markers_code = expr(
       p <- addCpaMarkersToPlot(!!base_p_pronoun, !!cpa_markers_sym,
                           !!output_sym, y_column = !!(y_col)))
@@ -137,7 +137,7 @@ cpaOverlayTabServer = function(input, output, session, data,
   ##----Axis Settings: Facet----
   doFacet = reactive({
     cd = customizeDisplay
-    isDataLoaded() & (cd$facetRowsPerPage != cd$no_selection)
+    isDataLoaded() & (is_set_str(cd$facetRowsPerPage))
   })
   
   facetPageN <- reactive({

@@ -84,7 +84,14 @@ runExpressions = function(exs, mask) {
 
 
 is_null_or_empty = function(e)
-  is_null(e) | is_empty(e) | is_na(e)
+  is_null(e) | is_empty(e) | is_na(e) | is_empty_str(e)
+
+is_empty_str = function(e) {
+  if(is_character(e)) e == ""
+  else is_null(e)
+}
+
+is_set_str = function(e) !(is_empty_str(e))
 
 not_equals = function(e1, e2)
   !(equals(e1, e2))

@@ -5,84 +5,85 @@ customizeDisplayUI = function(id) {
 }
 
 
-generatePlotDefaults = function(no_selection, overrides = list()){
+generatePlotDefaults = function(overrides = list()){
   ret = list(
-    no_selection = no_selection,
     anyEvent = 'Any Event',
-    shapeColumn = no_selection,
-    colorColumn = no_selection,
-    yColumn = no_selection,
+    shapeColumn = NULL,
+    colorColumn = NULL,
+    yColumn = 'Any Event',
     xColumn = 'Time',
-    facetColumn = no_selection,
-    facetOrder = no_selection,
-    facetLabels = no_selection,
+    facetColumn = NULL,
+    facetOrder = NULL,
+    facetLabels = NULL,
     isFacetCustomized = F,
     isFacetPaginated = F,
-    facetRowsPerPage = no_selection,
+    facetRowsPerPage = NULL,
     facetPage = 1,
     plotHeight = 400,
-    doStemPlot = T,
+    doStemPlot = TRUE,
     geomFunction = "geom_point"
     )
-
-  for(n in names(overrides)) ret[[n]] = overrides[[n]]
-
-  return(ret)
+  
+  ret %>% 
+    purrr::map2(names(ret), 
+                ~ getElementSafe(.y, overrides, ret[[.y]]))
 }
 
-displayNoSelectionAsAnyEvent = function(cols, anyEvent, no_selection) {
-  if(no_selection %not in% cols) 
-    return(cols)
-  else {
-    cols_list = as.list(cols)
-    names(cols_list) = cols
-    names(cols_list)[which(cols == no_selection)] = anyEvent
-    
-    return(cols_list)
-  }
+empty_str = ""
+displayEmptyStrAsAnyEvent = function(cols, anyEvent) {
+  cols %>% 
+    purrr::map_if(~ .x == empty_str, ~ anyEvent) %>%
+    set_names(cols, nm = .)
 }
+
+
+displayEmptyStrAsNone = function(cols) {
+  cols %>% 
+    purrr::map_if(is_empty_str, ~ "None") %>%
+    set_names(cols, nm = .)
+}
+
 
 customizeDisplayServer = function(input, output, session, data) {
   ns = session$ns
   
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
+  
+  f = stringr::str_interp
 
-  no_selection = "None"
-  ret = do.call(reactiveValues, generatePlotDefaults(no_selection))
+  ret = do.call(reactiveValues, generatePlotDefaults())
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   
   numberLikeColumns = function(df) df %>% 
-    validColumns(function(co) 
-      all(class(co) %in% c("logical", "numeric", "integer")))
-  
-  validCountGen = function(n) function(df, co) length(unique(co)) <= n
+    validColumns(~ is_logical(.x) | is_double(.x) |  is_integer(.x))
   
   validCountColumns = function(df, n) df %>% 
-    validColumns(function(co) length(unique(co)) <= n)
+    validColumns(~ n_distinct(.x) <= n)
   
   shouldUpdate = function(valid_choices, current_choice) {
-    should_update = F
-    if(is.null(current_choice)) should_update = T
-    else should_update = !(current_choice %in% valid_choices)
-    
-    return(should_update & length(valid_choices) > 0)
+    if(length(valid_choices) == 0) 
+      FALSE
+    else if(is.null(current_choice)) 
+      TRUE
+    else 
+      current_choice %not in% valid_choices
   }
   
   observe({
-    update = function(valids, current) 
-      if(shouldUpdate(valids, current))
-        ret[[current]] = valids[1]
+    updateRet = function(valids, col) 
+      if(shouldUpdate(valids, ret[[col]]))
+        ret[[col]] = valids[1]
     
-    update(validShapeColumns(), ret$shapeColumn)
+    updateRet(validShapeColumns(), 'shapeColumn')
     
-    update(validColorColumns(), ret$colorColumn)
+    updateRet(validColorColumns(), 'colorColumn')
   })
   
   validShapeColumns = reactive({
     req(data())
     
-    append(no_selection, validCountColumns(data(), props$maxShapeN))
+    append(empty_str, validCountColumns(data(), props$maxShapeN))
   })
   
   
@@ -91,28 +92,25 @@ customizeDisplayServer = function(input, output, session, data) {
     
     data() %>%
       numberLikeColumns %>%
-      {append(no_selection, .)}
+      append(empty_str, .)
   })
 
   validXColumns = reactive({
     req(data())
     
     data() %>%
-      validColumns(function(co) 
-        all(
-          class(co) %in% c("numeric", "integer", 
-                           "POSIXct", "POSIXt", 
-                           "difftime",
-                           "Date")
-          )
-      ) 
+      validColumns(~ is.difftime(.x) | 
+                     is_double(.x)   |
+                     is_integer(.x)  |
+                     is_logical(.x)  |
+                     is.timepoint(.x))
   })
   
   validColorColumns = reactive({
     req(data())
     
     d = data()
-    no_selection %>% 
+    empty_str %>% 
       append(validCountColumns(d, props$maxColorN)) %>%
       union(numberLikeColumns(d))
   })
@@ -120,12 +118,14 @@ customizeDisplayServer = function(input, output, session, data) {
   validFacetColumns = reactive({
     req(data())
     
-    append(no_selection, validCountColumns(data(), props$maxFacetN))
+    data() %>% 
+      validCountColumns(props$maxFacetN) %>% 
+      append(empty_str, .)
   })
   
   observeEvent(input$customizeDisplay, {
-    selectText = function(col, maxN, ext = "") 
-      paste0(col, " (Max ", maxN, " unique values", ext,")")
+    selectText = function(col, maxN, ext = "")
+      f("${col} (Max  ${maxN} unique values)${ext}")
     
     showModal(modalDialog(
       title = "Customize Display",
@@ -133,11 +133,9 @@ customizeDisplayServer = function(input, output, session, data) {
         actionButton(ns("modalSubmit"), "Submit"),
         modalButton("Cancel")
       ),
-      easyClose = T,
+      easyClose = TRUE,
       selectInput(ns("yColumn"), "Y (numeric/logical)",
-                  choices = 
-                    displayNoSelectionAsAnyEvent(
-                      validYColumns(), ret$anyEvent, no_selection),
+                  choices = validYColumns(),
                   selected = ret$yColumn),
       selectInput(ns("xColumn"), "X (numeric/date time)",
                   choices = validXColumns(),
@@ -145,19 +143,20 @@ customizeDisplayServer = function(input, output, session, data) {
       sliderInput(ns("plotHeight"), "Plot Height", 
                   value = ret$plotHeight, min = 20, max = 1000, step = 5),
       selectInput(ns("shapeColumn"), selectText("Shape", props$maxShapeN), 
-                  choices = validShapeColumns(),
+                  choices = displayEmptyStrAsNone(validShapeColumns()),
                   selected = ret$shapeColumn),
       selectInput(ns("colorColumn"), 
                   selectText(
                     "Color", props$maxColorN, ", or numeric/logical"), 
-                  choices = validColorColumns(),
+                  choices = displayEmptyStrAsNone(validColorColumns()),
                   selected = ret$colorColumn),
       checkboxInput(ns("doStemPlot"), "Stem Plot", value = ret$doStemPlot),
       fluidRow(
         column(6,
                selectInput(ns("facetColumn"), 
                            selectText("Facet", props$maxFacetN),
-                           choices = validFacetColumns(),
+                           choices = 
+                             displayEmptyStrAsNone(validFacetColumns()),
                            selected = ret$facetColumn)),
         column(2,
                fluidRow(uiOutput(ns("facetCustomizeCheck"))),
@@ -167,50 +166,48 @@ customizeDisplayServer = function(input, output, session, data) {
       fluidRow(uiOutput(ns("facetCustomizeBucket")))
     ))
     
+    doFacet = reactive({
+      is_set_str(input$facetColumn)
+    })
+    
     output$facetCustomizeCheck = renderUI({
-      if(input$facetColumn == no_selection) return()
-      
-      checkboxInput(ns("customizeFacet"), 
-                    "Customize", value = ret$isFacetCustomized)
+      if(doFacet())
+        checkboxInput(ns("customizeFacet"), 
+                      "Customize", value = ret$isFacetCustomized)
     })
     
     output$facetPaginateCheck = renderUI({
-      if(input$facetColumn == no_selection) return()
-      
-      checkboxInput(ns("paginateFacet"), 
-                    "Paginate", value = ret$isFacetPaginated)
+      if(doFacet())
+        checkboxInput(ns("paginateFacet"), 
+                      "Paginate", value = ret$isFacetPaginated)
     })
     
     showFacetCustomizeBucket = reactive({
       cf = input$customizeFacet
       if(is.null(cf))
-        return(F)
-      
-      return(input$facetColumn != no_selection & cf)
+        FALSE
+      else
+        doFacet() & cf
     })
     
     output$facetCustomizeBucket = renderUI({
       if(!showFacetCustomizeBucket())
         return()
 
+      makeTextInput = function(id, label = id, value = as.character(label))
+        textInput(ns(as.character(id)), 
+                  label, value = value, placeholder = value)
+      
       if(ret$facetColumn != input$facetColumn)
-        facet_values = data()[[input$facetColumn]] %>% 
-          unique %>% lapply(
-            function(fv) {
-              fvc = as.character(fv)
-              textInput(ns(fvc), fvc, value = fvc, placeholder = fvc)
-            }
-          )
-      else {
+        facet_values = data() %>% 
+        extract2(input$facetColumn) %>% 
+        unique %>% 
+        purrr::map(makeTextInput)
+      else
         facet_values = 1:length(ret$facetOrder) %>%
-          lapply(
-            function(i) {
-              fl = as.character(ret$facetOrder[i])
-              fv = as.character(ret$facetLabels[i])
-              textInput(ns(fl), fl, value = fv)
-            }
+          purrr::map(~ makeTextInput(ret$facetOrder[[.x]],
+                                     label = ret$facetLabels[.x])
           )
-      }
       
       div(bucket_list(
         header = "Customize Facet",
@@ -224,9 +221,9 @@ customizeDisplayServer = function(input, output, session, data) {
     
     showFacetPaginateBucket = reactive({
       if(is.null(input$paginateFacet))
-        return(F)
-      
-      return(input$facetColumn != no_selection & input$paginateFacet)
+        FALSE
+      else
+        doFacet() & input$paginateFacet
     })
     
     output$facetPaginateBucket = renderUI({
@@ -235,7 +232,7 @@ customizeDisplayServer = function(input, output, session, data) {
       
       sliderInput(ns("facetRowsPerPage"), "Items Per Page",
                   min = 2, max = 20, 
-                  value = ifelse(ret$facetRowsPerPage == no_selection, 
+                  value = ifelse(is_empty_str(ret$facetRowsPerPage), 
                                  10, ret$facetRowsPerPage))
     })
     
@@ -251,17 +248,16 @@ customizeDisplayServer = function(input, output, session, data) {
       
       ret$facetColumn = input$facetColumn
       if(showFacetCustomizeBucket()) {
-        ret$isFacetCustomized = T
+        ret$isFacetCustomized = TRUE
         ret$facetOrder = input$facet_list
         
         input$facet_list %>% 
-          lapply(function(f) input[[f]]) %>% 
-          as.character %>% 
-          {ret$facetLabels = .}
+          purrr::map(~ as.character(input[[.x]])) %>% 
+          {ret$facetLabels = as.array(.)}
       }
       
       if(showFacetPaginateBucket()) {
-        ret$isFacetPaginated = T
+        ret$isFacetPaginated = TRUE
         ret$facetRowsPerPage = input$facetRowsPerPage
       }
       

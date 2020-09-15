@@ -135,9 +135,7 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   copyPlotOpts = function(plot_opts) {
-    no_selection = plot_opts$no_selection
-    
-    generatePlotDefaults(no_selection, plot_opts)
+    generatePlotDefaults(plot_opts)
   }
   
   #reactiveValues so that dependencies update on a given field instead of any field
@@ -156,14 +154,14 @@ cpaTabServer = function(input, output, session, previousData,
     req(plotOptions)
     
     plot_opts = copyPlotOpts(plotOptions)
-    no_selection = plot_opts$no_selection
     
     y_col = yColumnDisplay()
     if(is.list(y_col)) 
       y_col = y_col$`Event Frequency`
+    
     plot_opts$yColumn = y_col
-    plot_opts$shapeColumn = no_selection
-    plot_opts$colorColumn = no_selection
+    plot_opts$shapeColumn = NULL
+    plot_opts$colorColumn = NULL
     
     updateReactiveVals(plot_opts, smoothedPlotOptions)
   })
@@ -198,7 +196,7 @@ cpaTabServer = function(input, output, session, previousData,
   #----Facet----
   doFacet = reactive({
     ppo = previousPlotOpts
-    isDataLoaded() & (ppo$facetRowsPerPage != ppo$no_selection)
+    isDataLoaded() & (is_set_str(ppo$facetRowsPerPage))
   })
   
   output$facetPageControl = renderUI({
@@ -220,10 +218,9 @@ cpaTabServer = function(input, output, session, previousData,
   #---Display----
   output$display = renderUI({
     
-    yColumns = displayNoSelectionAsAnyEvent(
+    yColumns = displayEmptyStrAsAnyEvent(
       c(previousPlotOpts$yColumn, "Event Frequency", "Both"),
-      anyEvent = previousPlotOpts$anyEvent,
-      no_selection = previousPlotOpts$no_selection)
+      anyEvent = previousPlotOpts$anyEvent)
     
     fluidRow(
       if(doSmooth())
@@ -304,7 +301,7 @@ cpaTabServer = function(input, output, session, previousData,
                agg_fn_expr = !!(preprocess$agg_fn_expr),
                stride = !!(preprocess$smooth_stride),
                index_col = !!(cpaIndexColumn()),
-               facet_col = !!(facetColumn())
+               facet_col = !!(previousPlotOpts$facetColumn)
              )
       )
     else
@@ -315,7 +312,7 @@ cpaTabServer = function(input, output, session, previousData,
     if(!doPlotCpa())
       return("")
     
-    facet_col_sym = facetColumn()
+    facet_col_sym = previousPlotOpts$facetColumn
     if(!is.null(facet_col_sym)) facet_col_sym = sym(facet_col_sym)
     
     cpa_params = reactiveValuesToList(cpaParams)
@@ -329,7 +326,7 @@ cpaTabServer = function(input, output, session, previousData,
   observeEvent(previousData(), {print("prev data changed")})
   observe({tmp = preprocess$agg_fn; print("agg fn changed")})
   observe({tmp = cpaIndexColumn(); print("index col changed")})
-  observe({tmp = facetColumn(); print("facet col changed")})
+  observe({tmp = previousPlotOpts$facetColumn; print("facet col changed")})
   
   cpaInputColumn = reactive({
     if(doSmooth()) 'CpaInput'
@@ -338,12 +335,6 @@ cpaTabServer = function(input, output, session, previousData,
   
   cpaIndexColumn = reactive({
     smoothedPlotOptions$xColumn
-  })
-  
-  facetColumn = reactive({
-    ppo = previousPlotOpts
-    if(ppo$facetColumn == ppo$no_selection) NULL
-    else ppo$facetColumn
   })
   
   

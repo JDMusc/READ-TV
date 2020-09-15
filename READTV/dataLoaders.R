@@ -56,6 +56,7 @@ loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym, cols = lis
 appendEventsWithRelativeAndDeltaTimeCode = function(input_expr, output_sym, cols = list()) {
   base = appendColsRhs(input_expr, cols)
   expr(!!output_sym <- !!base %>% 
+         mutate(`Any Event` = 1) %>%
          group_by(Case) %>% 
          group_modify(~ .x %>% mutate(deltaTime = Time - lag(Time),
                                       RelativeTime = Time - min(Time, na.rm = TRUE))) %>% 

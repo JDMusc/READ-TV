@@ -31,7 +31,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   isYcolAnyEvent = reactive(
-    yColumn() == previousPlotOpts$no_selection
+    yColumn() == 'Any Event'
   )
   
   eventFrequency = "Event Frequency"
@@ -42,9 +42,8 @@ cpaPreprocessServer = function(input, output, session, previousData,
     if(isYcolAnyEvent()) vals
     else yColumn() %>% 
       append(vals) %>% 
-      displayNoSelectionAsAnyEvent(
-        previousPlotOpts$anyEvent,
-        previousPlotOpts$no_selection
+      displayEmptyStrAsAnyEvent(
+        previousPlotOpts$anyEvent
       )
   })
   

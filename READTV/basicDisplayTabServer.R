@@ -132,7 +132,7 @@ basicDisplayTabServer = function(input, output, session, data,
   ##----Axis Settings: Facet----
   doFacet = reactive({
     cd = customizeDisplay
-    isDataLoaded() & (cd$facetRowsPerPage != cd$no_selection)
+    isDataLoaded() & is_set_str(cd$facetRowsPerPage)
   })
   
   facetPageN <- reactive({
