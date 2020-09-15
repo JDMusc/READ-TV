@@ -3,9 +3,9 @@ cpaTabServer = function(input, output, session, previousData,
                         isDataLoaded, previousPlotOpts, 
                         facetPageN, previousSourceString,
                         input_sym = sym("filtered_data"),
-			cpa_markers_sym = sym("cpa_markers")){
-  ns = session$ns
+                        cpa_markers_sym = sym("cpa_markers")){
   
+  ns = session$ns
   
   #----Code Gen Symbols and Pronouns----
   et = expr_text
@@ -293,8 +293,7 @@ cpaTabServer = function(input, output, session, previousData,
   cpaInputDataCode = reactive({
     req(previousData())
     
-    ds = doSmooth()
-    if(ds)
+    if(doSmooth())
       expr(!!cpa_input_df_pronoun <- !!sym(input_sym) %>% 
              preprocessForCpa(
                !!(preprocess$smooth_window_n), 
@@ -392,7 +391,6 @@ cpaTabServer = function(input, output, session, previousData,
   
   
   #----Return----
-  ret = reactiveValues()
   
   return(list(
     cpaMarkers = cpaMarkers,

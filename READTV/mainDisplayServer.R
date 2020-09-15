@@ -1,6 +1,6 @@
 
 mainDisplayServer = function(input, output, session, eventsPath = NULL,
-                             inputData = NULL){
+                             inputData = NULL, initPlotOpts = list()){
   ns = session$ns
   
   #------------Data Upload--------
@@ -17,6 +17,7 @@ mainDisplayServer = function(input, output, session, eventsPath = NULL,
                                "basicDisplay", 
                                data, fileName, isDataLoaded,
                                dataUploadTab$fullSourceString,
+                               initPlotOpts = initPlotOpts,
                                input_sym = dataUploadOutputSym,
                                output_sym = basicDisplayOutputSym)
   dataFilter = basicDisplayTab$dataFilter

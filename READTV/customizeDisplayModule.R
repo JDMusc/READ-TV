@@ -44,14 +44,15 @@ displayEmptyStrAsNone = function(cols) {
 }
 
 
-customizeDisplayServer = function(input, output, session, data) {
+customizeDisplayServer = function(input, output, session, data,
+                                  initPlotOpts = generatePlotDefaults()) {
   ns = session$ns
   
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
   
   f = stringr::str_interp
 
-  ret = do.call(reactiveValues, generatePlotDefaults())
+  ret = do.call(reactiveValues, generatePlotDefaults(initPlotOpts))
   
   validColumns = function(df, fn) df %>% select_if(fn) %>% colnames
   

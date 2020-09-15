@@ -126,3 +126,5 @@ name_expressions = function(xs) xs %>%
   purrr::map(~ str_remove_all(.x, '`')) %>% 
   {set_names(xs, nm = .)}
   
+
+tvOpts = function(...) ensyms(...) %>% purrr::map(as_string)

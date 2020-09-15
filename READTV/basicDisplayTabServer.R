@@ -1,6 +1,7 @@
 
 basicDisplayTabServer = function(input, output, session, data, 
                               fileName, isDataLoaded, previousSourceString,
+                              initPlotOpts = list(),
                               input_sym = sym('data'),
                               select_output_sym = sym('selected_data'),
                               output_sym = sym('filtered_data')){
@@ -51,9 +52,8 @@ basicDisplayTabServer = function(input, output, session, data,
   plot_out = 'plot_data'
   
   makeDataMask = function(filtered_data) {
-    mask = list()
-    mask[[plot_in]] = filtered_data
-    mask
+    list(filtered_data) %>% 
+      set_names(nm = plot_in)
   }
   
   
@@ -68,10 +68,10 @@ basicDisplayTabServer = function(input, output, session, data,
   plotInputCode = reactive({
     req(isDataLoaded())
     
-    mask = runExpressions(currentTabCode(), list(data = data()))
-    
-    generatePreparePlotCode(mask[[et(output_sym)]], customizeDisplay, 
-                            df_in_pronoun = output_sym)
+    currentTabCode() %>% 
+      runExpressions(list(data = data())) %>% 
+      extract2(et(output_sym)) %>% 
+      generatePreparePlotCode(customizeDisplay, df_in_pronoun = output_sym)
   })
   
   
@@ -127,7 +127,7 @@ basicDisplayTabServer = function(input, output, session, data,
   
   #----Axis Settings----
   customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay", 
-                                filteredData)
+                                filteredData, initPlotOpts)
   
   ##----Axis Settings: Facet----
   doFacet = reactive({
