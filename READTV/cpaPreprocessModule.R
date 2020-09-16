@@ -31,7 +31,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   isYcolAnyEvent = reactive(
-    y() == 'Any Event'
+    y() == previousPlotOpts$anyEvent
   )
   
   eventFrequency = "Event Frequency"

@@ -35,7 +35,7 @@ cpaTabLogic.addEventFrequencyCode = function(plot_opts,
                                              out_p_pronoun = sym("p")) {
   
   rhs = p_pronoun
-  original_y = if(is_str_set(plot_opts$y)) plot_opts$y else "Any Event"
+  original_y = if(is_str_set(plot_opts$y)) plot_opts$y else plot_opts$anyEvent
   if(show_original_and_event_frequency) {
     f = stringr::str_interp
     

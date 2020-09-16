@@ -6,11 +6,12 @@ customizeDisplayUI = function(id) {
 
 
 generatePlotDefaults = function(overrides = list()){
+  anyEvent = getElementSafe(overrides, anyEvent, 'Any Event')
   ret = list(
-    anyEvent = 'Any Event',
+    anyEvent = anyEvent,
     shape = NULL,
     color = NULL,
-    y = 'Any Event',
+    y = anyEvent,
     x = 'Time',
     facetOn = NULL,
     facetOrder = NULL,
@@ -45,7 +46,7 @@ displayEmptyStrAsNone = function(cols) {
 
 
 customizeDisplayServer = function(input, output, session, data,
-                                  initPlotOpts = generatePlotDefaults()) {
+                                  initPlotOpts = list()) {
   ns = session$ns
   
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
