@@ -119,18 +119,18 @@ cpaTabServer = function(input, output, session, previousData,
   })
   
   showOriginalAndEventFrequency = reactive({
-    is.list(yColumnDisplay())
+    is.list(yDisplay())
   })
   
   showSmoothed = reactive({
     (
-      ('CpaInput' %in% yColumnDisplay()) | 
+      ('CpaInput' %in% yDisplay()) | 
         showOriginalAndEventFrequency()
     ) & doSmooth()
   })
   
   showOriginal = reactive({
-    (previousPlotOpts$yColumn %in% yColumnDisplay()) |
+    (previousPlotOpts$y %in% yDisplay()) |
       showOriginalAndEventFrequency()
   })
   
@@ -155,13 +155,13 @@ cpaTabServer = function(input, output, session, previousData,
     
     plot_opts = copyPlotOpts(plotOptions)
     
-    y_col = yColumnDisplay()
+    y_col = yDisplay()
     if(is.list(y_col)) 
       y_col = y_col$`Event Frequency`
     
-    plot_opts$yColumn = y_col
-    plot_opts$shapeColumn = NULL
-    plot_opts$colorColumn = NULL
+    plot_opts$y = y_col
+    plot_opts$shape = NULL
+    plot_opts$color = NULL
     
     updateReactiveVals(plot_opts, smoothedPlotOptions)
   })
@@ -219,7 +219,7 @@ cpaTabServer = function(input, output, session, previousData,
   output$display = renderUI({
     
     yColumns = displayEmptyStrAsAnyEvent(
-      c(previousPlotOpts$yColumn, "Event Frequency", "Both"),
+      c(previousPlotOpts$y, "Event Frequency", "Both"),
       anyEvent = previousPlotOpts$anyEvent)
     
     fluidRow(
@@ -234,7 +234,7 @@ cpaTabServer = function(input, output, session, previousData,
   yColMapping = reactive({
     mapping = list(`Event Frequency` = 'CpaInput')
     
-    prev_y = previousPlotOpts$yColumn
+    prev_y = previousPlotOpts$y
     mapping[[prev_y]] = prev_y
     
     mapping$Both = mapping
@@ -242,12 +242,12 @@ cpaTabServer = function(input, output, session, previousData,
     mapping
   })
   
-  yColumnDisplay = reactive({
+  yDisplay = reactive({
     mapping = yColMapping()
     
     ds = doSmooth()
     if(!ds)
-      return(mapping[[previousPlotOpts$yColumn]])
+      return(mapping[[previousPlotOpts$y]])
     
     y_col_selected = !is.null(input$y_column)
     if(y_col_selected)
@@ -300,7 +300,7 @@ cpaTabServer = function(input, output, session, previousData,
                agg_fn_expr = !!(preprocess$agg_fn_expr),
                stride = !!(preprocess$smooth_stride),
                index_col = !!(cpaIndexColumn()),
-               facet_col = !!(previousPlotOpts$facetColumn)
+               facet_col = !!(previousPlotOpts$facetOn)
              )
       )
     else
@@ -311,7 +311,7 @@ cpaTabServer = function(input, output, session, previousData,
     if(!doPlotCpa())
       return("")
     
-    facet_col_sym = previousPlotOpts$facetColumn
+    facet_col_sym = previousPlotOpts$facetOn
     if(is_str_set(facet_col_sym)) facet_col_sym = sym(facet_col_sym)
     
     cpa_params = reactiveValuesToList(cpaParams)
@@ -325,15 +325,15 @@ cpaTabServer = function(input, output, session, previousData,
   observeEvent(previousData(), {print("prev data changed")})
   observe({tmp = preprocess$agg_fn; print("agg fn changed")})
   observe({tmp = cpaIndexColumn(); print("index col changed")})
-  observe({tmp = previousPlotOpts$facetColumn; print("facet col changed")})
+  observe({tmp = previousPlotOpts$facetOn; print("facet col changed")})
   
   cpaInputColumn = reactive({
     if(doSmooth()) 'CpaInput'
-    else yColumnDisplay()
+    else yDisplay()
   })
   
   cpaIndexColumn = reactive({
-    smoothedPlotOptions$xColumn
+    smoothedPlotOptions$x
   })
   
   

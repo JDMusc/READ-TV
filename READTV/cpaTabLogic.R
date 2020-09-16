@@ -35,14 +35,14 @@ cpaTabLogic.addEventFrequencyCode = function(plot_opts,
                                              out_p_pronoun = sym("p")) {
   
   rhs = p_pronoun
-  original_y = if(is_str_set(plot_opts$yColumn)) plot_opts$yColumn else "Any Event"
+  original_y = if(is_str_set(plot_opts$y)) plot_opts$y else "Any Event"
   if(show_original_and_event_frequency) {
     f = stringr::str_interp
     
     ylabel = f("${original_y}; ${smooth_fn_name} of ${original_y}")
     rhs = expr(!!p_pronoun + 
-                 geom_line(aes(x = !!(sym(cpa_plot_opts$xColumn)), 
-                               y= !!(sym(cpa_plot_opts$yColumn))), 
+                 geom_line(aes(x = !!(sym(cpa_plot_opts$x)), 
+                               y= !!(sym(cpa_plot_opts$y))), 
                            data = !!(cpa_plot_df_pronoun),
                            linetype = 'dotdash') +
                  scale_y_continuous() +
@@ -65,16 +65,16 @@ cpaTabLogic.addCpaMarkersCode = function(
   cpa_markers_pronoun, 
   add_markers, show_original, show_original_and_event_frequency) {
   
-  x_col = plot_opts$xColumn
+  x_col = plot_opts$x
   if(add_markers) {
     use_cpa_y = !show_original
     if(show_original_and_event_frequency) {
       mx_cpa = cpa_plot_df %>% 
-        pull(!!sym(cpa_plot_opts$yColumn)) %>% 
+        pull(!!sym(cpa_plot_opts$y)) %>% 
         max(na.rm = T)
       
       mx_prev = base_plot_df %>% 
-        getElementSafe(plot_opts$yColumn, 1) %>% 
+        getElementSafe(plot_opts$y, 1) %>% 
         max(na.rm = T)
       
       use_cpa_y = mx_cpa > mx_prev
@@ -82,11 +82,11 @@ cpaTabLogic.addCpaMarkersCode = function(
     
     if(use_cpa_y) {
       ref_data = cpa_plot_df_pronoun
-      y_col = cpa_plot_opts$yColumn
-      x_col = cpa_plot_opts$xColumn
+      y_col = cpa_plot_opts$y
+      x_col = cpa_plot_opts$x
     } else {
       ref_data = base_plot_df_pronoun
-      y_col = plot_opts$yColumn
+      y_col = plot_opts$y
     }
     
     rhs = expr(addCpaMarkersToPlot(!!p_pronoun, !!cpa_markers_pronoun,

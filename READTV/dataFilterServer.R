@@ -81,13 +81,11 @@ dataFilterServer = function(input, output, session, data,
 
 
   columnValues = function(df, col) {
-	  chs = tryCatch({df[[col]] %>% unique},
-		  error = function(e) browser())
-
-	  if(class(chs) == "factor")
-		  as.character(chs)
-	  else
-		  chs
+    df %>% 
+      select(col) %>% 
+      mutate_if(is.factor, as.character) %>% 
+      pull(col) %>% 
+      unique
   }
 
 

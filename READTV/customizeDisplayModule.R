@@ -8,11 +8,11 @@ customizeDisplayUI = function(id) {
 generatePlotDefaults = function(overrides = list()){
   ret = list(
     anyEvent = 'Any Event',
-    shapeColumn = NULL,
-    colorColumn = NULL,
-    yColumn = 'Any Event',
-    xColumn = 'Time',
-    facetColumn = NULL,
+    shape = NULL,
+    color = NULL,
+    y = 'Any Event',
+    x = 'Time',
+    facetOn = NULL,
     facetOrder = NULL,
     facetLabels = NULL,
     isFacetCustomized = F,
@@ -76,9 +76,9 @@ customizeDisplayServer = function(input, output, session, data,
       if(shouldUpdate(valids, ret[[col]]))
         ret[[col]] = valids[1]
     
-    updateRet(validShapeColumns(), 'shapeColumn')
+    updateRet(validShapeColumns(), 'shape')
     
-    updateRet(validColorColumns(), 'colorColumn')
+    updateRet(validColorColumns(), 'color')
   })
   
   validShapeColumns = reactive({
@@ -135,31 +135,31 @@ customizeDisplayServer = function(input, output, session, data,
         modalButton("Cancel")
       ),
       easyClose = TRUE,
-      selectInput(ns("yColumn"), "Y (numeric/logical)",
+      selectInput(ns("y"), "Y (numeric/logical)",
                   choices = validYColumns(),
-                  selected = ret$yColumn),
-      selectInput(ns("xColumn"), "X (numeric/date time)",
+                  selected = ret$y),
+      selectInput(ns("x"), "X (numeric/date time)",
                   choices = validXColumns(),
-                  selected = ret$xColumn),
+                  selected = ret$x),
       sliderInput(ns("plotHeight"), "Plot Height", 
                   value = ret$plotHeight, min = 20, max = 1000, step = 5),
-      selectInput(ns("shapeColumn"), 
+      selectInput(ns("shape"), 
                   selectText("Shape", props$maxShapeN), 
                   choices = displayEmptyStrAsNone(validShapeColumns()),
-                  selected = ret$shapeColumn),
-      selectInput(ns("colorColumn"), 
+                  selected = ret$shape),
+      selectInput(ns("color"), 
                   selectText(
                     "Color", props$maxColorN, ", or numeric/logical"), 
                   choices = displayEmptyStrAsNone(validColorColumns()),
-                  selected = ret$colorColumn),
+                  selected = ret$color),
       checkboxInput(ns("doStemPlot"), "Stem Plot", value = ret$doStemPlot),
       fluidRow(
         column(6,
-               selectInput(ns("facetColumn"), 
+               selectInput(ns("facetOn"), 
                            selectText("Facet", props$maxFacetN),
                            choices = 
                              displayEmptyStrAsNone(validFacetColumns()),
-                           selected = ret$facetColumn)),
+                           selected = ret$facetOn)),
         column(2,
                fluidRow(uiOutput(ns("facetCustomizeCheck"))),
                fluidRow(uiOutput(ns("facetPaginateCheck"))))
@@ -169,7 +169,7 @@ customizeDisplayServer = function(input, output, session, data,
     ))
     
     doFacet = reactive({
-      is_str_set(input$facetColumn)
+      is_str_set(input$facetOn)
     })
     
     output$facetCustomizeCheck = renderUI({
@@ -200,11 +200,11 @@ customizeDisplayServer = function(input, output, session, data,
         textInput(ns(as.character(id)), 
                   label, value = value, placeholder = value)
       
-      if(ret$facetColumn != input$facetColumn)
+      if(ret$facetOn != input$facetOn)
         facet_values = data() %>% 
-        extract2(input$facetColumn) %>% 
-        unique %>% 
-        purrr::map(makeTextInput)
+          extract2(input$facetOn) %>% 
+          unique %>% 
+          purrr::map(makeTextInput)
       else
         facet_values = 1:length(ret$facetOrder) %>%
           purrr::map(~ makeTextInput(ret$facetOrder[[.x]],
@@ -239,16 +239,16 @@ customizeDisplayServer = function(input, output, session, data,
     })
     
     observeEvent(input$modalSubmit, {
-      ret$xColumn = input$xColumn
-      ret$yColumn = input$yColumn
+      ret$x = input$x
+      ret$y = input$y
       ret$plotHeight = input$plotHeight
       
-      ret$shapeColumn = input$shapeColumn
-      ret$colorColumn = input$colorColumn
+      ret$shape = input$shape
+      ret$color = input$color
       
       ret$doStemPlot = input$doStemPlot
       
-      ret$facetColumn = input$facetColumn
+      ret$facetOn = input$facetOn
       if(showFacetCustomizeBucket()) {
         ret$isFacetCustomized = TRUE
         ret$facetOrder = input$facet_list

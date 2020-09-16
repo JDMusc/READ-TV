@@ -6,16 +6,16 @@ generatePreparePlotCode <- function(data, plot_opts,
     getElementSafe(item_name, plot_opts, default)
   
   #----Mandatory Fields----
-  x_col = getSafe("xColumn")
+  x_col = getSafe("x")
   stopifnot(is_str_set(x_col))
   
   
   #----Optional Fields----
-  y_col = getSafe('yColumn')
+  y_col = getSafe('y')
   
-  shape_col = getSafe('shapeColumn')
+  shape_col = getSafe('shape')
   
-  facet_col = getSafe('facetColumn')
+  facet_col = getSafe('facetOn')
   facet_order = getSafe('facetOrder')
   facet_labels = getSafe('facetLabels')
   
@@ -71,7 +71,7 @@ generatePreparePlotCode <- function(data, plot_opts,
       pre_plot_rhs = base_facet()
   
   
-  return(expr(!!df_out_sym <- !!pre_plot_rhs))
+  expr(!!df_out_sym <- !!pre_plot_rhs)
 }
 
 
@@ -84,18 +84,18 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   
   
   #----Mandatory Fields----
-  x_col = getSafe("xColumn")
+  x_col = getSafe("x")
   if(is_empty_str(x_col)) stop("x column must be set")
   
   
   #----Optional Fields----
-  y_col = getSafe('yColumn')
+  y_col = getSafe('y')
   if(is_empty_str(y_col)) y_col = 'Event'
   
-  shape_col = getSafe('shapeColumn')
-  color_col = getSafe('colorColumn')
+  shape_col = getSafe('shape')
+  color_col = getSafe('color')
   
-  facet_col = getSafe('facetColumn')
+  facet_col = getSafe('facetOn')
   
   is_facet_paginated = getSafe('isFacetPaginated', F)
   facet_rows_per_pg = getSafe('facetRowsPerPage')

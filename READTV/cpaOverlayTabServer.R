@@ -74,7 +74,7 @@ cpaOverlayTabServer = function(input, output, session, data,
                                           out_p_pronoun = base_p_pronoun)
     codes[[et(base_p_pronoun)]] = base_plot_code
     
-    y_col = plot_opts$yColumn
+    y_col = plot_opts$y
     if(is_empty_str(y_col)) y_col = NULL
     add_markers_code = expr(
       p <- addCpaMarkersToPlot(!!base_p_pronoun, !!cpa_markers_sym,

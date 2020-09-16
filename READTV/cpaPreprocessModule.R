@@ -26,12 +26,12 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   
-  yColumn = reactive({
-    previousPlotOpts$yColumn
+  y = reactive({
+    previousPlotOpts$y
   })
   
   isYcolAnyEvent = reactive(
-    yColumn() == 'Any Event'
+    y() == 'Any Event'
   )
   
   eventFrequency = "Event Frequency"
@@ -40,7 +40,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
     vals = c(eventFrequency)
     
     if(isYcolAnyEvent()) vals
-    else yColumn() %>% 
+    else y() %>% 
       append(vals) %>% 
       displayEmptyStrAsAnyEvent(
         previousPlotOpts$anyEvent
@@ -48,7 +48,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
   
   output$doSmooth = renderUI({
-    selected = if(isYcolAnyEvent()) eventFrequency else yColumn()
+    selected = if(isYcolAnyEvent()) eventFrequency else y()
     selectInput(ns("doSmoothSelect"), "CPA Input",
                      choices = validCpaInputs(),
                      selected = selected)
@@ -104,7 +104,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
     req(previousData())
     
     previousData() %>% 
-      pull(previousPlotOpts$xColumn) %>% 
+      pull(previousPlotOpts$x) %>% 
       {is.difftime(.) | is.timepoint(.)}
   })
   
@@ -213,7 +213,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
       val = input %>% extract2(f('${tag}Units'))
       if(is.null(val))
         val = previousData() %>% 
-          pull(previousPlotOpts$xColumn) %>% 
+          pull(previousPlotOpts$x) %>% 
           defaultUnits %>% 
           {paste0('d', .)}
       
