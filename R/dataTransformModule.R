@@ -279,11 +279,11 @@ dataTransformServer = function(input, output, session, quickInspect,
     qip = quickInspectPreview()
     qip_cols = quickInspectColumns()
 
-    must_chose = 'Must Chose a Column'
+    must_choose = 'Must Choose a Column'
 
     time_choices = qip_cols %>%
       keep(~ is.numeric(qip[[.x]]) | is.timepoint(qip[[.x]])) %>%
-      columnChoices(must_chose, top_selection_val = un_selected_column_const)
+      columnChoices(must_choose, top_selection_val = un_selected_column_const)
 
     if('Time' %in% missingCols())
       selectInput(
