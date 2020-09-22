@@ -167,12 +167,6 @@ dataTransformServer = function(input, output, session, quickInspect,
     qip = quickInspectPreview()
 
     div(
-      selectInput(
-        ns("rowSkip"),
-        "Row Skip (assumes top row contains column names)",
-        choices = 0:100,
-        selected = 0
-      ),
       uiOutput(ns("TimeColumnSection")),
       uiOutput(ns("CaseColumnSection")),
       uiOutput(ns("Event.TypeColumnSection")),
