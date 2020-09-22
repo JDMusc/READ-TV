@@ -1,7 +1,7 @@
-.Rhistory
-*.Rproj*
-*.xls*
 .Rproj.user
+.Rhistory
+*.xls*
 refs/
 unrelated_analysis
 administrative
+.here

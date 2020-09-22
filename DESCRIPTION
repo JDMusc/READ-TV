@@ -1,0 +1,37 @@
+Package: readtv
+Title: Research and Exploratory Analysis Time-data Visualization (READ-TV)
+Version: 0.1
+Authors@R: 
+    person(given = "John",
+           family = "Del Gaizo",
+           role = c("aut", "cre"),
+           email = "delgaizoj@musc.edu",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Shiny application and functions to quickly explore longitudinal data and changepoints.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports:
+    dplyr,
+    changepoint,
+    DT,
+    feasts,
+    ggforce,
+    ggplot2,
+    lubridate,
+    magrittr,
+    purrr,
+    readr,
+    rlang,
+    shiny,
+    shinyjs,
+    shinythemes,
+    sortable,
+    stringr,
+    tidyr,
+    tools,
+    tsibble
+Depends: 
+    R (>= 2.10)
