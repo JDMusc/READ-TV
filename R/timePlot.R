@@ -144,7 +144,7 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   if(is_str_set(facet_col)) {
     if(is_facet_paginated) {
       p_rhs = expr(!!p_rhs +
-                     facet_grid_paginate(
+                     ggforce::facet_grid_paginate(
                        !!sym(facet_col) ~ .,
                        ncol = 1,
                        nrow = !!facet_rows_per_pg,

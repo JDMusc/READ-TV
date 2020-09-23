@@ -1,4 +1,5 @@
-READ-TV, Research & Exploratory Analysis Driven Time-data Visualization
+READ-TV, Research & Exploratory Analysis Driven Time-data Visualization.
+Version 0.1
 ================
 
 ## Description
@@ -65,15 +66,15 @@ with the specified axes, colors, etc.
 <img src="tools/readme/japan_eq_3_11.png">
 
 READ-TV exports 5 functions and 3 data sets. The 5 functions are
-`launchReadtv`, `tvOpts`, \`preprocessForCpa`,`slidingWindow`,
-and`generatePlotDefaults\`\`\`.
+`launchReadtv`, `tvOpts`, `preprocessForCpa`, `slidingWindow`, and
+`generatePlotDefaults`.
 
 Each of these functions has associated help documentation. The 3 data
-sets are [global COVID data, from Our World in
-Data](https://ourworldindata.org/coronavirus-source-data), [US
+sets are: \* [Global COVID data, from Our World in
+Data](https://ourworldindata.org/coronavirus-source-data) \* [US
 state-based COVID data, from NY
-Times](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv),
-and [USGS seismic records from Japan on
+Times](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv)
+\* [USGS seismic records from Japan on
 March 11, 2011](https://earthquake.usgs.gov/earthquakes/map).
 
 ### CPA tab
@@ -86,21 +87,7 @@ To avoid the column mapping pop up, we can use dplyr to specify the
 columns and mock values (Case) before it is passed into `launchReadtv`.
 
 ``` r
-library(dplyr)
-```
-
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
-``` r
+library(dplyr, warn.conflicts = FALSE)
 library(magrittr)
 library(readtv)
 
@@ -135,8 +122,8 @@ app = readtv::covid_usa %>%
 
 <img src="tools/readme/covid_states_facet.png">
 
-And the source code can also be viewed from the app. \_Please not that
-it assumes `tidyverse`, `changepoint`, and `readtv` packages are already
-attached.
+And the source code can also be viewed from the app. *Please note that
+it assumes `tidyverse`, `changepoint`, and `readtv` packages are
+attached*.
 
 <img src="tools/readme/covid_states_facet_src.png">

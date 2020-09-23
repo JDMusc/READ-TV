@@ -7,7 +7,7 @@
 #' @importFrom dplyr group_modify if_else lag mutate
 #' @importFrom dplyr n n_distinct pull rename select slice
 #' @importFrom dplyr summarise ungroup
-#' @importFrom ggforce facet_grid_paginate n_pages
+#' @importFrom ggforce n_pages
 #' @import ggplot2
 #' @importFrom grDevices hcl
 #' @importFrom lubridate dpicoseconds dnanoseconds dmicroseconds dmilliseconds
