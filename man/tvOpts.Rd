@@ -10,12 +10,12 @@ tvOpts(...)
 list with string, integer, double, or bool values
 }
 \description{
-This is used with \code{launchReadtv} (\code{plotOpts} argument); and the second argument in \code{generateTimePlotCode}.
-\code{launchReadtv} and \code{generateTimeplotCode} expect a list with non-expression values.
+This is used with \code{launchReadtv} (\code{plotOpts} argument).
+\code{launchReadtv} expects a list with non-expression values.
 This type of list can be generated with \code{tvOpts}
 }
 \details{
-For any values not set, both \code{launchReadtv} and \code{generateTimePlotCode} will use the defaults found in \code{generatePlotDefaults()}.
+For any values not set, \code{launchReadtv} will use the defaults found in \code{generatePlotDefaults()}.
 \code{generatePlotDefaults()} will also show which list names can be set, other names will be ignored.
 }
 \examples{
@@ -26,10 +26,12 @@ library(magrittr)
 readtv::japan_eq_3_11 \%>\%
   with(tvOpts(x = time, y = mag, facetOn = place))
 
-readtv::japan_eq_3_11 \%>\%
+app = readtv::japan_eq_3_11 \%>\%
   mutate(Time = time, Case = 1, Event.Type = place) \%>\%
   launchReadtv(plotOpts = tvOpts(
     x = time, y = mag, color = place, facetOn = place,
     isFacetPaginated = TRUE, facetRowsPerPage = 3, facetPage = 2))
+
+#shiny::runApp(app)
 
 }

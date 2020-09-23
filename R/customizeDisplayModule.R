@@ -4,7 +4,16 @@ customizeDisplayUI = function(id) {
   actionButton(ns("customizeDisplay"), "Customize Display")
 }
 
-
+#' Generate Plot Defaults for Basic Time Plot
+#'
+#' This function is for internal use. It is exported so that users can view key-value pairs used for plotting. Reveals key names and value defaults. See \code{help(tvOpts)}.
+#'
+#' See \code{help(tvOpts)} for more information. Should not be used for other reasons besides viewing plot defaults and param names.
+#'
+#' @export
+#'
+#' @examples
+#' generatePlotDefaults()
 generatePlotDefaults = function(overrides = list()){
   anyEvent = getElementSafe('anyEvent', overrides, 'Any Event')
   ret = list(
