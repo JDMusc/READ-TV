@@ -17,8 +17,8 @@
 #' @importFrom purrr discard is_numeric keep map
 #' @importFrom readr read_csv read_rds write_csv
 #' @importFrom rlang := eval_tidy expr expr_text exprs is_call
-#' @importFrom rlang is_character is_double is_empty is_logical is_null
-#' @importFrom rlang list2 new_function parse_expr set_names sym
+#' @importFrom rlang is_character is_double is_empty is_integer is_logical
+#' @importFrom rlang is_null list2 new_function parse_expr set_names sym
 #' @import shiny
 #' @importFrom sortable add_rank_list bucket_list
 #' @importFrom stringr str_detect str_sub str_to_lower

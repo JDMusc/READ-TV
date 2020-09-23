@@ -146,7 +146,8 @@ basicDisplayTabServer = function(input, output, session, data,
   })
 
   facetPageControl = callModule(facetPageServer, "facetPageControl",
-                                facetPageN)
+                                facetPageN,
+                                initPlotOpts$facetPage)
 
   observeEvent(facetPageControl$page, {
     pg = facetPageControl$page

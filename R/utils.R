@@ -128,5 +128,35 @@ name_expressions = function(xs) xs %>%
   {set_names(xs, nm = .)}
 
 
+#' Use Non-standard evaluation with functions that require a list with string, integer, double, or bool values
+#'
+#' This is used with \code{launchReadtv} (\code{plotOpts} argument); and the second argument in \code{generateTimePlotCode}.
+#' \code{launchReadtv} and \code{generateTimeplotCode} expect a list with non-expression values.
+#' This type of list can be generated with \code{tvOpts}
+#'
+#' For any values not set, both \code{launchReadtv} and \code{generateTimePlotCode} will use the defaults found in \code{generatePlotDefaults()}.
+#' \code{generatePlotDefaults()} will also show which list names can be set, other names will be ignored.
+#'
+#' @return list with string, integer, double, or bool values
+#'
+#' @examples
+#'
+#' library(dplyr)
+#' library(magrittr)
+#'
+#' readtv::japan_eq_3_11 %>%
+#'   with(tvOpts(x = time, y = mag, facetOn = place))
+#'
+#' readtv::japan_eq_3_11 %>%
+#'   mutate(Time = time, Case = 1, Event.Type = place) %>%
+#'   launchReadtv(plotOpts = tvOpts(
+#'     x = time, y = mag, color = place, facetOn = place,
+#'     isFacetPaginated = TRUE, facetRowsPerPage = 3, facetPage = 2))
+#'
 #' @export
-tvOpts = function(...) rlang::ensyms(...) %>% purrr::map(rlang::as_string)
+tvOpts = function(...)
+  rlang::enexprs(...) %>%
+  purrr::map_if(
+    ~ !(rlang::is_integer(.x) | rlang::is_double(.x) | rlang::is_bool(.x)),
+    rlang::as_string
+  )
