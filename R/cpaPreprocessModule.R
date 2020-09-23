@@ -2,14 +2,15 @@ cpaPreprocessUI = function(id) {
   ns = NS(id)
 
   fluidRow(
-    column(uiOutput(ns("doSmooth")), width = 2),
+    column(uiOutput(ns("cpaInput")), width = 2),
+    uiOutput(ns("regularCheck")),
     column(uiOutput(ns("windowWidth")), width = 2),
-    column(uiOutput(ns("smoothStride")), width = 2),
+    column(uiOutput(ns("windowStride")), width = 2),
     column(selectInput(ns("aggFn"), "Freq. Metric",
-                       choices = c("count", "rate"),
+                       choices = c("count", "rate", "mean"),
                        selected = "count"),
            width = 2),
-    column(actionButton(ns("preprocessSubmit"), label = "Preprocess"),
+    column(actionButton(ns("regularizeSubmit"), label = "Regularize"),
            width = 2)
   )
 }
@@ -20,11 +21,29 @@ cpaPreprocessServer = function(input, output, session, previousData,
   ns = session$ns
   f = stringr::str_interp
 
-  #----Do Smooth----
-  doSmooth = reactive({
-    input$doSmoothSelect %==% "Event Frequency"
+  #----Do Regularize----
+  eventFrequency = "Event Frequency"
+
+  isEventFrequencySelected = reactive({
+    input$cpaInputSelect %==% eventFrequency
   })
 
+  output$regularCheck = renderUI({
+    if(isEventFrequencySelected())
+      return()
+
+    column(selectInput(ns("doRegularize"),
+                       "Already Regular Spacing?",
+                       choices = c("Yes", "No")),
+           width = 2)
+  })
+
+  doRegularize = reactive({
+    if(isEventFrequencySelected())
+      TRUE
+    else
+      input$doRegularize == "No"
+  })
 
   y = reactive({
     previousPlotOpts$y
@@ -33,8 +52,6 @@ cpaPreprocessServer = function(input, output, session, previousData,
   isYcolAnyEvent = reactive(
     y() == previousPlotOpts$anyEvent
   )
-
-  eventFrequency = "Event Frequency"
 
   validCpaInputs = reactive({
     vals = c(eventFrequency)
@@ -47,20 +64,20 @@ cpaPreprocessServer = function(input, output, session, previousData,
       )
   })
 
-  output$doSmooth = renderUI({
+  output$cpaInput = renderUI({
     selected = if(isYcolAnyEvent()) eventFrequency else y()
-    selectInput(ns("doSmoothSelect"), "CPA Input",
+    selectInput(ns("cpaInputSelect"), "CPA Input",
                      choices = validCpaInputs(),
                      selected = selected)
   })
 
-  smoothInputUIs = c("windowWidth", "smoothStride", "aggFn", "preprocessSubmit")
+  smoothInputUIs = c("windowWidth", "windowStride", "aggFn", "regularizeSubmit")
   smoothInputs = reactive({
-    base = c("windowWidthText", "smoothStrideText", "aggFn")
+    base = c("windowWidthText", "windowStrideText", "aggFn")
 
     if(showTimeOptions())
       c(base,
-        "windowWidthUnits", "smoothStrideUnits")
+        "windowWidthUnits", "windowStrideUnits")
     else
       base
   })
@@ -87,7 +104,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
 
   toggleSmoothControl = function(id)
-    shinyjs::toggle(id = id, condition = doSmooth())
+    shinyjs::toggle(id = id, condition = doRegularize())
 
   observe({
     smoothInputUIs %>% sapply(toggleSmoothControl)
@@ -96,9 +113,9 @@ cpaPreprocessServer = function(input, output, session, previousData,
 
   #----Time Options----
   convValues = reactiveValues(windowWidth = 5,
-                               smoothStride = 2)
+                               windowStride = 2)
   convUnits = reactiveValues(windowWidth = NULL,
-                             smoothStride = NULL)
+                             windowStride = NULL)
 
   showTimeOptions = reactive({
     req(previousData())
@@ -241,31 +258,32 @@ cpaPreprocessServer = function(input, output, session, previousData,
   })
 
 
-  #----Smooth Stride----
-  output$smoothStride = renderUI({
+  #----Window Stride----
+  output$windowStride = renderUI({
     req(previousData())
 
-    timeUnitsTextInput("smoothStride", "Interval Stride",
-                       value = isolate(convValues$smoothStride))
+    timeUnitsTextInput("windowStride", "Interval Stride",
+                       value = isolate(convValues$windowStride))
   })
 
 
-  smoothStride = reactive({
-    req(input$smoothStrideText)
+  windowStride = reactive({
+    req(input$windowStrideText)
 
-    extractTimeValue('smoothStride')
+    extractTimeValue('windowStride')
   })
 
   #----Aggregate Function----
   aggregateFunctionExpr = reactive({
     agg_fn = input$aggFn
     if(agg_fn == "count") expr(length(.values))
+    else if(agg_fn == "mean") expr(if_else(is_empty(.values), 0, mean(.values)))
     else expr(length(.values)/!!(windowWidth()))
   })
 
   #----Preprocess Changed----
   observe({
-    for(si in setdiff(smoothInputs(), "preprocessSubmit"))
+    for(si in setdiff(smoothInputs(), "regularizeSubmit"))
       tmp = input[[si]]
 
     are_smooth_inputs_valid = isSmoothInputValid %>%
@@ -273,11 +291,11 @@ cpaPreprocessServer = function(input, output, session, previousData,
       as.logical %>% all
 
     shinyjs::toggleState(
-      'preprocessSubmit',
+      'regularizeSubmit',
       condition = are_smooth_inputs_valid)
 
     shinyjs::toggleClass(
-      'preprocessSubmit', 'invalid_query',
+      'regularizeSubmit', 'invalid_query',
       condition = !are_smooth_inputs_valid)
   })
 
@@ -295,16 +313,23 @@ cpaPreprocessServer = function(input, output, session, previousData,
                            cond = !isSmoothInputValid[[id]])
   })
 
+  #----Preprocess Input Column----
+  valuesColumn = reactive({
+    if(isEventFrequencySelected()) NULL
+    else input$cpaInputSelect
+  })
+
   #----Return----
   ret = reactiveValues()
 
-  observeEvent(input$preprocessSubmit, {
-    ret$smooth_window_n = windowWidth()
+  observeEvent(input$regularizeSubmit, {
+    ret$window_width = windowWidth()
     ret$agg_fn_expr = aggregateFunctionExpr()
     ret$agg_fn_label = input$aggFn
-    ret$smooth_stride = smoothStride()
-    ret$do_smooth = doSmooth()
-    shinyjs::disable("preprocessSubmit")
+    ret$window_stride = windowStride()
+    ret$do_regularize = doRegularize()
+    ret$values_col = valuesColumn()
+    shinyjs::disable("regularizeSubmit")
   })
 
   return(ret)

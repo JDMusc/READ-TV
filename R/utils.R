@@ -62,16 +62,21 @@ getElementSafe = function(item_name, obj, default = NULL) {
 
 `%not in%` = function(item, collection) !(item %in% collection)
 
-expressionsToString = function(..., width = 50) {
-  list(...) %>%
-  {rlang::flatten(.)} %>%
-  purrr::discard(~ is_empty(.x)) %>%
-  purrr::map(~ ifelse(rlang::is_string(.x),
-                      .x,
-                      expr_text(.x, width = width)
-                      )
-             ) %>%
-  purrr::reduce(~ paste(.x, .y, sep = '\n'))
+expressionsToString = function(..., width = 50, do_style = TRUE) {
+  unstyled = list(...) %>%
+    {rlang::flatten(.)} %>%
+    purrr::discard(~ is_empty(.x)) %>%
+    purrr::map(~ ifelse(rlang::is_string(.x),
+                        .x,
+                        expr_text(.x, width = width)
+                        )
+               ) %>%
+    purrr::reduce(~ paste(.x, .y, sep = '\n'))
+
+  if(do_style)
+    unstyled %>% style_text %>% paste(collapse = '\n')
+  else
+    unstyled
 }
 
 

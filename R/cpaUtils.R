@@ -12,7 +12,7 @@ calcCpa = function(data, values_col = 'CpaInput',
 
 generateCpaDefaults = function()
   list(Q = 4, input_col = 'CpaInput', method = 'BinSeg', penalty = 'BIC',
-       pen.value = .05, smooth_window_n = 1)
+       pen.value = .05, window_width = 1)
 
 cpaToHorizontalSegment = function(cpa_df) cpa_df %>%
   group_modify(~ data.frame(xend = .x$cpts,
@@ -51,7 +51,7 @@ cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym,
 }
 
 
-preprocessForCpa = function(data, smooth_window_n,
+preprocessForCpa = function(data, window_width,
                             index_col = 'RelativeTime',
                             values_col = NULL,
                             output_col = 'CpaInput',
@@ -66,7 +66,7 @@ preprocessForCpa = function(data, smooth_window_n,
   agg_fn = new_function(exprs(.values = ), enexpr(agg_fn_expr))
   mutate_fn = function(data) data %>%
     {slidingWindow(.[[index_col]], .[[values_col]],
-                     n = smooth_window_n, agg_fn = agg_fn, stride = stride)} %>%
+                     n = window_width, agg_fn = agg_fn, stride = stride)} %>%
     select(!!sym(output_col) := Value, !!sym(index_col) := Time)
 
   output_select_fn = function(data) data %>%
@@ -84,7 +84,7 @@ preprocessForCpa = function(data, smooth_window_n,
       build_tsibble(index = !!sym(index_col), interval = interval)
   }
 
-  is_facet = !is.null(facet_col)
+  is_facet = !is_null_or_empty(facet_col)
   if(is_facet) {
     #facet_col = dplyr::groups(data)[[1]] #only supports one facet column for now
     data %<>%
@@ -103,47 +103,11 @@ preprocessForCpa = function(data, smooth_window_n,
 }
 
 
-preprocessForCpaCode = function(data, smooth_window_n,
-                                index_col = 'RelativeTime',
-                                values_col = NULL,
-                                output_col = 'CpaInput',
-                                stride = 1,
-                                agg_fn_expr = sum(.values)) {
-  rhs = expr(data)
-
-  if(is.null(values_col))
-    rhs = expr(!!rhs %>% mutate(IsEvent = 1))
-
-  agg_fn = new_function(exprs(.values = ), enexpr(agg_fn_expr))
-
-  mutate_expr = expr(!!rhs %>%
-    {slidingWindow(!!index_col, !!values_col,
-                      n = !!smooth_window_n,
-                      agg_fn = agg_fn,
-                      stride = !!stride)} %>%
-      select(!!sym(output_col) := Value, !!sym(index_col) := Time)
-  )
-
-  output_select_fn = function(data) data %>%
-    select(!!sym(index_col), !!sym(output_col)) %>%
-    distinct
-
-  as_tsibble_fn = function(data) data %>%
-    as_tsibble(index = !!sym(index_col))
-
-  data %<>%
-    #input_select_fn %>%
-    mutate_fn %>%
-    output_select_fn %>%
-    as_tsibble_fn
-}
-
-
-quickPlotCpa = function(data, smooth_window_n,
+quickPlotCpa = function(data, window_width,
                         index_col = 'RelativeTime',
                         cpa_params = generateCpaDefaults()) {
   smoothed_data = data %>%
-    preprocessForCpa(smooth_window_n = smooth_window_n,
+    preprocessForCpa(window_width = window_width,
                      index_col = index_col)
 
   p = autoplot(smoothed_data, CpaInput)
