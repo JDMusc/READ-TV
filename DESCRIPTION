@@ -30,6 +30,7 @@ Imports:
     shinythemes,
     sortable,
     stringr,
+    styler,
     tidyr,
     tools,
     tsibble

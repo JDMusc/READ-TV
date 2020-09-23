@@ -22,7 +22,7 @@
 #' @import shiny
 #' @importFrom sortable add_rank_list bucket_list
 #' @importFrom stringr str_detect str_sub str_to_lower
-#' @import styler
+#' @importFrom styler style_text
 #' @importFrom tidyr drop_na
 #' @importFrom tools file_ext
 #' @importFrom tsibble as_tsibble build_tsibble index new_interval

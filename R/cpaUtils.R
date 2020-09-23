@@ -32,7 +32,7 @@ cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym,
                            output_sym = sym("cpa_markers"), facet_column_sym = NULL,
                            ...) {
   rhs = data_sym
-  is_facet = !is.null(facet_column_sym)
+  is_facet = !is_null_or_empty(facet_column_sym)
   if(is_facet)
     rhs = expr(!!rhs %>% group_by(!!facet_column_sym))
 
@@ -47,10 +47,45 @@ cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym,
                )
              )
 
-  return(expr(!!output_sym <- !!rhs))
+  expr(!!output_sym <- !!rhs)
 }
 
 
+#' Preprocess (Regularize spacing and smooth) Data before CPA
+#'
+#' READ-TV uses changepoint algorithms in the \code{changepoint} package which expect (1) regularly spaced data in time, and (2) each x-axis time point should have a unique value on the y-axis.
+#' \code{preprocessForCpa} regularizes the time spacing and performs an interpolation function at each of the new time points.
+#'
+#' \code{slidingWindow} is used by \code{preprocessForCpa} for interpolation.
+#'
+#' @param data a dataframe with a index column of time points
+#' @param window_width the numeric or \code{lubridate::duration} width of the sliding window
+#' @param index_col a string indicating which column of \code{data} is the time column
+#' @param values_col a string indicating which column of \code{data} has values. If null or empty, then a mock column of only 1's is used.
+#' @param output_col a string for the name of the interpolated values. Defaults to 'CpaInput'.
+#' @param facet_col a string that specifies which column, if any, to treat as a faceting variable. The time-series interpolation will be executed seperately for each value of this column.
+#' @param stride a numeric or \code{lubridate::duration} for the spacing between sliding window steps.
+#' @param agg_fn_expr an interpolation expression calculated at each sliding window location.
+#'
+#'
+#' @return data frame with columns for index and output. Where index will be regularly spaced and output will consist of interpolated values.
+#'
+#'
+#' @examples
+#' raw_data = data.frame(Time = rnorm(100, mean = 10))
+#'
+#' #uncomment to view plot
+#' #plot(raw_data$Time, rep.int(1, nrow(raw_data)))
+#'
+#' pre_proc_data = preprocessForCpa(raw_data,
+#'   window_width = 1,
+#'   index_col = 'Time',
+#'   stride = .1)
+#'
+#' #uncomment to view plot
+#' #with(pre_proc_data, plot(Time, CpaInput))
+#'
+#' @export
 preprocessForCpa = function(data, window_width,
                             index_col = 'RelativeTime',
                             values_col = NULL,
