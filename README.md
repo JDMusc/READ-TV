@@ -101,7 +101,7 @@ app = readtv::japan_eq_3_11 %>%
 Below is a screen shot from READ-TV. Note that the time points are
 regularized with values interpolated through a sliding window. The
 timing intervals were not originally evenly spaced (irregular) since it
-is earthquake event data. The CPA tab has funcitonality to create
+is earthquake event data. The CPA tab has functionality to create
 regular spacing.
 
 <img src="tools/readme/japan_eq_3_11_cpa.png">
