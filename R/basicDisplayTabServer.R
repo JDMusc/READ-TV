@@ -1,6 +1,8 @@
 
 basicDisplayTabServer = function(input, output, session, data,
-                              fileName, isDataLoaded, previousSourceString,
+                              fileName, isDataLoaded,
+                              isFilePassed,
+                              previousSourceString,
                               initPlotOpts = list(),
                               input_sym = sym('data'),
                               select_output_sym = sym('selected_data'),
@@ -120,7 +122,7 @@ basicDisplayTabServer = function(input, output, session, data,
                customizeDisplayUI(ns("customizeDisplay"))),
       tabPanel("Event Statistics",
                uiOutput(ns("showEventStats"), label = "Basic Statistics")),
-      tabPanel("Download Data", uiOutput(ns("downloadDataOutput"))),
+      tabPanel("Download Data", dataDownloadUI(ns("dataDownload"))),
       tabPanel("Source Code", uiOutput(ns("sourceCodeSubTab")))
     )
   })
@@ -166,18 +168,12 @@ basicDisplayTabServer = function(input, output, session, data,
     callModule(showEventStats, "", data=filteredData)
   })
 
-  #----Download Data----
-  output$downloadData <- downloadHandler(
-    filename = fileName,
-    content = function(file) {
-      write_csv(filteredData(), file)
-    }
-  )
 
-  output$downloadDataOutput = renderUI({
-    if(isDataLoaded())
-      downloadButton(ns("downloadData"))
-  })
+  #----Download Data----
+  downloadControl = callModule(dataDownloadServer, "dataDownload",
+                               filteredData, fileName,
+                               isDataLoaded, isFilePassed,
+                               'filtered-data')
 
 
   #----Source Code----

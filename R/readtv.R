@@ -15,7 +15,7 @@
 #' @importFrom lubridate is.difftime is.duration is.timepoint
 #' @importFrom magrittr %>% %<>% extract extract2
 #' @importFrom purrr discard is_numeric keep map
-#' @importFrom readr read_csv read_rds write_csv
+#' @importFrom readr read_csv read_rds write_csv write_rds
 #' @importFrom rlang := eval_tidy expr expr_text exprs is_call
 #' @importFrom rlang is_character is_double is_empty is_integer is_logical
 #' @importFrom rlang is_null list2 new_function parse_expr set_names sym

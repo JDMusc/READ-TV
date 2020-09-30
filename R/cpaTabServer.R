@@ -1,6 +1,7 @@
 
 cpaTabServer = function(input, output, session, previousData,
-                        isDataLoaded, previousPlotOpts,
+                        fileName, isDataLoaded, isFilePassed,
+                        previousPlotOpts,
                         facetPageN, previousSourceString,
                         input_sym = sym("filtered_data"),
                         cpa_markers_sym = sym("cpa_markers")){
@@ -187,6 +188,8 @@ cpaTabServer = function(input, output, session, previousData,
                  )
                ),
       tabPanel("Display", uiOutput(ns("display"))),
+      tabPanel("Download Data",
+               uiOutput(ns("dataDownload"))),
       tabPanel("Source Code",
                uiOutput(ns("sourceCodeSubTab")))
     )
@@ -219,16 +222,22 @@ cpaTabServer = function(input, output, session, previousData,
   regularSpacedData = "Regularly Spaced Data"
   output$display = renderUI({
 
-    yColumns = displayEmptyStrAsAnyEvent(
-      c(previousPlotOpts$y, regularSpacedData, "Both"),
-      anyEvent = previousPlotOpts$anyEvent)
+    if(doRegularize()) {
+      choices = displayEmptyStrAsAnyEvent(
+        c(previousPlotOpts$y, regularSpacedData, "Both"),
+        anyEvent = previousPlotOpts$anyEvent)
+
+      selected = "Both"
+    }
+    else {
+      choices = c(previousPlotOpts$y)
+      selected = previousPlotOpts$y
+    }
 
     fluidRow(
-      if(doRegularize())
-        column(selectInput(ns("y_column"), "Y-axis",
-                         choices = yColumns,
-                         selected = "Both"), width = 2)
-      else NULL
+      column(selectInput(ns("y_column"), "Y-axis",
+                       choices = choices,
+                       selected = selected), width = 2)
     )
   })
 
@@ -339,6 +348,33 @@ cpaTabServer = function(input, output, session, previousData,
   })
 
 
+  #----Download Data----
+  output$dataDownload = renderUI({
+    if(!preprocess$ready)
+      return("Neither CPA input nor CPA markers are calculated yet.")
+
+    div(
+      wellPanel(
+        dataDownloadUI(ns("inputDataDownload"))
+      ),
+      if(doPlotCpa())
+         wellPanel(dataDownloadUI(ns("markersDataDownload"))
+      )
+    )
+  })
+
+  inputDownloadControl = callModule(dataDownloadServer,
+                                    "inputDataDownload",
+                                    cpaInputData, fileName,
+                                    isDataLoaded, isFilePassed,
+                                    'cpa-input')
+
+  markersDownloadControl = callModule(dataDownloadServer,
+                                    "markersDataDownload",
+                                    cpaMarkers, fileName,
+                                    isDataLoaded, isFilePassed,
+                                    'cpa-markers')
+
   #----Source Code----
   annotateSourceString = function(tab_code)
     expressionsToString(previousSourceString(),
@@ -393,7 +429,6 @@ cpaTabServer = function(input, output, session, previousData,
 
 
   #----Return----
-
   return(list(
     cpaMarkers = cpaMarkers,
     doPlotCpa = doPlotCpa,

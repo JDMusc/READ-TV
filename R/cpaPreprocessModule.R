@@ -32,9 +32,10 @@ cpaPreprocessServer = function(input, output, session, previousData,
     if(isEventFrequencySelected())
       return()
 
-    column(selectInput(ns("doRegularize"),
+    column(selectInput(ns("alreadyRegularized"),
                        "Already Regular Spacing?",
-                       choices = c("Yes", "No")),
+                       choices = c("Yes", "No"),
+                       selected = ),
            width = 2)
   })
 
@@ -42,7 +43,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
     if(isEventFrequencySelected())
       TRUE
     else
-      input$doRegularize == "No"
+      input$alreadyRegularized == "No"
   })
 
   y = reactive({
@@ -322,6 +323,10 @@ cpaPreprocessServer = function(input, output, session, previousData,
   #----Return----
   ret = reactiveValues()
 
+  observe({
+    ret$ready = !doRegularize()
+  })
+
   observeEvent(input$regularizeSubmit, {
     ret$window_width = windowWidth()
     ret$agg_fn_expr = aggregateFunctionExpr()
@@ -329,6 +334,7 @@ cpaPreprocessServer = function(input, output, session, previousData,
     ret$window_stride = windowStride()
     ret$do_regularize = doRegularize()
     ret$values_col = valuesColumn()
+    ret$ready = TRUE
     shinyjs::disable("regularizeSubmit")
   })
 
