@@ -55,6 +55,9 @@ generatePreparePlotCode <- function(data, plot_opts,
   #----Facet----
   base_facet = function(...) {
     ex_options = rlang::list2(...)
+    if(rlang::is_empty(ex_options))
+      return(pre_plot_rhs)
+
     expr(!!pre_plot_rhs %>%
            mutate(
              !!sym(facet_col) := factor(
