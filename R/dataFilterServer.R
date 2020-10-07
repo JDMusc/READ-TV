@@ -1,7 +1,8 @@
 
 dataFilterServer = function(input, output, session, data,
                             in_pronoun, selected_pronoun,
-                            out_pronoun) {
+                            out_pronoun,
+                            filter_out = TRUE) {
   ns = session$ns
 
   selectMods <- reactiveValues()
@@ -24,10 +25,14 @@ dataFilterServer = function(input, output, session, data,
   selectedQuery = reactive({
     req(data())
 
-    selected_vals = selectedVals()
-    generateSelectedQuery(in_pronoun,
-                           selected_pronoun,
-                           selected_vals)
+    rhs = selectedQueryRhs()
+    expr(!!selected_pronoun <- !!rhs)
+  })
+
+  selectedQueryRhs = reactive({
+    req(data())
+
+    generateSelectedQueryRhs(in_pronoun, selectedVals(), filter_out)
   })
 
   createDataMask = function(in_data){
@@ -39,12 +44,8 @@ dataFilterServer = function(input, output, session, data,
   selectedData <- reactive({
     req(data())
 
-    d = data()
-
-    #filteredDataCount()
-
     qry = selectedQuery()
-    df = eval_tidy(qry, data = createDataMask(d))
+    df = eval_tidy(qry, data = createDataMask(data()))
 
     for(col in names(constraints)) {
       fn = constraints[[col]]
@@ -111,7 +112,7 @@ dataFilterServer = function(input, output, session, data,
   #----Custom Query----
   customQuery = callModule(customEventsQueryServer, "customQuery",
                            selectedData, selected_pronoun,
-                           out_pronoun)
+                           out_pronoun, filter_out = filter_out)
 
   filteredData = reactive({
 	  hvq = customQuery$hasValidQuery()
@@ -130,6 +131,7 @@ dataFilterServer = function(input, output, session, data,
 	      selectedVals = selectedVals,
 	      selectedQuery = selectedQuery,
 	      filteredQuery = customQuery$filterQuery,
+	      filteredQueryRhs = customQuery$filterQueryRhs,
 	      constraints = constraints))
 }
 

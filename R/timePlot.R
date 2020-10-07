@@ -22,6 +22,7 @@ generatePreparePlotCode <- function(data, plot_opts,
   is_facet_customized = getSafe('isFacetCustomized', F)
   is_facet_paginated = getSafe('isFacetPaginated', F)
 
+  alpha_col = getSafe('alpha')
 
   #----Y Column----
   pre_plot_rhs = df_in_pronoun
@@ -73,6 +74,13 @@ generatePreparePlotCode <- function(data, plot_opts,
     if(is_facet_paginated)
       pre_plot_rhs = base_facet()
 
+  #----Alpha----
+  if(!is_null(alpha_col)) {
+    pre_plot_rhs = expr(
+      !!pre_plot_rhs %>%
+        mutate(!!sym(alpha_col) := if_else(!!sym(alpha_col), 1.0, 0.2))
+      )
+  }
 
   expr(!!df_out_sym <- !!pre_plot_rhs)
 }
@@ -103,6 +111,8 @@ generateTimePlotCode <- function(plot_data, plot_opts,
   facet_rows_per_pg = getSafe('facetRowsPerPage')
   facet_page = getSafe('facetPage', 1)
 
+  alpha_col = getSafe('alpha')
+
   do_stem_plot = getSafe('doStemPlot', T)
   geom_function = getSafe('geomFunction', "geom_point")
 
@@ -116,6 +126,10 @@ generateTimePlotCode <- function(plot_data, plot_opts,
     aes_extra_inputs$colour = sym(color_col)
 
 
+  #---Alpha----
+  if(is_str_set(alpha_col))
+    aes_extra_inputs$alpha = sym(alpha_col)
+
   #----Base Plot----
   p_rhs = expr(
     !!plot_data_pronoun %>%
@@ -125,21 +139,13 @@ generateTimePlotCode <- function(plot_data, plot_opts,
 
   #----Do Stem----
   if(do_stem_plot){
+    segment_aes = list(xend = sym(x_col),
+                       yend = 0, y = sym(y_col))
     if(is_str_set(color_col))
-      p_rhs = expr(!!p_rhs +
-                     geom_segment(
-                       aes(
-                         xend = !!sym(x_col),
-                         yend = 0, y = !!sym(y_col),
-                         colour = !!sym(color_col)))
-      )
-    else
-      p_rhs = expr(!!p_rhs +
-                     geom_segment(
-                       aes(xend = !!sym(x_col),
-                                  yend = 0,
-                                  y = !!sym(y_col)))
-      )
+      segment_aes$colour = sym(color_col)
+    if(is_str_set(alpha_col))
+      segment_aes$alpha = sym(alpha_col)
+    p_rhs = expr(!!p_rhs + geom_segment(aes(!!!segment_aes)))
   }
 
 
@@ -167,6 +173,9 @@ generateTimePlotCode <- function(plot_data, plot_opts,
     p_rhs = expr(!!p_rhs +
                    scale_y_continuous(breaks = 1))
 
+  #----Alpha Remove Guides
+  if(is_str_set(alpha_col))
+    p_rhs = expr(!!p_rhs + guides(alpha = FALSE))
 
   #----Return----
   expr(!!out_p_pronoun <- !!p_rhs)
