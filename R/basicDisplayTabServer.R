@@ -13,7 +13,8 @@ basicDisplayTabServer = function(input, output, session, data,
 
   #----Filter Data----
   dataFilter = callModule(dataFilterServer, "dataFilter", data,
-                          input_sym, select_output_sym, output_sym)
+                          input_sym, select_output_sym, output_sym,
+                          filter_out_init = TRUE)
 
   output$dataFilter = renderUI({
     if(isDataLoaded()) dataFilterUI(ns("dataFilter"))
@@ -47,7 +48,7 @@ basicDisplayTabServer = function(input, output, session, data,
 
   plotCode = reactive({
     plot_data = plotInput()
-    generateTimePlotCode(plot_data, customizeDisplay)
+    generateTimePlotCode(plot_data, plotOpts())
   })
 
   plot_in = as.character(output_sym)
@@ -58,6 +59,16 @@ basicDisplayTabServer = function(input, output, session, data,
       set_names(nm = plot_in)
   }
 
+  plotOpts = reactive({
+    cd = customizeDisplay
+
+    if(dataFilter$filterOut())
+      cd$alpha = NULL
+    else
+      cd$alpha = constants.alpha_col
+
+    cd
+  })
 
   plotInput = reactive({
     req(isDataLoaded())
@@ -73,7 +84,7 @@ basicDisplayTabServer = function(input, output, session, data,
     currentTabCode() %>%
       runExpressions(list(data = data())) %>%
       extract2(et(output_sym)) %>%
-      generatePreparePlotCode(customizeDisplay, df_in_pronoun = output_sym)
+      generatePreparePlotCode(plotOpts(), df_in_pronoun = output_sym)
   })
 
 

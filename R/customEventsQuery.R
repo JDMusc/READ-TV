@@ -3,10 +3,14 @@ customEventsQueryUI <- function(id) {
   renderUI(
     {
       div(
-        textInput(ns("queryInput"), "Custom Filter", placeholder = "",
-                  width = '100%'),
+        fluidRow(
+          column(textInput(ns("queryInput"), "Custom Filter", placeholder = "",
+                           width = '100%'),
+                 width = 8),
+          column(uiOutput(ns("filterOut")), width = 4)
+          ),
         actionButton(ns("queryInclude"), "Include Condition"),
-        actionButton(ns("eventsPreview"), "Preview Events")
+        actionButton(ns("eventsView"), "View Data")
       )
     }
   )
@@ -14,7 +18,7 @@ customEventsQueryUI <- function(id) {
 
 
 customEventsQueryServer = function(input, output, session, data,
-                                   in_pronoun, out_pronoun, filter_out = TRUE) {
+                                   in_pronoun, out_pronoun, filter_out_init = TRUE) {
   ns = session$ns
 
   observeEvent(input$queryInclude, {
@@ -121,7 +125,7 @@ customEventsQueryServer = function(input, output, session, data,
   })
 
   showSource = callModule(showSourceServer, 'showSource')
-  observeEvent(input$eventsPreview, {
+  observeEvent(input$eventsView, {
     req(queryCompiles())
 
     if(hasQueryInput())
@@ -140,10 +144,11 @@ customEventsQueryServer = function(input, output, session, data,
 
 
   filterQueryRhs = reactive({
+
     if(hasValidQuery()) {
       input$queryInput %>%
         parse_expr %>%
-        mappedExpr(in_pronoun, ., filter_out, append = TRUE)
+        mappedExpr(in_pronoun, ., filterOut(), append = TRUE)
     }
     else
       in_pronoun
@@ -160,10 +165,10 @@ customEventsQueryServer = function(input, output, session, data,
   observe({
     if(hasValidQuery() | !hasQueryInput()) {
       shinyjs::removeClass("queryInput", "invalid_query")
-      shinyjs::enable("eventsPreview")
+      shinyjs::enable("eventsView")
     } else {
       shinyjs::addClass("queryInput", "invalid_query")
-      shinyjs::disable("eventsPreview")
+      shinyjs::disable("eventsView")
     }
   })
 
@@ -190,11 +195,28 @@ customEventsQueryServer = function(input, output, session, data,
     applyQuery(validQuery(), data())
   })
 
+  rm = 'remove'
+  tr = 'transparent'
+  output$filterOut = renderUI({
+    selected = if(filter_out_init) rm else tr
+
+    selectInput(ns("filterOutSelect"), "Filtered Data",
+                       choices = c(rm, tr), selected = selected)
+  })
+
+  filterOut = reactive({
+    if(is.null(input$filterOutSelect))
+      filter_out_init
+    else
+      input$filterOutSelect == rm
+  })
+
   return(list(filteredData = filteredData,
               hasQueryInput = hasQueryInput,
               hasValidQuery = hasValidQuery,
               filterQuery = filterQuery,
               filterQueryRhs = filterQueryRhs,
+              filterOut = filterOut,
               query = validQuery))
 
 }

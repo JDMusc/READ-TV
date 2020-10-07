@@ -2,7 +2,7 @@
 dataFilterServer = function(input, output, session, data,
                             in_pronoun, selected_pronoun,
                             out_pronoun,
-                            filter_out = TRUE) {
+                            filter_out_init) {
   ns = session$ns
 
   selectMods <- reactiveValues()
@@ -32,7 +32,7 @@ dataFilterServer = function(input, output, session, data,
   selectedQueryRhs = reactive({
     req(data())
 
-    generateSelectedQueryRhs(in_pronoun, selectedVals(), filter_out)
+    generateSelectedQueryRhs(in_pronoun, selectedVals(), customQuery$filterOut())
   })
 
   createDataMask = function(in_data){
@@ -112,7 +112,7 @@ dataFilterServer = function(input, output, session, data,
   #----Custom Query----
   customQuery = callModule(customEventsQueryServer, "customQuery",
                            selectedData, selected_pronoun,
-                           out_pronoun, filter_out = filter_out)
+                           out_pronoun, filter_out_init = filter_out_init)
 
   filteredData = reactive({
 	  hvq = customQuery$hasValidQuery()
@@ -132,6 +132,7 @@ dataFilterServer = function(input, output, session, data,
 	      selectedQuery = selectedQuery,
 	      filteredQuery = customQuery$filterQuery,
 	      filteredQueryRhs = customQuery$filterQueryRhs,
+	      filterOut = customQuery$filterOut,
 	      constraints = constraints))
 }
 

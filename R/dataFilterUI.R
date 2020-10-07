@@ -17,7 +17,7 @@ selectRows <- function(ns) {
       multiSelectUI(ns("eventTypeFilter"), "Event Type")
     ),
     column(
-      width = 6,
+      width = 8,
       customEventsQueryUI(ns("customQuery"))
     )
   )

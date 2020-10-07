@@ -16,7 +16,8 @@ cpaOverlayTabServer = function(input, output, session, data,
 
   #----Filter Data----
   dataFilter = callModule(dataFilterServer, "dataFilter", data,
-                          input_sym, select_output_sym, output_sym, filter_out = FALSE)
+                          input_sym, select_output_sym, output_sym,
+                          filter_out_init = FALSE)
 
   output$dataFilter = renderUI({
     if(isDataLoaded()) dataFilterUI(ns("dataFilter"))
@@ -57,7 +58,8 @@ cpaOverlayTabServer = function(input, output, session, data,
     codes = list()
 
     plot_opts = reactiveValuesToList(customizeDisplay)
-    plot_opts$alpha = 'Read-TV Filtered'
+    if(!dataFilter$filterOut())
+      plot_opts$alpha = constants.alpha_col
 
     mask = list()
     mask[[et(output_sym)]] = filteredData()
@@ -137,8 +139,7 @@ cpaOverlayTabServer = function(input, output, session, data,
 
   ##----Axis Settings: Facet----
   doFacet = reactive({
-    cd = customizeDisplay
-    isDataLoaded() & (is_str_set(cd$facetRowsPerPage))
+    isDataLoaded() & is_str_set(customizeDisplay$facetRowsPerPage)
   })
 
   facetPageN <- reactive({
@@ -157,7 +158,7 @@ cpaOverlayTabServer = function(input, output, session, data,
   observeEvent(facetPageControl$page, {
     pg = facetPageControl$page
     if(!is.null(pg))
-      customizeDisplay$facetPage = facetPageControl$page
+      customizeDisplay$facetPage = pg
   })
 
   #----CPA Markers Overlay----
@@ -176,8 +177,6 @@ cpaOverlayTabServer = function(input, output, session, data,
   output$cpaMarkerMessage = renderText({
     if(!cpa$doPlotCpa())
       no_cpa_msg
-    else
-      NULL
   })
 
 
