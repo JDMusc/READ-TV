@@ -35,25 +35,14 @@ printWithCountGen <- function(msg) {
 }
 
 
-applyQuery = function(filter_criterion, data)
-  filter_criterion %>%
-  makeFullQuery %>%
-  eval_tidy(data = list(data = data))
-
-
-makeFullQuery = function(filter_criterion, data_sym = sym('data')) {
-  expr(!!data_sym %>% filter(!!parse_expr(filter_criterion)))
-}
-
-
-doesFilterCompile = function(filter_criterion, data)
+doesEvalCompile = function(ex, data)
   try(
-    applyQuery(filter_criterion, data),
-    silent = T) %>%
+    eval_tidy(ex, data),
+    silent = TRUE
+  ) %>%
   class %>%
   not_equals('try-error') %>%
   all #can be more than one class
-
 
 getElementSafe = function(item_name, obj, default = NULL) {
   if(item_name %in% names(obj)) obj[[item_name]]
@@ -132,6 +121,9 @@ name_expressions = function(xs) xs %>%
   purrr::map(~ stringr::str_remove_all(.x, '`')) %>%
   {set_names(xs, nm = .)}
 
+
+set_expr_names = function(xs, nms)
+  nms %>% purrr::map(expr_text) %>% {set_names(xs, .)}
 
 #' Use Non-standard evaluation with functions that require a list with string, integer, double, or bool values
 #'

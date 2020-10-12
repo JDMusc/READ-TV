@@ -1,10 +1,10 @@
-READ-TV, Research & Exploratory Analysis Driven Time-data Visualization.
+read-tv, Research & Exploratory Analysis Driven Time-data Visualization.
 Version 0.1
 ================
 
 ## Description
 
-READ-TV is a shiny application and associated console interface designed
+read-tv is a shiny application and associated console interface designed
 for visualizing changepoints in **irregularly and regularly spaced**
 longitudinal data. Technical users can rapidly view data through the R
 console interface, and non-technical users can use it as a standard web
@@ -31,7 +31,7 @@ package](https://www.rdocumentation.org/packages/remotes/versions/2.2.0/topics/i
 ### Data requirements
 
 A data frame or CSV file where each row is an observation. If the data
-does not have columns for Case, Event.Type, or Time, then READ-TV will
+does not have columns for Case, Event.Type, or Time, then read-tv will
 open a pop-up that enables the user to map Case and Event.Type to
 another column (or mock value), and map Time to a column.
 
@@ -65,7 +65,7 @@ The `plotOpts` argument and the `tvOpts` function tells the plot to load
 with the specified axes, colors, etc.
 <img src="tools/readme/japan_eq_3_11.png">
 
-READ-TV exports 5 functions and 3 data sets. The 5 functions are
+read-tv exports 5 functions and 3 data sets. The 5 functions are
 `launchReadtv`, `tvOpts`, `preprocessForCpa`, `slidingWindow`, and
 `generatePlotDefaults`.
 
@@ -98,7 +98,7 @@ app = readtv::japan_eq_3_11 %>%
 #shiny::runApp(app) # and move to CPA tab after viewing in Basic display tab
 ```
 
-Below is a screen shot from READ-TV. Note that the time points are
+Below is a screen shot from read-tv. Note that the time points are
 regularized with values interpolated through a sliding window. The
 timing intervals were not originally evenly spaced (irregular) since it
 is earthquake event data. The CPA tab has functionality to create

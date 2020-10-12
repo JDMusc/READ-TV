@@ -25,7 +25,11 @@ cpaOverlayTabServer = function(input, output, session, data,
 
   filteredData = reactive({
     req(isDataLoaded())
-    dataFilter$filteredData()
+    data() %>%
+      list %>%
+      set_expr_names(c(input_sym)) %>%
+      runExpressions(currentTabCode(), .) %>%
+      extract2(rtv.et(output_sym))
   })
 
   #----Plot----
@@ -35,9 +39,8 @@ cpaOverlayTabServer = function(input, output, session, data,
     req(isDataLoaded())
     req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
 
-    mask = list()
-    mask[[et(input_sym)]] = data()
-    mask[[et(cpa_markers_sym)]] = cpa$cpaMarkers()
+    mask = list(data(), cpa$cpaMarkers()) %>%
+      set_expr_names(c(input_sym, cpa_markers_sym))
 
     mask = runExpressions(currentTabWithPlotCode(), mask)
 
@@ -61,21 +64,20 @@ cpaOverlayTabServer = function(input, output, session, data,
     if(!dataFilter$filterOut())
       plot_opts$alpha = constants.alpha_col
 
-    mask = list()
-    mask[[et(output_sym)]] = filteredData()
-    codes[[et(plot_in_sym)]] = generatePreparePlotCode(
-      mask[[et(output_sym)]],
+    mask = filteredData() %>% list %>% set_expr_names(c(output_sym))
+    codes[[rtv.et(plot_in_sym)]] = generatePreparePlotCode(
+      mask[[rtv.et(output_sym)]],
       plot_opts,
       df_in_pronoun = output_sym,
       df_out_sym = plot_in_sym)
 
-    plot_df = eval_tidy(codes[[et(plot_in_sym)]], data = mask)
+    plot_df = eval_tidy(codes[[rtv.et(plot_in_sym)]], data = mask)
 
     base_p_pronoun = sym("base_p")
     base_plot_code = generateTimePlotCode(plot_df, plot_opts,
                                           plot_data_pronoun = plot_in_sym,
                                           out_p_pronoun = base_p_pronoun)
-    codes[[et(base_p_pronoun)]] = base_plot_code
+    codes[[rtv.et(base_p_pronoun)]] = base_plot_code
 
     y_col = plot_opts$y
     if(is_empty_str(y_col)) y_col = NULL
@@ -209,11 +211,7 @@ cpaOverlayTabServer = function(input, output, session, data,
   currentTabCode = reactive({
     req(isDataLoaded())
 
-    codes = list()
-    codes[[et(select_output_sym)]] = dataFilter$selectedQuery()
-    codes[[et(output_sym)]] = dataFilter$filteredQuery()
-
-    codes
+    dataFilter$filteredDataExprs()
   })
 
   fullSourceWithPlotString = reactive({

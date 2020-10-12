@@ -19,10 +19,10 @@ cpaTabServer = function(input, output, session, previousData,
   timePlot <- reactive({
     req(previousData())
 
-    mask = list()
-    mask[[et(input_sym)]] = previousData()
-
-    mask = runExpressions(currentTabWithPlotCode(), mask)
+    mask = previousData() %>%
+      list %>%
+      set_expr_names(c(input_sym)) %>%
+      {runExpressions(currentTabWithPlotCode(), .)}
 
     mask$p
   })
@@ -52,10 +52,10 @@ cpaTabServer = function(input, output, session, previousData,
       df_in_pronoun = input_sym,
       df_out_sym = base_plot_df_pronoun)
 
-    codes[[et(base_plot_df_pronoun)]] = prepare_plot_input
+    codes[[rtv.et(base_plot_df_pronoun)]] = prepare_plot_input
 
     mask = list()
-    mask[[et(input_sym)]] = previousData()
+    mask[[rtv.et(input_sym)]] = previousData()
     plot_df = eval_tidy(prepare_plot_input, data = mask)
 
     base_p_pronoun = sym("base_p")
@@ -69,7 +69,7 @@ cpaTabServer = function(input, output, session, previousData,
       show_original = show_original,
       out_p_pronoun = base_p_pronoun
     )
-    codes[[et(base_p_pronoun)]] = base_plot_code
+    codes[[rtv.et(base_p_pronoun)]] = base_plot_code
 
 
     add_ef_p_pronoun = sym("event_freq_p")
@@ -81,7 +81,7 @@ cpaTabServer = function(input, output, session, previousData,
       show_original_and_event_frequency = show_original_and_event_frequency,
       smooth_fn_name = preprocess$agg_fn_label,
       out_p_pronoun = add_ef_p_pronoun)
-    codes[[et(add_ef_p_pronoun)]] = add_event_freq_code
+    codes[[rtv.et(add_ef_p_pronoun)]] = add_event_freq_code
 
     add_markers_code = cpaTabLogic.addCpaMarkersCode(
       p_pronoun = add_ef_p_pronoun,
@@ -295,9 +295,10 @@ cpaTabServer = function(input, output, session, previousData,
   cpaInputData = reactive({
     req(previousData())
 
-    mask = list()
-    mask[[et(input_sym)]] = previousData()
-    eval_tidy(cpaInputDataCode(), data = mask)
+    previousData() %>%
+      list %>%
+      set_expr_names(c(input_sym)) %>%
+      {eval_tidy(cpaInputDataCode(), data = .)}
   })
 
   cpaInputDataCode = reactive({
@@ -397,11 +398,8 @@ cpaTabServer = function(input, output, session, previousData,
   currentTabCode = reactive({
     req(isDataLoaded())
 
-    codes = list()
-    codes[[et(cpa_input_df_pronoun)]] = cpaInputDataCode()
-    codes[[et(cpa_markers_sym)]] = cpaMarkersCode()
-
-    codes
+    list(cpaInputDataCode(), cpaMarkersCode()) %>%
+      set_expr_names(c(cpa_input_df_pronoun, cpa_markers_sym))
   })
 
   fullSourceString = reactive({
@@ -429,9 +427,9 @@ cpaTabServer = function(input, output, session, previousData,
 
 
   #----Return----
-  return(list(
+  list(
     cpaMarkers = cpaMarkers,
     doPlotCpa = doPlotCpa,
     fullSourceString = fullSourceString
-  ))
+  )
 }

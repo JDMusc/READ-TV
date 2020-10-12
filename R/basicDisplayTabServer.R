@@ -22,32 +22,29 @@ basicDisplayTabServer = function(input, output, session, data,
 
   filteredData = reactive({
     req(isDataLoaded())
-    dataFilter$filteredData()
+
+    data() %>%
+      list %>%
+      set_expr_names(c(input_sym)) %>%
+      runExpressions(currentTabCode(), .) %>%
+      extract2(rtv.et(output_sym))
   })
 
 
   #----Plot----
-  hist <- reactive({
-    req(isDataLoaded())
-
-    ggplot(filteredData(), aes(x = deltaTime)) +
-      geom_histogram(fill = "black") +
-      xlab("Time Between Events") +
-      ylab("Event Count")
-  })
-
   updateTimePlotCountDebug = printWithCountGen('time plot')
 
   timePlot <- reactive({
     req(isDataLoaded())
-    req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
 
-    mask = runExpressions(currentTabWithPlotCode(), list(data = data()))
+    mask = data() %>% list %>% set_names(rtv.et(input_sym))
+    mask = runExpressions(currentTabWithPlotCode(), mask)
     mask$p
   })
 
   plotCode = reactive({
     plot_data = plotInput()
+
     generateTimePlotCode(plot_data, plotOpts())
   })
 
@@ -83,7 +80,7 @@ basicDisplayTabServer = function(input, output, session, data,
 
     currentTabCode() %>%
       runExpressions(list(data = data())) %>%
-      extract2(et(output_sym)) %>%
+      extract2(rtv.et(output_sym)) %>%
       generatePreparePlotCode(plotOpts(), df_in_pronoun = output_sym)
   })
 
@@ -203,11 +200,7 @@ basicDisplayTabServer = function(input, output, session, data,
   currentTabCode = reactive({
     req(isDataLoaded())
 
-    codes = list()
-    codes[[et(select_output_sym)]] = dataFilter$selectedQuery()
-    codes[[et(output_sym)]] = dataFilter$filteredQuery()
-
-    codes
+    dataFilter$filteredDataExprs()
   })
 
   currentTabWithPlotCode = reactive({
@@ -251,11 +244,11 @@ basicDisplayTabServer = function(input, output, session, data,
 
 
   #----Return----
-  return(list(
+  list(
     customizeDisplay = customizeDisplay,
     dataFilter = dataFilter,
     filteredData = filteredData,
     facetPageN = facetPageN,
     fullSourceString = fullSourceString
-  ))
+  )
 }

@@ -126,7 +126,7 @@ customEventsQueryServer = function(input, output, session, data,
 
   showSource = callModule(showSourceServer, 'showSource')
   observeEvent(input$eventsView, {
-    req(queryCompiles())
+    req(doesQueryCompile())
 
     if(hasQueryInput())
       d = filteredData()
@@ -144,19 +144,25 @@ customEventsQueryServer = function(input, output, session, data,
 
 
   filterQueryRhs = reactive({
-
-    if(hasValidQuery()) {
-      input$queryInput %>%
-        parse_expr %>%
-        mappedExpr(in_pronoun, ., filterOut(), append = TRUE)
-    }
-    else
-      in_pronoun
+    qry_ex = if(hasQueryInput()) parse_expr(input$queryInput) else expr("")
+    mappedExpr(in_pronoun, qry_ex, filterOut())
   })
 
-  queryCompiles = reactive({
+  filterQuerySafe = reactive({
+    expr(!!out_pronoun <- !!(filterQueryRhsSafe()))
+  })
+
+  filterQueryRhsSafe = reactive({
+    if(doesQueryCompile()) filterQueryRhs()
+    else in_pronoun
+  })
+
+  doesQueryCompile = reactive({
     if(hasQueryInput())
-      doesFilterCompile(input$queryInput, data())
+      data() %>%
+        list %>%
+        set_names(expr_text(in_pronoun)) %>%
+        doesEvalCompile(filterQueryRhs(), .)
     else
       TRUE
   })
@@ -180,7 +186,7 @@ customEventsQueryServer = function(input, output, session, data,
   })
 
   hasValidQuery = reactive({
-    hasQueryInput() & queryCompiles()
+    hasQueryInput() & doesQueryCompile()
   })
 
   validQuery = reactive({
@@ -190,9 +196,10 @@ customEventsQueryServer = function(input, output, session, data,
   })
 
   filteredData = reactive({
-    req(hasValidQuery())
-
-    applyQuery(validQuery(), data())
+    data() %>%
+      list %>%
+      set_names(c(expr_text(in_pronoun))) %>%
+      eval_tidy(filterQueryRhsSafe(), .)
   })
 
   rm = 'remove'
@@ -211,12 +218,10 @@ customEventsQueryServer = function(input, output, session, data,
       input$filterOutSelect == rm
   })
 
-  return(list(filteredData = filteredData,
-              hasQueryInput = hasQueryInput,
-              hasValidQuery = hasValidQuery,
-              filterQuery = filterQuery,
-              filterQueryRhs = filterQueryRhs,
-              filterOut = filterOut,
-              query = validQuery))
+  list(
+    hasQueryInput = hasQueryInput,
+    hasValidQuery = hasValidQuery,
+    filterQuery = filterQuerySafe,
+    filterOut = filterOut)
 
 }

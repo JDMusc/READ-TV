@@ -1,12 +1,12 @@
 ---
-title: "READ-TV, Research & Exploratory Analysis Driven Time-data Visualization. Version 0.1"
+title: "read-tv, Research & Exploratory Analysis Driven Time-data Visualization. Version 0.1"
 output: 
   github_document
 ---
 
 ## Description
 
-READ-TV is a shiny application and associated console interface designed for visualizing changepoints in __irregularly and regularly spaced__ longitudinal data. Technical users can rapidly view data through the R console interface, and non-technical users can use it as a standard web application. Intermediate users, as well as users who want to replicate plots, will benefit from the source code generation associated with any plot.
+read-tv is a shiny application and associated console interface designed for visualizing changepoints in __irregularly and regularly spaced__ longitudinal data. Technical users can rapidly view data through the R console interface, and non-technical users can use it as a standard web application. Intermediate users, as well as users who want to replicate plots, will benefit from the source code generation associated with any plot.
 
 This application is built on top of a wide array of packages, and especially wraps functionality from the [changepoint](https://cran.r-project.org/web/packages/changepoint/index.html) package and [tidyverse](https://github.com/tidyverse) set of packages.
 
@@ -22,7 +22,7 @@ This package is not on CRAN. Please install from GitHub with the [install_github
 
 ### Data requirements
 
-A data frame or CSV file where each row is an observation. If the data does not have columns for Case, Event.Type, or Time, then READ-TV will open a pop-up that enables the user to map Case and Event.Type to another column (or mock value), and map Time to a column.
+A data frame or CSV file where each row is an observation. If the data does not have columns for Case, Event.Type, or Time, then read-tv will open a pop-up that enables the user to map Case and Event.Type to another column (or mock value), and map Time to a column.
 
 ### The main function is **launchReadtv**:
 
@@ -51,7 +51,7 @@ The above code generates the following if ```shiny::runApp``` is executed. The `
 <img src="tools/readme/japan_eq_3_11.png">
 
 
-READ-TV exports 5 functions and 3 data sets. The 5 functions are ```launchReadtv```, ```tvOpts```, ```preprocessForCpa```, ```slidingWindow```, and ```generatePlotDefaults```. 
+read-tv exports 5 functions and 3 data sets. The 5 functions are ```launchReadtv```, ```tvOpts```, ```preprocessForCpa```, ```slidingWindow```, and ```generatePlotDefaults```. 
 
 Each of these functions has associated help documentation. The 3 data sets are:
 * [Global COVID data, from Our World in  Data](https://ourworldindata.org/coronavirus-source-data)
@@ -77,7 +77,7 @@ app = readtv::japan_eq_3_11 %>%
 #shiny::runApp(app) # and move to CPA tab after viewing in Basic display tab
 ```
 
-Below is a screen shot from READ-TV. Note that the time points are regularized with values interpolated through a sliding window. The timing intervals were not originally evenly spaced (irregular) since it is earthquake event data. The CPA tab has functionality to create regular spacing.
+Below is a screen shot from read-tv. Note that the time points are regularized with values interpolated through a sliding window. The timing intervals were not originally evenly spaced (irregular) since it is earthquake event data. The CPA tab has functionality to create regular spacing.
 
 <img src="tools/readme/japan_eq_3_11_cpa.png">
 

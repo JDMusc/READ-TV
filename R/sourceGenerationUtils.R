@@ -1,29 +1,26 @@
 f = stringr::str_interp
 
 
-generateSelectedQuery = function(in_pronoun_sym, out_pronoun_sym, selected_vals,
-                                 filter_out = TRUE) {
-  rhs = generateSelectedQueryRhs(in_pronoun_sym, selected_vals, filter_out)
+generateSelectedQuery = function(in_pronoun_sym, out_pronoun_sym, selected_vals) {
+  rhs = generateSelectedQueryRhs(in_pronoun_sym, selected_vals)
   expr(!!out_pronoun_sym <- !!rhs)
 }
 
 
-generateSelectedQueryRhs = function(in_pronoun_sym, selected_vals,
-                                    filter_out = TRUE)
+generateSelectedQueryRhs = function(in_pronoun_sym, selected_vals)
   selected_vals %>%
     purrr::discard(~ is_empty(.x) | ('All' %in% .x)) %>%
     purrr::imap(~ expr(!!(sym(.y)) %in% !!.x)) %>%
     {
-      qry = if(!is_empty(.))
-        purrr::reduce(., ~ expr(!!.x & !!.y))
-      else
-        NULL
+      if(is_empty(.))
+        return(in_pronoun_sym)
 
-      mappedExpr(in_pronoun_sym, qry, filter_out)
+      qry = purrr::reduce(., ~ expr(!!.x & !!.y))
+      expr(!!in_pronoun_sym %>% filter(!!qry))
     }
 
 
-mappedExpr = function(in_pronoun_sym, qry, filter_out, append = FALSE) {
+mappedExpr = function(in_pronoun_sym, qry, filter_out = FALSE) {
   has_query = !is_null_or_empty(qry)
   if(filter_out) {
     if(has_query)
@@ -32,20 +29,11 @@ mappedExpr = function(in_pronoun_sym, qry, filter_out, append = FALSE) {
       in_pronoun_sym
   }
   else {
-    if(!has_query & append)
-      in_pronoun_sym
-    else {
-      qry = if(has_query)
-        qry
-      else
-        TRUE
+    qry = if(has_query)
+      qry
+    else
+      TRUE
 
-      rhs = if(!append)
-        expr(mutate(`Read-TV Filtered` = !!qry))
-      else
-        expr(mutate(`Read-TV Filtered` = `Read-TV Filtered` & !!qry))
-
-      expr(!!in_pronoun_sym %>% !!rhs)
-    }
+    expr(!!in_pronoun_sym %>% mutate(`read-tv Filtered` = !!qry))
   }
 }

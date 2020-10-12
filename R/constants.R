@@ -1,1 +1,3 @@
-constants.alpha_col = 'Read-TV Filtered'
+constants.alpha_col = 'read-tv Filtered'
+
+rtv.et = expr_text
