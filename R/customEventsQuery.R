@@ -207,7 +207,7 @@ customEventsQueryServer = function(input, output, session, data,
   output$filterOut = renderUI({
     selected = if(filter_out_init) rm else tr
 
-    selectInput(ns("filterOutSelect"), "Filtered Data",
+    selectInput(ns("filterOutSelect"), "Custom Filtered Data",
                        choices = c(rm, tr), selected = selected)
   })
 

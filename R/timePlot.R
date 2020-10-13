@@ -74,14 +74,6 @@ generatePreparePlotCode <- function(data, plot_opts,
     if(is_facet_paginated)
       pre_plot_rhs = base_facet()
 
-  #----Alpha----
-  if(!is_null(alpha_col)) {
-    pre_plot_rhs = expr(
-      !!pre_plot_rhs %>%
-        mutate(!!sym(alpha_col) := if_else(!!sym(alpha_col), 1.0, 0.2))
-      )
-  }
-
   expr(!!df_out_sym <- !!pre_plot_rhs)
 }
 
