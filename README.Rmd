@@ -22,7 +22,7 @@ This package is not on CRAN. Please install from GitHub with the [install_github
 
 ### Data requirements
 
-A data frame or CSV file where each row is an observation. If the data does not have columns for Case, Event.Type, or Time, then read-tv will open a pop-up that enables the user to map Case and Event.Type to another column (or mock value), and map Time to a column.
+A data frame or RDS/CSV file where each row is an observation. If the data does not have columns for Case, Event.Type, or Time, then read-tv will open a pop-up that enables the user to map Case and Event.Type to another column (or mock value), and map Time to a column.
 
 ### The main function is **launchReadtv**:
 
@@ -37,25 +37,54 @@ app = readtv::launchReadtv()
 ```
 
 Both files and in-memory objects can be passed to **launchReadtv**
-```{r}
+```{r message=FALSE}
+library(dplyr)
 library(magrittr)
 library(readtv)
 
+app = readtv::japan_eq_3_11 %>% 
+  mutate(Time = time, Event.Type = place, Case = 1) %>% #bypass popup
+  launchReadtv(plotOpts = tvOpts(y = mag, x = Time, color = place))
+
+#shiny::runApp(app)
+```
+
+Executing the above ```shiny::runApp(app)``` code will generate the following plot. The ```plotOpts``` argument and the ```tvOpts``` function tells the plot to load with the specified axes, colors, etc. 
+<img src="tools/readme/japan_eq_3_11.png">
+
+
+If the code is run without the ```mutate``` call, then a pop-up first requests the user to map the ```Case```, ```Time```, and ```Event.Type``` columns.
+
+```{r}
 app = readtv::japan_eq_3_11 %>% 
   launchReadtv(plotOpts = tvOpts(y = mag, x = Time, color = place))
 
 #shiny::runApp(app)
 ```
 
-The above code generates the following if ```shiny::runApp``` is executed. The ```plotOpts``` argument and the ```tvOpts``` function tells the plot to load with the specified axes, colors, etc.
-<img src="tools/readme/japan_eq_3_11.png">
+<img src="tools/readme/japan_eq_popup.png">
 
+The ```Filter & Facet``` tab will show the same plot after the pop-up is submitted.
 
-read-tv exports 5 functions and 3 data sets. The 5 functions are ```launchReadtv```, ```tvOpts```, ```preprocessForCpa```, ```slidingWindow```, and ```generatePlotDefaults```. 
+read-tv exports 5 functions and 3 data sets. The 5 functions are:   
 
-Each of these functions has associated help documentation. The 3 data sets are:
-* [Global COVID data, from Our World in  Data](https://ourworldindata.org/coronavirus-source-data)
-* [US state-based COVID data, from NY Times](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv)
+* ```launchReadtv``` 
+    + launch the application  
+* ```tvOpts``` 
+    + tells the plot to load with the specified axes, colors, etc.  
+    + used with ```launchReadtv```'s ```plotOpts``` argument
+* ```preprocessForCpa```  
+    + regularly spaces and smooths time series data
+    + used in the ```CPA``` tabs
+    + how to use visible from ```Source Code``` sub-tab.
+* ```slidingWindow```  
+    + same sub-points as ```preprocessForCpa```.  
+* ```generatePlotDefaults``` 
+    + user can run ```generatePlotDefaults()``` to view defaults for ```tvOpts```
+
+Each of these functions has associated help documentation. The 3 data sets are:  
+* [Global COVID data, from Our World in  Data](https://ourworldindata.org/coronavirus-source-data)  
+* [US state-based COVID data, from NY Times](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv)  
 * [USGS seismic records from Japan on March 11, 2011](https://earthquake.usgs.gov/earthquakes/map).
 
 
@@ -98,6 +127,6 @@ app = readtv::covid_usa %>%
 
 <img src="tools/readme/covid_states_facet.png">
 
-And the source code can also be viewed from the app. _Please note that it assumes ```tidyverse```, ```changepoint```, and ```readtv``` packages are attached_.
+And the source code can also be viewed from the app. _Please note that it assumes ```tidyverse```, ```changepoint```, ```ggforce```, and ```readtv``` packages are attached_.
 
 <img src="tools/readme/covid_states_facet_src.png">
