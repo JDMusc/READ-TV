@@ -26,16 +26,17 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
 
   name = reactive({
     if(!isInputDataSet()) {
-      req(eventDataF())
-      eventDataF()$name
+      req(eventDataF$fileInfo())
+
+      eventDataF$fileInfo()$name
     }
     else
       'inputData'
   })
 
   datapath = reactive({
-    req(eventDataF())
-    eventDataF()$datapath
+    req(eventDataF$fileInfo())
+    eventDataF$fileInfo()$datapath
   })
 
   data = reactive({

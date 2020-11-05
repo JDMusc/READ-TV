@@ -23,8 +23,8 @@ fileWellServer = function(input, output, session, fileType, filepath = NULL){
       input$loadF
   })
 
-  fileLoaded = reactive({
-    return(!is.null(fileinfo))
+  isFileLoaded = reactive({
+    return(!is.null(fileinfo()))
   })
 
   output$loadData = renderUI({
@@ -45,7 +45,7 @@ fileWellServer = function(input, output, session, fileType, filepath = NULL){
 
   minimizeLabel = reactive({
     if(isMinimized())
-      if_else(fileLoaded(),
+      if_else(isFileLoaded(),
               paste("Load New", fileType),
               paste("Load", fileType)
               )
@@ -74,9 +74,8 @@ fileWellServer = function(input, output, session, fileType, filepath = NULL){
       shinyjs::show("loadF")
   })
 
-  return(reactive({
-    req(fileinfo())
-
-    fileinfo()
-  }))
+  return(
+    list(fileInfo = fileinfo,
+         isFileLoaded = isFileLoaded)
+  )
 }

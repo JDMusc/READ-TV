@@ -7,12 +7,12 @@ metaQueryLoaderUI = function(id) {
 
 metaQueryLoader = function(input, output, session) {
   ns = session$ns
-  
+
   metaDataF = callModule(fileWellServer, "filewell", "Meta Data")
-  
+
   return(reactive({
-    req(metaDataF())
-    
-    return(metaDataF())
+    req(metaDataF$fileInfo())
+
+    return(metaDataF$fileInfo())
   }))
 }

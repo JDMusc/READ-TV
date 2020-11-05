@@ -190,6 +190,7 @@ cpaTabServer = function(input, output, session, previousData,
       tabPanel("Display", uiOutput(ns("display"))),
       tabPanel("Download Data",
                uiOutput(ns("dataDownload"))),
+      tabPanel("Load Changepoints", cpaMarkersLoaderUI(ns("loadChangepoints"))),
       tabPanel("Source Code",
                uiOutput(ns("sourceCodeSubTab")))
     )
@@ -281,24 +282,24 @@ cpaTabServer = function(input, output, session, previousData,
 
   cpaMarkers = reactive({
     req(cpaInputData())
-    cpa_params = cpaParams
 
-    if(is.null(cpa_params)) return(NULL)
+    if(is.null(cpaParams)) return(NULL)
 
-    plot_opts = smoothedPlotOptions
-    cpa_input = cpaInputData()
-    mask = list()
-    mask[[expr_text(cpa_input_df_pronoun)]] = cpa_input
-    eval_tidy(cpaMarkersCode(), data = mask)
+    if(markersLoader$isFileLoaded()) {
+      markersLoader$data()
+    } else {
+      mask = list()
+      mask[expr_text(cpa_input_df_pronoun)] = list(cpaInputData())
+      eval_tidy(cpaMarkersCode(), data = mask)
+    }
   })
 
   cpaInputData = reactive({
     req(previousData())
 
-    previousData() %>%
-      list %>%
-      set_expr_names(c(input_sym)) %>%
-      {eval_tidy(cpaInputDataCode(), data = .)}
+    mask = list()
+    mask[et(input_sym)] = list(previousData())
+    eval_tidy(cpaInputDataCode(), data = mask)
   })
 
   cpaInputDataCode = reactive({
@@ -376,6 +377,13 @@ cpaTabServer = function(input, output, session, previousData,
                                     isDataLoaded, isFilePassed,
                                     'cpa-markers')
 
+  #---Load Change points----
+  output$loadChangepoints = renderUI({
+    fileWellUI(ns("filewell"))
+  })
+
+  markersLoader = callModule(cpaMarkersLoader, "loadChangepoints", cpa_markers_sym)
+
   #----Source Code----
   annotateSourceString = function(tab_code)
     expressionsToString(previousSourceString(),
@@ -398,7 +406,12 @@ cpaTabServer = function(input, output, session, previousData,
   currentTabCode = reactive({
     req(isDataLoaded())
 
-    list(cpaInputDataCode(), cpaMarkersCode()) %>%
+    markers_code = cpaMarkersCode()
+    if(markersLoader$isFileLoaded()) {
+      markers_code = markersLoader$code()
+    }
+
+    list(cpaInputDataCode(), markers_code) %>%
       set_expr_names(c(cpa_input_df_pronoun, cpa_markers_sym))
   })
 
