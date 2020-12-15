@@ -11,7 +11,7 @@
 #' @import ggplot2
 #' @importFrom grDevices hcl
 #' @importFrom lubridate dpicoseconds dnanoseconds dmicroseconds dmilliseconds
-#' @importFrom lubridate dseconds dminutes dhours ddays dweeks dyears
+#' @importFrom lubridate dseconds dminutes dhours ddays dweeks dmonths dyears
 #' @importFrom lubridate is.difftime is.duration is.timepoint
 #' @importFrom magrittr %>% %<>% extract extract2
 #' @importFrom purrr discard is_numeric keep map
