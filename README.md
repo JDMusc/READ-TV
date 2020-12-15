@@ -23,8 +23,14 @@ changepoints. <img src="tools/readme/covid_global_us.png">
 ## Installation
 
 This package is not on CRAN. Please install from GitHub with the
-[install\_github function from the remotes
-package](https://www.rdocumentation.org/packages/remotes/versions/2.2.0/topics/install_github).
+[install\_github function from the Devtools
+package](https://www.rdocumentation.org/packages/devtools/versions/2.3.2).
+
+``` r
+# Install devtools if not yet installed
+install.packages("devtools")
+devtools::install_github("JDMusc/READ-TV")
+```
 
 ## Usage
 
@@ -52,6 +58,11 @@ Both files and in-memory objects can be passed to **launchReadtv**
 
 ``` r
 library(dplyr)
+```
+
+    ## Warning: package 'dplyr' was built under R version 3.6.2
+
+``` r
 library(magrittr)
 library(readtv)
 

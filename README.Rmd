@@ -15,7 +15,13 @@ Below is a plot of new COVID-19 cases in the United States with detected changep
 
 
 ## Installation
-This package is not on CRAN. Please install from GitHub with the [install_github function from the remotes package](https://www.rdocumentation.org/packages/remotes/versions/2.2.0/topics/install_github).
+This package is not on CRAN. Please install from GitHub with the [install_github function from the Devtools package](https://www.rdocumentation.org/packages/devtools/versions/2.3.2).
+
+```{r eval=FALSE}
+# Install devtools if not yet installed
+install.packages("devtools")
+devtools::install_github("JDMusc/READ-TV")
+```
 
 
 ## Usage
