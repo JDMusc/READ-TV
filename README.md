@@ -22,6 +22,8 @@ changepoints. <img src="tools/readme/covid_global_us.png">
 
 ## Installation
 
+This software has been tested with R Version 3.6.
+
 This package is not on CRAN. Please install from GitHub with the
 [install\_github function from the Devtools
 package](https://www.rdocumentation.org/packages/devtools/versions/2.3.2).
@@ -44,14 +46,14 @@ another column (or mock value), and map Time to a column.
 ### The main function is **launchReadtv**:
 
 ``` r
-# launchReadtv() #uncomment to launch the web application
+launchReadtv()
 ```
 
 Or it can be launched as
 
 ``` r
 app = readtv::launchReadtv()
-#shiny::runApp(app) #uncomment to launch the web application
+shiny::runApp(app)
 ```
 
 Both files and in-memory objects can be passed to **launchReadtv**
@@ -70,7 +72,7 @@ app = readtv::japan_eq_3_11 %>%
   mutate(Time = time, Event.Type = place, Case = 1) %>% #bypass popup
   launchReadtv(plotOpts = tvOpts(y = mag, x = Time, color = place))
 
-#shiny::runApp(app)
+#shiny::runApp(app) #uncomment to run application
 ```
 
 Executing the above `shiny::runApp(app)` code will generate the
@@ -85,7 +87,7 @@ requests the user to map the `Case`, `Time`, and `Event.Type` columns.
 app = readtv::japan_eq_3_11 %>% 
   launchReadtv(plotOpts = tvOpts(y = mag, x = Time, color = place))
 
-#shiny::runApp(app)
+#shiny::runApp(app) #uncomment to run application
 ```
 
 <img src="tools/readme/japan_eq_popup.png">
@@ -159,7 +161,7 @@ app = readtv::covid_usa %>%
                  tvOpts(y = cases, facetOn = state, isFacetPaginated = TRUE,
                         facetRowsPerPage = 3))
 
-#shiny::runApp(app)
+#shiny::runApp(app) #uncomment to run application
 ```
 
 <img src="tools/readme/covid_states_facet.png">

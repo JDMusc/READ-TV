@@ -15,6 +15,8 @@ Below is a plot of new COVID-19 cases in the United States with detected changep
 
 
 ## Installation
+This software has been tested with R Version 3.6.
+
 This package is not on CRAN. Please install from GitHub with the [install_github function from the Devtools package](https://www.rdocumentation.org/packages/devtools/versions/2.3.2).
 
 ```{r eval=FALSE}
@@ -32,14 +34,14 @@ A data frame or RDS/CSV file where each row is an observation. If the data does 
 
 ### The main function is **launchReadtv**:
 
-```{r}
-# launchReadtv() #uncomment to launch the web application
+```{r eval=FALSE}
+launchReadtv()
 ```
 
 Or it can be launched as 
-```{r}
+```{r eval=FALSE}
 app = readtv::launchReadtv()
-#shiny::runApp(app) #uncomment to launch the web application
+shiny::runApp(app)
 ```
 
 Both files and in-memory objects can be passed to **launchReadtv**
@@ -52,7 +54,7 @@ app = readtv::japan_eq_3_11 %>%
   mutate(Time = time, Event.Type = place, Case = 1) %>% #bypass popup
   launchReadtv(plotOpts = tvOpts(y = mag, x = Time, color = place))
 
-#shiny::runApp(app)
+#shiny::runApp(app) #uncomment to run application
 ```
 
 Executing the above ```shiny::runApp(app)``` code will generate the following plot. The ```plotOpts``` argument and the ```tvOpts``` function tells the plot to load with the specified axes, colors, etc. 
@@ -65,7 +67,7 @@ If the code is run without the ```mutate``` call, then a pop-up first requests t
 app = readtv::japan_eq_3_11 %>% 
   launchReadtv(plotOpts = tvOpts(y = mag, x = Time, color = place))
 
-#shiny::runApp(app)
+#shiny::runApp(app) #uncomment to run application
 ```
 
 <img src="tools/readme/japan_eq_popup.png">
@@ -128,7 +130,7 @@ app = readtv::covid_usa %>%
                  tvOpts(y = cases, facetOn = state, isFacetPaginated = TRUE,
                         facetRowsPerPage = 3))
 
-#shiny::runApp(app)
+#shiny::runApp(app) #uncomment to run application
 ```
 
 <img src="tools/readme/covid_states_facet.png">
