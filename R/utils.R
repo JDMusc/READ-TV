@@ -159,3 +159,8 @@ tvOpts = function(...)
     ~ !(rlang::is_integer(.x) | rlang::is_double(.x) | rlang::is_bool(.x)),
     rlang::as_string
   )
+
+
+eval_tidy_msg = function(expr, data = NULL, env = caller_env) {
+
+}
