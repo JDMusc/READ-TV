@@ -15,6 +15,8 @@ Below is a plot of new COVID-19 cases in the United States with detected changep
 
 
 ## Installation
+
+### Through R/R Studio
 This software has been tested with R Version 3.6.
 
 This package is not on CRAN. Please install from GitHub with the [install_github function from the Devtools package](https://www.rdocumentation.org/packages/devtools/versions/2.3.2).
@@ -26,11 +28,27 @@ devtools::install_github("JDMusc/READ-TV")
 ```
 
 
+### Docker
+There is also a [Docker option](https://github.com/JDMusc/read-tv-docker.git).  
+
+Please note that since the docker image is a light version of Ubuntu, it will not run if the host machine (your local computer) is Windows.  
+
 ## Usage
 
 ### Data requirements
 
 A data frame or RDS/CSV file where each row is an observation. If the data does not have columns for Case, Event.Type, or Time, then read-tv will open a pop-up that enables the user to map Case and Event.Type to another column (or mock value), and map Time to a column.
+
+#### Sample Data Exports
+
+read-tv exports 3 data sets:  
+* [Global COVID data, from Our World in  Data](https://ourworldindata.org/coronavirus-source-data)  
+* [US state-based COVID data, from NY Times](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv)  
+* [USGS seismic records from Japan on March 11, 2011](https://earthquake.usgs.gov/earthquakes/map).
+
+#### Sample Data File
+
+A sample CSV data file that works with read-tv can be found [here](https://github.com/JDMusc/surgery-analysis/blob/master/data/events_phi_free.csv). This was used for our research on workflow disruptions during surgery, specifically an analysis of periods of time with high disruptions rates, or cascades. 
 
 ### The main function is **launchReadtv**:
 
@@ -74,7 +92,7 @@ app = readtv::japan_eq_3_11 %>%
 
 The ```Filter & Facet``` tab will show the same plot after the pop-up is submitted.
 
-read-tv exports 5 functions and 3 data sets. The 5 functions are:   
+read-tv exports 5 functions:   
 
 * ```launchReadtv``` 
     + launch the application  
@@ -88,12 +106,13 @@ read-tv exports 5 functions and 3 data sets. The 5 functions are:
 * ```slidingWindow```  
     + same sub-points as ```preprocessForCpa```.  
 * ```generatePlotDefaults``` 
-    + user can run ```generatePlotDefaults()``` to view defaults for ```tvOpts```
+    + user can run ```generatePlotDefaults()``` to view defaults for ```tvOpts```  
+* ```addCpaMarkersToPlot```
+    + user can add cpa markers to a gg-plot.
+    + used in the ```CPA``` tabs, after CPA is calculated
+    + how to use visible from ```Source Code``` sub-tab.
 
-Each of these functions has associated help documentation. The 3 data sets are:  
-* [Global COVID data, from Our World in  Data](https://ourworldindata.org/coronavirus-source-data)  
-* [US state-based COVID data, from NY Times](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv)  
-* [USGS seismic records from Japan on March 11, 2011](https://earthquake.usgs.gov/earthquakes/map).
+Each of these functions has associated help documentation. 
 
 
 ### CPA tab
