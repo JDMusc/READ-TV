@@ -2,6 +2,16 @@ read-tv, Research & Exploratory Analysis Driven Time-data Visualization.
 Version 0.1
 ================
 
+  - [Description](#description)
+  - [Installation](#installation)
+      - [Through R/R Studio](#through-rr-studio)
+      - [Docker](#docker)
+  - [Usage](#usage)
+      - [Data requirements](#data-requirements)
+      - [Launch Application](#launch-application)
+      - [CPA tab](#cpa-tab)
+      - [Faceting](#faceting)
+
 ## Description
 
 read-tv is a shiny application and associated console interface designed
@@ -71,7 +81,9 @@ This was used for our research on workflow disruptions during surgery,
 specifically an analysis of periods of time with high disruptions rates,
 or cascades.
 
-### The main function is **launchReadtv**:
+### Launch Application
+
+The main function is **launchReadtv**.
 
 ``` r
 launchReadtv()
@@ -88,11 +100,6 @@ Both files and in-memory objects can be passed to **launchReadtv**
 
 ``` r
 library(dplyr)
-```
-
-    ## Warning: package 'dplyr' was built under R version 3.6.2
-
-``` r
 library(magrittr)
 library(readtv)
 

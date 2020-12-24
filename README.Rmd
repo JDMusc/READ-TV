@@ -1,7 +1,8 @@
 ---
 title: "read-tv, Research & Exploratory Analysis Driven Time-data Visualization. Version 0.1"
 output: 
-  github_document
+  github_document:
+    toc: yes
 ---
 
 ## Description
@@ -50,7 +51,9 @@ read-tv exports 3 data sets:
 
 A sample CSV data file that works with read-tv can be found [here](https://github.com/JDMusc/surgery-analysis/blob/master/data/events_phi_free.csv). This was used for our research on workflow disruptions during surgery, specifically an analysis of periods of time with high disruptions rates, or cascades. 
 
-### The main function is **launchReadtv**:
+### Launch Application
+
+The main function is **launchReadtv**.
 
 ```{r eval=FALSE}
 launchReadtv()
@@ -63,7 +66,7 @@ shiny::runApp(app)
 ```
 
 Both files and in-memory objects can be passed to **launchReadtv**
-```{r message=FALSE}
+```{r message=FALSE, warning=FALSE}
 library(dplyr)
 library(magrittr)
 library(readtv)
