@@ -10,9 +10,14 @@ loadFileExpr = function(f_name, ...) {
       'csv' = if(n_args > 1)
         expr(read_csv(!!!(rlang::list2(...))))
       else
-        expr(read_csv)
+        expr(read_csv),
+      'tsv' = if(n_args > 1)
+        expr(read_tsv(!!!(rlang::list2(...))))
+      else
+        expr(read_tsv)
     )
 }
+
 
 
 quickLoadEventsCode = function(f_name, n_max = 100, cols = list(),
@@ -27,6 +32,12 @@ quickLoadEventsCode = function(f_name, n_max = 100, cols = list(),
 quickLoad = function(f_name, n_max = 100, ...)
   eval_tidy(quickLoadEventsCode(f_name, n_max = n_max, ...),
             data = list(f_name = f_name))
+
+
+loadEventsCode = function(f_name, out_pronoun = sym('raw_data'), cols = list(), ...) {
+  rhs = loadEventsCodeRhs(f_name, cols, ...)
+  expr(!!out_pronoun <- !!rhs)
+}
 
 
 loadEventsCodeRhs = function(f_name, cols = list(), ...) {
@@ -47,21 +58,34 @@ appendColsRhs = function(code, cols) {
 }
 
 
-loadEventsWithRelativeAndDeltaTimeCode = function(data_f, output_sym, cols = list()) {
-  base = loadEventsCodeRhs(data_f, cols)
-  appendEventsWithRelativeAndDeltaTimeCode(base, output_sym)
+appendCols = function(code, cols, output_sym) {
+  rhs = appendColsRhs(code, cols)
+  expr(!!output_sym <- !!rhs)
 }
 
 
-appendEventsWithRelativeAndDeltaTimeCode = function(input_expr, output_sym, cols = list()) {
-  base = appendColsRhs(input_expr, cols)
-  expr(!!output_sym <- !!base %>%
-         mutate(`Any Event` = 1) %>%
-         group_by(Case) %>%
-         group_modify(~ .x %>% mutate(deltaTime = Time - lag(Time),
-                                      RelativeTime = Time - min(Time, na.rm = TRUE))) %>%
-         ungroup
-       )
+appendEventsWithRelativeAndDeltaTimeCode = function(input_sym, output_sym, has_case = TRUE) {
+  rhs = expr(!!input_sym %>% mutate(`Any Event` = 1))
+
+  if(has_case) {
+    rhs = expr(!!rhs %>%
+                 group_by(Case) %>%
+                 group_modify(~ .x %>%
+                                arrange(Time) %>%
+                                mutate(deltaTime = Time - lag(Time),
+                                       RelativeTime = Time - min(Time, na.rm = TRUE))
+                              ) %>%
+                 ungroup
+               )
+  }
+  else {
+    rhs = expr(!!rhs %>%
+                 arrange(Time) %>%
+                 mutate(deltaTime = Time - lag(Time),
+                        RelativeTime = Time - min(Time, na.rm = TRUE)))
+  }
+
+  expr(!!output_sym <- !!rhs)
 }
 
 

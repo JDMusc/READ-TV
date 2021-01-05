@@ -7,6 +7,12 @@ cpaTabServer = function(input, output, session, previousData,
                         cpa_markers_sym = sym("cpa_markers")){
 
   ns = session$ns
+  f = stringr::str_interp
+
+  location = function(msg) f('cpaTabServer, ${msg}')
+
+  log_info_cts = log_info_module_gen('cpaTabServer')
+  req_log = req_log_gen(log_info_cts)
 
   #----Code Gen Symbols and Pronouns----
   et = expr_text
@@ -17,25 +23,27 @@ cpaTabServer = function(input, output, session, previousData,
 
   #----Plot----
   timePlot <- reactive({
-    req(previousData())
+    req_log('timePlot', quo(previousData()))
 
     mask = previousData() %>%
       list %>%
-      set_expr_names(c(input_sym)) %>%
-      {runExpressions(currentTabWithPlotCode(), .)}
+      set_expr_names(c(input_sym))
+
+    mask = runExpressions(currentTabWithPlotCode(), mask,
+                          location = location('timePlot'))
 
     mask$p
   })
 
 
   currentTabWithPlotCode = reactive({
-    req(isDataLoaded())
+    req_log('currentTabWithPlotCode', quo(isDataLoaded()))
 
     append(currentTabCode(), plotCodes())
   })
 
   plotCodes = reactive({
-    req(previousData())
+    req_log('plotCodes', quo(previousData()))
 
     codes = list()
 
@@ -104,13 +112,15 @@ cpaTabServer = function(input, output, session, previousData,
 
 
   output$eventPlot = renderPlot({
-    req(isDataLoaded())
+    req_log('output$eventPlot', quo(isDataLoaded()))
+
     timePlot()
   })
 
 
   output$eventPlotContainer = renderUI({
-    print("rerender event plot container")
+    log_info_cts('output$eventPlotContainer')
+
     fluidPage(
       plotOutput(ns("eventPlot"),
                  height = plotOptions$plotHeight
@@ -142,7 +152,8 @@ cpaTabServer = function(input, output, session, previousData,
   #reactiveValues so that dependencies update on a given field instead of any field
   plotOptions = reactiveValues()
   observe({
-    req(previousPlotOpts)
+    req_log('observe plot_opts', quo(previousPlotOpts))
+
     plot_opts = copyPlotOpts(previousPlotOpts)
     if(doFacet())
       plot_opts$facetPage = facetPageControl$page
@@ -152,7 +163,7 @@ cpaTabServer = function(input, output, session, previousData,
 
   smoothedPlotOptions = reactiveValues()
   observe({
-    req(plotOptions)
+    req_log('observe plot_opts 2', quo(plotOptions))
 
     plot_opts = copyPlotOpts(plotOptions)
 
@@ -295,15 +306,16 @@ cpaTabServer = function(input, output, session, previousData,
   })
 
   cpaInputData = reactive({
-    req(previousData())
+    req_log('cpaInputData', quo(previousData()))
 
     mask = list()
     mask[et(input_sym)] = list(previousData())
-    eval_tidy(cpaInputDataCode(), data = mask)
+    eval_tidy_verbose(cpaInputDataCode(), data = mask,
+                      location = location('cpaInputData'))
   })
 
   cpaInputDataCode = reactive({
-    req(previousData())
+    req_log('cpaInputDataCode', quo(previousData()))
 
     if(doRegularize())
       expr(!!cpa_input_df_pronoun <- !!sym(input_sym) %>%
@@ -321,6 +333,8 @@ cpaTabServer = function(input, output, session, previousData,
   })
 
   cpaMarkersCode = reactive({
+    log_info_cts('cpaMakersCode')
+
     if(!doPlotCpa())
       return("")
 
@@ -334,13 +348,10 @@ cpaTabServer = function(input, output, session, previousData,
                     !!!cpa_params)
   })
 
-  observeEvent(doRegularize(), {print("do regularize changed")})
-  observeEvent(previousData(), {print("prev data changed")})
-  observe({tmp = preprocess$agg_fn; print("agg fn changed")})
-  observe({tmp = cpaIndexColumn(); print("index col changed")})
-  observe({tmp = previousPlotOpts$facetOn; print("facet col changed")})
 
   cpaInputColumn = reactive({
+    log_info_cts('cpaInputColumn')
+
     if(doRegularize()) 'CpaInput'
     else yDisplay()
   })
@@ -404,7 +415,7 @@ cpaTabServer = function(input, output, session, previousData,
   })
 
   currentTabCode = reactive({
-    req(isDataLoaded())
+    req_log('currentTabCode', quo(isDataLoaded()))
 
     markers_code = cpaMarkersCode()
     if(markersLoader$isFileLoaded()) {
@@ -416,7 +427,7 @@ cpaTabServer = function(input, output, session, previousData,
   })
 
   fullSourceString = reactive({
-    req(isDataLoaded())
+    req_log('fullSourceString', quo(isDataLoaded()))
 
     annotateSourceString(currentTabCode())
   })

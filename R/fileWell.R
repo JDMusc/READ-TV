@@ -32,7 +32,8 @@ fileWellServer = function(input, output, session, fileType, filepath = NULL){
       label = paste("Load", fileType)
       wellPanel(
         uiOutput(ns("minimize")),
-        fileInput(ns("loadF"), label, accept = c('.csv', '.rds', '.RDS', '.CSV')),
+        fileInput(ns("loadF"), label, accept = c('.csv', '.rds', '.tsv',
+                                                 '.CSV', '.RDS', '.TSV')),
         uiOutput(ns("filename")))
     }
     else

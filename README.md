@@ -6,8 +6,12 @@ Version 0.1
   - [Installation](#installation)
       - [Through R/R Studio](#through-rr-studio)
       - [Docker](#docker)
-  - [Usage](#usage)
+  - [Tutorial](#tutorial)
       - [Data requirements](#data-requirements)
+      - [Sample Data](#sample-data)
+  - [More Information](#more-information)
+      - [Sample Data Exports](#sample-data-exports)
+      - [Sample Data File](#sample-data-file)
       - [Launch Application](#launch-application)
       - [CPA tab](#cpa-tab)
       - [Faceting](#faceting)
@@ -54,14 +58,36 @@ option](https://github.com/JDMusc/read-tv-docker.git).
 Please note that since the docker image is a light version of Ubuntu, it
 will not run if the host machine (your local computer) is Windows.
 
-## Usage
+## Tutorial
 
 ### Data requirements
 
-A data frame or RDS/CSV file where each row is an observation. If the
-data does not have columns for Case, Event.Type, or Time, then read-tv
-will open a pop-up that enables the user to map Case and Event.Type to
-another column (or mock value), and map Time to a column.
+A data frame or RDS/CSV/TSV file where each row is an observation. If
+the data does not have columns for Case, Event.Type, or Time, then
+read-tv will open a pop-up that enables the user to map Case and
+Event.Type to another column (or mock value), and map Time to a column.
+
+### Sample Data
+
+For this tutorial we will use 2 sample data sets:
+
+1.  **PHI-free (no private health information) surgical disruptions
+    data.**
+      - The motivating example for read-tv.
+      - Workflow disruptions were manually observed and recorded for 41
+        surgeries, such as a cell phone ring or misheard command.  
+      - We analyzed workflow disruptions cascades, or periods of time
+        with high disruption rates.  
+2.  **The Great Japan Earthquake data publicly available from USGS.**
+      - Though read-tv was designed for medical data, earthquakes are an
+        informative use-case example of irregularly spaced event data.  
+      - This also highlights read-tv’s capabilities for working with
+        different types of data sets.
+
+The earthquake data can be downloaded at [this
+link](https://earthquake.usgs.gov/fdsnws/event/1/query.csv?starttime=2011-03-10%2000:00:00&endtime=2011-03-12%2023:59:59&maxlatitude=45.919&minlatitude=26.861&maxlongitude=149.414&minlongitude=129.023&minmagnitude=2.5&orderby=time).
+
+## More Information
 
 #### Sample Data Exports
 
@@ -77,9 +103,6 @@ March 11, 2011](https://earthquake.usgs.gov/earthquakes/map).
 
 A sample CSV data file that works with read-tv can be found
 [here](https://github.com/JDMusc/surgery-analysis/blob/master/data/events_phi_free.csv).
-This was used for our research on workflow disruptions during surgery,
-specifically an analysis of periods of time with high disruptions rates,
-or cascades.
 
 ### Launch Application
 
@@ -193,7 +216,7 @@ app = readtv::covid_usa %>%
                  tvOpts(y = cases, facetOn = state, isFacetPaginated = TRUE,
                         facetRowsPerPage = 3))
 
-#shiny::runApp(app) #uncomment to run application
+#shiny::runApp(app) #un comment to run application
 ```
 
 <img src="tools/readme/covid_states_facet.png">

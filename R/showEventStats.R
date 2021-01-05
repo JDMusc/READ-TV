@@ -5,41 +5,61 @@ showEventStats = function(input, output, session, data) {
 
   eventStats <- reactive({
     d = data()
-    totalTime = function(da) da %>%
-      group_by(Case) %>%
-      summarise(TDiff = dplyr::last(Time) - first(Time)) %>%
-      {sum(.$TDiff)}
 
-    total_time = totalTime(d)
-    d %>%
-      group_by(Event.Type) %>%
-      summarise(n = n(), rate = n/total_time) %>%
-      as.data.frame %>%
-      dplyr::add_row(Event.Type = "Combined", n = nrow(d),
-                     rate = n/total_time) %>%
-      rename(`Event Type` = Event.Type, Count = n, Rate = rate)
+    if('Event.Type' %in% colnames(d))
+      d %>%
+        group_by(Event.Type) %>%
+        summarise(n = n()) %>%
+        as.data.frame %>%
+        dplyr::add_row(Event.Type = "Combined", n = nrow(d)) %>%
+        rename(`Event Type` = Event.Type, Count = n)
+    else
+      d %>% summarise(Count = n())
   })
 
   summaryStats <- reactive({
     summary(data()$deltaTime)
   })
 
+  totalTime <- reactive({
+    req(data())
+
+    sumTDiff = function(d) d %>%
+      summarise(TDiff = dplyr::last(Time) - dplyr::first(Time)) %>%
+      {sum(.$TDiff)}
+
+    da = data()
+    if('Case' %in% colnames(da)) da %>%
+      group_by(Case) %>%
+      sumTDiff
+    else da %>% sumTDiff
+  })
+
+  output$totalTime = renderPrint({
+    totalTime()
+  })
+
   output$eventStats = renderPrint({
-    return(eventStats())
+    req(data())
+    d = data()
+
+    eventStats() %>% as.data.frame
   })
 
   output$summaryStats = renderPrint({
-    return(summaryStats())
+    summaryStats()
   })
 
   showModal(modalDialog(
     title = "Event Statistics",
     easyClose = T,
     fluidRow(
-      h4("Event Types"),
+      h4("Event Counts"),
       verbatimTextOutput(ns("eventStats")),
-      h4("Interevent Times Distribution"),
-      verbatimTextOutput(ns("summaryStats"))
+      h4("Interevent Times Summary"),
+      verbatimTextOutput(ns("summaryStats")),
+      h4("Total Duration"),
+      verbatimTextOutput(ns("totalTime"))
     )
   ))
 }

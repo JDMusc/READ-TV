@@ -28,6 +28,17 @@ cpaToVerticalSegment = function(cpa_df) cpa_df %>%
   )
 
 
+#' This simple function takes the output of a changepoint algorithm,
+#' with a time array, and creates a data frame of 2 columns:
+#' 1) cpts (change points, in time, the final time point before the change)
+#' 2) vals (the calculated average \alue of the data before the change point)
+#' @export
+cpaResultsToDataFrame = function(cpt_res, time_data) {
+  data.frame(cpts = time_data[cpt_res@cpts],
+             vals = cpt_res@param.est$mean)
+}
+
+
 cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym,
                            output_sym = sym("cpa_markers"), facet_column_sym = NULL,
                            ...) {
@@ -41,9 +52,11 @@ cpaPipelineCode = function(data_sym, time_column_sym, values_column_sym,
   rhs = expr(!!rhs %>%
                filter(n() > 1) %>%
                group_modify(~ arrange(.x, !!time_column_sym)) %>%
-               group_modify(~ cpt.mean(pull(.x, !!values_column_sym),
+               group_modify(~
+                              cpt.mean(.x[[!!(expr_text(values_column_sym))]],
                                        !!!cpa_params) %>%
-                              {data.frame(cpts = pull(.x, !!time_column_sym)[.@cpts], vals = .@param.est$mean)}
+                              cpaResultsToDataFrame(
+                                .x[[!!(expr_text(time_column_sym))]])
                )
              )
 

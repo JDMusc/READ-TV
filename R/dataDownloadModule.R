@@ -28,6 +28,8 @@ dataDownloadServer = function(input, output, session, data, fileName,
   writeFnGen = function(ext) {
     fn = if(ext == 'csv')
       write_csv
+    else if(ext == 'tsv')
+      write_tsv
     else
       write_rds
 

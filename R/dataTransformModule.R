@@ -3,21 +3,31 @@ dataTransformUI = function(id) {
 }
 
 
-dataTransformServer = function(input, output, session, quickInspect,
+dataTransformServer = function(input, output, session,
+                               rawDataCodes,
+                               rawDataMask,
                                pre_transform_sym,
                                data_sym) {
   ns = session$ns
   f = stringr::str_interp
 
+  location = function(msg) f('dataTransformModule, ${msg}')
+
   un_selected_column_const = -1
 
   missingCols = reactive({
-    req(quickInspect())
+    req(rawData())
 
-    current_cols = colnames(quickInspect())
+    current_cols = colnames(rawData())
     desired_cols = c("Event.Type", "Time", "Case")
 
     setdiff(desired_cols, current_cols)
+  })
+
+  #----Pre Transform Data----
+  rawData = reactive({
+    rawDataCodes() %>%
+      runExpressionsLast(rawDataMask(), location = location('rawData'))
   })
 
   #----Column Transforms----
@@ -33,32 +43,13 @@ dataTransformServer = function(input, output, session, quickInspect,
   get_selected = function(col, default_val = un_selected_column_const)
     getElementSafe(col, columnTransforms, default_val)
 
-  #----Mock Column Creates----
-  mockableCols = reactive({
+  #----Optional Column Creates----
+  optionalCols = reactive({
     req(missingCols())
 
     missingCols() %>% setdiff('Time')
   })
 
-  mock_case_val = 1
-  mock_event_type_val = 'a'
-  columnCreates = reactiveValues()
-  observe({
-    req(missingCols())
-
-    if('Case' %in% missingCols())
-      columnCreates$Case = mock_case_val
-    if('Event.Type' %in% missingCols())
-      columnCreates$Event.Type = mock_event_type_val
-  })
-
-  doCreateColumn = reactiveValues()
-  observe({
-    req(missingCols())
-
-    for(n in missingCols())
-      doCreateColumn[[n]] = n == 'Case'
-  })
 
   #----Return Value----
   mutateCols = reactive({
@@ -67,33 +58,41 @@ dataTransformServer = function(input, output, session, quickInspect,
     for(dst in names(columnTransforms)) {
       new_col = columnTransforms[[dst]]
 
-      if(new_col == un_selected_column_const | doCreateColumn[[dst]])
+      if(new_col == un_selected_column_const)
         next
 
       cols[[dst]] = sym(columnTransforms[[dst]])
     }
-
-    for(dst in names(columnCreates))
-      if(doCreateColumn[[dst]])
-        cols[[dst]] = columnCreates[[dst]]
 
     cols
   })
 
 
   #----Code Generation----
-  quickInspectPreviewCode = reactive({
-    req(quickInspect())
+  outputCode = reactive({
+    req(rawData())
 
-    appendColsRhs(expr(data), mutateCols())
+    pre_codes = rawDataCodes()
+    c_code = appendCols(pre_transform_sym, mutateCols(), data_sym)
+
+    c_code = rlang::set_names(list(c_code),
+                              list(data_sym))
+
+    c(pre_codes, c_code)
   })
 
 
   #----Quick Inspect Preview----
-  quickInspectPreview = reactive({
-    req(quickInspect())
+  transformDataPreview = reactive({
+    req(rawData())
 
-    qi = eval_tidy(quickInspectPreviewCode(), data = list(data = quickInspect()))
+    #mask = list(expr_text(pre_transform_sym)) %>%
+    #  rlang::set_names(list(rawData()), nm = .)
+
+    qi = runExpressionsLast(
+      outputCode(),
+      mask = rawDataMask(),
+      location = location('transformDataPreview'))
 
     missingCols() %>%
       purrr::keep(~ .x %in% names(qi)) %>%
@@ -102,24 +101,24 @@ dataTransformServer = function(input, output, session, quickInspect,
   })
 
 
-  quickInspectPreviewColumns = reactive({
-    req(quickInspectPreview())
+  transformDataPreviewColumns = reactive({
+    req(transformDataPreview())
 
-    colnames(quickInspectPreview())
+    colnames(transformDataPreview())
   })
 
 
   #----Popup----
   popup = reactiveVal(FALSE)
 
-  quickInspectColumns = reactive({
-    req(quickInspect())
+  rawDataColumns = reactive({
+    req(rawData())
 
-    colnames(quickInspect())
+    colnames(rawData())
   })
 
   top5PreviewCols = reactive({
-    qip_cols = quickInspectPreviewColumns()
+    qip_cols = transformDataPreviewColumns()
 
     if(length(qip_cols) < 6)
       qip_cols
@@ -137,7 +136,7 @@ dataTransformServer = function(input, output, session, quickInspect,
     if(!popup())
       return()
 
-    req(quickInspect())
+    req(rawData())
 
     showModal(modalDialog(
       title = "Data Preview & Load",
@@ -151,127 +150,107 @@ dataTransformServer = function(input, output, session, quickInspect,
         tabPanel(
           "Glimpse into Data",
           dataGlimpseUI(ns("dataGlimpse"))
-          )
+          ),
+        tabPanel(
+          'Source Code',
+          verbatimTextOutput(ns("sourceCodeView"))
+        )
         )
       )
     )
   })
 
   #----Data Glimpse Tab----
-  dataGlimpse = callModule(dataGlimpseServer, 'dataGlimpse', quickInspect)
+  dataGlimpse = callModule(dataGlimpseServer, 'dataGlimpse', transformDataPreview)
+
 
   #----Data Transform Tab----
   output$dataTransformTab = renderUI({
-    req(quickInspect())
+    req(rawData())
 
-    qip = quickInspectPreview()
+    qip = transformDataPreview()
 
     div(
       uiOutput(ns("TimeColumnSection")),
-      uiOutput(ns("CaseColumnSection")),
-      uiOutput(ns("Event.TypeColumnSection")),
-      selectInput(
-        ns("columnChoices"),
-        "Columns",
-        colnames(qip),
-        multiple = T,
-        selected = top5PreviewCols()
-      ),
-      fluidRow(
-        column(
-          actionButton(ns("preview"), "Preview"),
-          width = 2,
-          offset = 0
-        ),
-        column(
-          actionButton(ns("done"), "Done"),
-          width = 2,
-          offset = 0
+      fluidPage(
+        fluidRow(strong('Optional Columns')),
+        fluidRow(
+          column(uiOutput(ns("CaseColumn")), width = 4),
+          column(uiOutput(ns("Event.TypeColumn")), width = 4)
         )
       ),
-      renderDataTable(qip[, input$columnChoices])
+      selectInput(
+        ns("columnChoices"),
+        "Preview Columns (all columns will be loaded)",
+        colnames(qip),
+        multiple = TRUE,
+        selected = top5PreviewCols()
+      ),
+      actionButton(ns("done"), "Submit"),
+      uiOutput(ns("dataTblPreview"))
     )
   })
 
+  output$dataTblPreview = renderUI({
+    req(rawData())
 
-  #----Mockable Columns----
-  data_column_choice = "Data Column"
-  mock_value_choice = "Mock Value"
+    qip = transformDataPreview()
 
-  columnTypeStr = function(col) f('${col}ColumnType')
+    valid_cols = intersect(input$columnChoices,
+                           colnames(qip))
 
-  makeMockableInputSection = function(col) {
-    fluidRow(
-      column(width = 4,
-             selectInput(ns(columnTypeStr(col)),
-                         f("${col} Input"),
-                         choices = c(data_column_choice, mock_value_choice),
-                         selected = if_else(doCreateColumn[[col]],
-                                            mock_value_choice,
-                                            data_column_choice
-                                            )
-             )
-      ),
-      column(width = 4, uiOutput(ns(f("${col}Column"))))
+    div(
+      renderDataTable(qip[, valid_cols])
     )
-  }
+  })
 
-  mockColumnStr = function(col) f('mock${col}')
-  mockColumnValue = function(col) input[[mockColumnStr(col)]]
+  #----Source Code View----
+  output$sourceCodeView = renderText({
+    expressionsToString(outputCode())
+  })
 
-  inputColumnType = function(col) input[[columnTypeStr(col)]]
 
-  makeMockableInput = function(col, choices){
-    make_mock = inputColumnType(col) == mock_value_choice
+  #----Optional Columns----
+  data_column_choice = "Data Column"
+  optional_value_choice = "No Column"
 
-    if(make_mock)
-      div(textInput(ns(mockColumnStr(col)),
-                    mock_value_choice,
-                    value = columnCreates[[col]]))
-    else
-      selectInput(ns(col),
-                  "Column",
-                  choices = choices,
-                  selected = get_selected(col, NULL))
+  optionalColumnStr = function(col) f('optional${col}')
+  optionalColumnValue = function(col) input[[optionalColumnStr(col)]]
+
+  makeOptionalInput = function(col, keep_fn){
+    if(col %not in% missingCols()) return()
+
+    qi = rawData()
+
+    choices = rawDataColumns() %>%
+      keep(~ keep_fn(qi, .x)) %>%
+      columnChoices("None", un_selected_column_const)
+
+    selectInput(ns(col),
+                f("${col}"),
+                choices = choices,
+                selected = get_selected(col, NULL))
   }
 
 
   #----Case Column----
-  output$CaseColumnSection = renderUI({
-    if('Case' %in% missingCols())
-      makeMockableInputSection("Case")
-  })
-
   output$CaseColumn = renderUI({
-    qi = quickInspect()
-    makeMockableInput('Case',
-                      choices = quickInspectColumns() %>%
-                        keep(~ n_distinct(qi[[.x]])/nrow(qi) < .2)
-                      )
+    makeOptionalInput('Case', validCaseCol)
   })
 
 
   #----Event.Type Column----
-  output$Event.TypeColumnSection = renderUI({
-    if('Event.Type' %in% missingCols())
-      makeMockableInputSection("Event.Type")
-  })
-
   output$Event.TypeColumn = renderUI({
-    qi = quickInspect()
-    makeMockableInput('Event.Type',
-                      choices = quickInspectColumns() %>%
-                        keep(~ is.character(qi[[.x]]) | is.factor(qi[[.x]]))
-                      )
+    makeOptionalInput('Event.Type', validEventTypeCol)
   })
 
 
   #----Time Column----
   output$TimeColumnSection = renderUI({
-    req(quickInspect())
+    req(rawData())
 
-    qip = quickInspectPreview()
-    qip_cols = quickInspectColumns()
+    qip = transformDataPreview()
+    qip_cols = rawDataColumns()
 
     must_choose = 'Must Choose a Column'
 
@@ -285,7 +264,6 @@ dataTransformServer = function(input, output, session, quickInspect,
         "Time Column (must pass is.numeric or lubridate::is.datetime)",
         choices = time_choices,
         selected = get_selected('Time', un_selected_column_const)
-
       )
   })
 
@@ -295,28 +273,16 @@ dataTransformServer = function(input, output, session, quickInspect,
     getElementSafe(col, input, default = null_val)
 
   didUserUpdateColumn = function(col) {
-    input_type = inputColumnType(col)
-    did_type_change =
-      (input_type %==% mock_value_choice) != doCreateColumn[[col]]
-
-    if(did_type_change)
-      return(TRUE)
-
-    if(doCreateColumn[[col]]) {
-      user_input = mockColumnValue(col)
-      current = columnCreates[[col]]
-    } else {
-      user_input = userSelectedValue(col)
-      current = columnTransforms[[col]]
-    }
+    user_input = userSelectedValue(col)
+    current = columnTransforms[[col]]
 
     user_input %!=% current
   }
 
   areInputsValid = reactive({
-    time_preset = 'Time' %not in% missingCols()
+    time_present = 'Time' %not in% missingCols()
 
-    time_valid = if(time_preset)
+    time_valid = if(time_present)
       TRUE
     else 'Time' %>%
       userSelectedValue %>%
@@ -332,34 +298,17 @@ dataTransformServer = function(input, output, session, quickInspect,
   })
 
   observe({
-    valid = areInputsValid()
-    change = didAnyInputChange()
-
-    shinyjs::toggleState('preview', valid & change)
-    shinyjs::toggleState('done', valid & !change)
+    shinyjs::toggleState('done', areInputsValid())
   })
 
 
   #----Preview----
-  observeEvent(input$preview, {
+  observe({
     update_cols = missingCols() %>%
       keep(didUserUpdateColumn)
 
     for(col in update_cols)
       columnTransforms[[col]] = input[[col]]
-
-    for(m in mockableCols())
-      doCreateColumn[[m]] = inputColumnType(m) %==% mock_value_choice
-
-    mock_updates = mockableCols() %>%
-      keep(~ doCreateColumn[[.x]]) %>%
-      discard(~ mockColumnValue(.x) %==% columnCreates[[.x]])
-
-    for(m in mock_updates)
-      columnCreates[[m]] = mockColumnValue(m)
-
-    shinyjs::disable('preview')
-    shinyjs::enable('done')
   })
 
 
@@ -370,5 +319,7 @@ dataTransformServer = function(input, output, session, quickInspect,
     removeModal()
   })
 
-  return(list(popup = popup, ready = ready, mutateCols = mutateCols))
+  return(list(popup = popup,
+              ready = ready,
+              code = outputCode))
 }

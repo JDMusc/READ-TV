@@ -1,5 +1,5 @@
 
-cpaOverlayTabServer = function(input, output, session, data,
+cpaOverlayTabServer = function(input, output, session, uploadCode, uploadMask,
                                isDataLoaded,
                                cpa, filteredPlotOpts,
                                previousSourceString,
@@ -7,14 +7,27 @@ cpaOverlayTabServer = function(input, output, session, data,
                                cpa_markers_sym = sym("cpa_markers"),
                                select_output_sym = sym("selected_data2"),
                                output_sym = sym("filtered_data2")){
-  ns = session$ns
 
   #----Code Gen Symbols and Pronouns----
+  ns = session$ns
+
   f = stringr::str_interp
   plot_in_sym = sym("plot_df")
   et = expr_text
 
+  location = function(msg) f('cpaOverlayTabServer ${msg}')
+
+  log_trace_bdt = log_info_module_gen('cpaOverlayTabServer')
+  req_log = req_log_gen(log_trace_bdt)
+
+
   #----Filter Data----
+  data = reactive({
+    req_log('data', quo(isDataLoaded()))
+
+    runExpressionsLast(uploadCode(), uploadMask(), location = location('data'))
+  })
+
   dataFilter = callModule(dataFilterServer, "dataFilter", data,
                           input_sym, select_output_sym, output_sym,
                           filter_out_init = FALSE)
@@ -28,7 +41,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     data() %>%
       list %>%
       set_expr_names(c(input_sym)) %>%
-      runExpressions(currentTabCode(), .) %>%
+      runExpressions(currentTabCode(), ., location = location('filteredData')) %>%
       extract2(rtv.et(output_sym))
   })
 
@@ -42,7 +55,7 @@ cpaOverlayTabServer = function(input, output, session, data,
     mask = list(data(), cpa$cpaMarkers()) %>%
       set_expr_names(c(input_sym, cpa_markers_sym))
 
-    mask = runExpressions(currentTabWithPlotCode(), mask)
+    mask = runExpressions(currentTabWithPlotCode(), mask, location = location('timePlot'))
 
     mask$p
   })

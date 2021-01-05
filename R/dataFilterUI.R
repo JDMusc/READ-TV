@@ -7,18 +7,5 @@ dataFilterUI = function(id) {
 
 
 selectRows <- function(ns) {
-  fluidRow(
-    column(
-      width = 2,
-      multiSelectUI(ns("caseFilter"), "Case")
-    ),
-    column(
-      width = 2,
-      multiSelectUI(ns("eventTypeFilter"), "Event Type")
-    ),
-    column(
-      width = 8,
-      customEventsQueryUI(ns("customQuery"))
-    )
-  )
+  uiOutput(ns('selectRows'))
 }

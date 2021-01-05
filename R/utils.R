@@ -1,7 +1,6 @@
 isSelected = function(choice) any(choice != c("All"))
 selectableChoices = function(choices) c("All" = "All", choices)
 
-
 #https://stackoverflow.com/questions/8197559/emulate-ggplot2-default-color-palette
 eventTypeColors <- function(types, do_sort = TRUE) {
   if(do_sort)
@@ -35,7 +34,9 @@ printWithCountGen <- function(msg) {
 }
 
 
-doesEvalCompile = function(ex, data)
+doesEvalCompile = function(ex, data) {
+  log_utils('doesEvalCompile')
+
   try(
     eval_tidy(ex, data),
     silent = TRUE
@@ -43,6 +44,7 @@ doesEvalCompile = function(ex, data)
   class %>%
   not_equals('try-error') %>%
   all #can be more than one class
+}
 
 getElementSafe = function(item_name, obj, default = NULL) {
   if(item_name %in% names(obj)) obj[[item_name]]
@@ -69,14 +71,28 @@ expressionsToString = function(..., width = 50, do_style = TRUE) {
 }
 
 
-runExpressions = function(exs, mask) {
+runExpressions = function(exs, mask, location = "",
+			  env = rlang::caller_env()) {
+  log_utils('runExpressions')
+  f = stringr::str_interp
   for(i in seq_along(exs)) {
     nm = names(exs)[[i]]
-    mask[[nm]] = eval_tidy(exs[[i]], data = mask)
+    mask[[nm]] = eval_tidy_verbose(exs[[i]],
+                                   data = mask,
+                                   location = f('${location}: ${i}'),
+                                   env = env)
   }
   mask
 }
 
+
+runExpressionsLast = function(exs, mask, location = "") {
+  log_utils('runExpressionsLast')
+  exs %>%
+    runExpressions(mask, location) %>%
+    tail(n = 1) %>%
+    magrittr::extract2(1)
+}
 
 is_null_or_empty = function(e)
   is_null(e) | is_empty(e) | rlang::is_na(e) | is_empty_str(e)
@@ -161,6 +177,68 @@ tvOpts = function(...)
   )
 
 
-eval_tidy_msg = function(expr, data = NULL, env = caller_env) {
+eval_tidy_verbose = function(expr, data = NULL, env = rlang::caller_env(), location = '',
+                             stop_on_error = TRUE) {
+  log_utils(stringr::str_interp('will evaluate ${location}'))
+  logger::log_info(expr_text(expr))
+  ret = try(
+    eval_tidy(expr, data, env),
+    silent = TRUE
+  )
 
+  did_compile = ret %>%
+    class %>%
+    not_equals('try-error') %>%
+    all #can be more than one class
+
+  f = stringr::str_interp
+
+  if(!did_compile) {
+    msg = f('\n error trying to evaluate: ${expr_text(expr)}\n ${ret} \n location: ${location}')
+    if(stop_on_error)
+      stop(msg)
+    else
+      warning(msg)
+  }
+
+  ret
+}
+
+
+validEventTypeCol = function(df, col)
+  is.character(df[[col]]) | is.factor(df[[col]])
+
+
+validCaseCol = function(df, col)
+  n_distinct(df[[col]])/nrow(df) < .2
+
+
+wrapInGroupBy = function(no_env_quo, df_sym = sym('df'), group_col = sym('Case')) {
+  ex = rlang::get_expr(no_env_quo)
+  expr(!!df_sym %>%
+         group_by(!!group_col) %>%
+         group_modify(~!!ex) %>%
+         ungroup
+         )
+}
+
+
+log_info_module_gen = function(module) {
+  function(msg) {
+   logger::log_info(f('${module}, ${msg}'))
+  }
+}
+
+log_utils = log_info_module_gen('utils')
+
+req_log_gen = function(log_fn) {
+  f = stringr::str_interp
+  function(msg, req_quo) {
+    e_text = rlang::expr_text(req_quo)
+    log_fn(f('${msg}, pre-req, ${e_text}'))
+
+    eval_tidy(expr(req(!!req_quo)))
+
+    log_fn(f('${msg}, post-req'))
+  }
 }

@@ -24,8 +24,13 @@ dataUploadTabUI = function(id) {
 dataUploadTabServer = function(input, output, session,
                                eventsPath = NULL,
                                inputData = NULL,
-                               output_sym = sym('data')) {
+                               output_sym = sym('data2')) {
   ns = session$ns
+  f = stringr::str_interp
+
+  location = function(msg) f('dataUploadTab, ${msg}')
+
+  log_info_du = log_info_module_gen('dataUploadTab')
 
   #------------Header--------
   isHeaderMinimized = reactiveVal(F)
@@ -39,6 +44,7 @@ dataUploadTabServer = function(input, output, session,
   })
 
   headerMinimalInformation = reactive({
+    log_info_du('headerMinimalInformation')
     parts = c()
 
     if(isDataLoaded())
@@ -65,24 +71,13 @@ dataUploadTabServer = function(input, output, session,
   eventsInformation = callModule(eventsLoader, "loadData", output_sym,
                                  eventsPath, inputData)
 
-  isDataLoaded = reactiveVal(F)
-  data <- reactive({
-    req(eventsInformation$data())
+  isDataLoaded = eventsInformation$isDataReady
 
-    tbl = eventsInformation$data()
-    if(isMetaDataLoaded()) {
-      tbl = tbl %>% filter(Case %in% filteredMetaData()$data$Case)
-    }
-    isDataLoaded(T)
-    tbl
-  })
+  data = reactive({
+    req(isDataLoaded())
 
-
-  observe({
-    req(eventsInformation$quickInspect())
-
-    if(!eventsInformation$isValidRaw())
-      eventsInformation$showTransformPopup(TRUE)
+    runExpressionsLast(eventsInformation$code(), eventsInformation$mask(),
+                   location='du d')
   })
 
 
@@ -91,7 +86,7 @@ dataUploadTabServer = function(input, output, session,
   filteredMetaData <- callModule(metaQueryServer, "metaqueryui",
                                  metaDataFile)
   isMetaDataLoaded = reactive({
-    fmd = try(filteredMetaData(), silent = T)
+    fmd = try(filteredMetaData(), silent = TRUE)
 
     return(!(class(fmd) == "try-error"))
   })
@@ -113,11 +108,10 @@ dataUploadTabServer = function(input, output, session,
 
   #----Source Code----
   fullSourceString = reactive({
-    req(eventsInformation$sourceString())
+    req(eventsInformation$isDataReady())
 
     expressionsToString(
-      "#Load Data",
-      eventsInformation$sourceString()
+      eventsInformation$code()
     )
   })
 
@@ -129,12 +123,10 @@ dataUploadTabServer = function(input, output, session,
   )
 
   #---Return----
-  return(list(
-    data = data,
-    eventsInformation = eventsInformation,
+  list(
     fileName = eventsInformation$name,
-    headerMinimalInformation = headerMinimalInformation,
     isDataLoaded = isDataLoaded,
-    fullSourceString = fullSourceString
-  ))
+    code = eventsInformation$code,
+    mask = eventsInformation$mask
+  )
 }

@@ -4,10 +4,11 @@ mainDisplayServer = function(input, output, session, eventsPath = NULL,
   ns = session$ns
 
   #------------Data Upload--------
-  dataUploadOutputSym = sym('data')
+  dataUploadOutputSym = sym('data2')
   dataUploadTab = callModule(dataUploadTabServer, "dataUpload",
                              eventsPath, inputData, dataUploadOutputSym)
-  data = dataUploadTab$data
+  uploadCode = dataUploadTab$code
+  initMask = dataUploadTab$mask
   fileName = dataUploadTab$fileName
   isDataLoaded = dataUploadTab$isDataLoaded
   isFilePassed = is.null(inputData)
@@ -16,13 +17,12 @@ mainDisplayServer = function(input, output, session, eventsPath = NULL,
   basicDisplayOutputSym = sym('filtered_data')
   basicDisplayTab = callModule(basicDisplayTabServer,
                                "basicDisplay",
-                               data, fileName,
+                               uploadCode, initMask,
+                               fileName,
                                isDataLoaded, isFilePassed,
-                               dataUploadTab$fullSourceString,
                                initPlotOpts = initPlotOpts,
                                input_sym = dataUploadOutputSym,
                                output_sym = basicDisplayOutputSym)
-  dataFilter = basicDisplayTab$dataFilter
   customizeDisplay = basicDisplayTab$customizeDisplay
   filteredData = basicDisplayTab$filteredData
   facetPageN = basicDisplayTab$facetPageN
@@ -39,7 +39,7 @@ mainDisplayServer = function(input, output, session, eventsPath = NULL,
 
   #----CPA Overlay----
   cpaOverlay = callModule(cpaOverlayTabServer, "cpaOverlay",
-                          data, isDataLoaded,
+                          uploadCode, initMask, isDataLoaded,
                           cpa, customizeDisplay,
                           cpa$fullSourceString,
                           input_sym = dataUploadOutputSym,

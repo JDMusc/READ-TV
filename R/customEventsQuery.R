@@ -105,7 +105,7 @@ customEventsQueryServer = function(input, output, session, data,
       field = sym(input$field)
 
       if(is_call(fn_name))
-        new_qry = eval_tidy(fn_name)(!!field, field_value)
+        new_qry = eval_tidy_verbose(fn_name)(!!field, field_value)
       else
         new_qry = expr((!!fn_name)(!!field, !!field_value))
 
@@ -199,7 +199,7 @@ customEventsQueryServer = function(input, output, session, data,
     data() %>%
       list %>%
       set_names(c(expr_text(in_pronoun))) %>%
-      eval_tidy(filterQueryRhsSafe(), .)
+      eval_tidy_verbose(filterQueryRhsSafe(), .)
   })
 
   rm = 'remove'

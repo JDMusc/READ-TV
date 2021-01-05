@@ -11,7 +11,13 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
   ns = session$ns
   f = stringr::str_interp
 
-  pre_transform_data_sym = sym("pre_transform_data")
+  location = function(msg) f('eventsLoader, ${msg}')
+
+  log_info_el = log_info_module_gen('eventsLoader')
+  req_log = req_log_gen(log_info_el)
+
+  raw_data_sym = sym("raw_data")
+  mutated_data_sym = sym("mutated_data")
 
   isInputDataSet = reactive({
     !is_null(inputData)
@@ -34,40 +40,74 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
       'inputData'
   })
 
+  hasFile = reactive({
+    !is.null(eventDataF$fileInfo())
+  })
+
   datapath = reactive({
-    req(eventDataF$fileInfo())
+    req_log('datapath', quo(eventDataF$fileInfo()))
     eventDataF$fileInfo()$datapath
+  })
+
+  isDataReady = reactive({
+    ret = if(!(hasFile() | isInputDataSet())) FALSE
+    else isValidRaw() | dataTransform$ready()
+
+    log_info_el(f('isDataReady ${ret}'))
+
+    ret
   })
 
   data = reactive({
     if(!isValidRaw())
       req(dataTransform$ready())
 
-    c_code = currentCode()
-
-    if(!isInputDataSet())
-      eval_tidy(c_code, list(f_name = datapath()))
-    else
-      eval_tidy(c_code, list(inputData = inputData))
+    runExpressionsLast(currentCode(), rawDataMask(), location='el d')
   })
 
+  rawData = reactive({
+    rawDataCodes() %>%
+      runExpressionsLast(rawDataMask(), location = location('rawData'))
+  })
 
-  quickInspect = reactive({
-    n_max = 100
-
+  rawDataMask = reactive({
     if(!isInputDataSet()) {
       req(datapath())
-      quickLoad(datapath(), n_max = n_max)
+
+      list()
+    } else {
+      set_names(
+        list(inputData),
+        expr(inputData)
+      )
     }
-    else inputData %>% head(n_max)
+  })
+
+  rawDataCodes = reactive({
+    if(!isInputDataSet()) {
+      req(datapath())
+
+      exs = list(
+        expr(f_name <- !!datapath()),
+        loadEventsCode(datapath(), out_pronoun = raw_data_sym)
+      )
+
+      set_names(
+        exs,
+        list(sym('f_name'), raw_data_sym)
+      )
+    }
+    else {
+      exs = list(expr(!!raw_data_sym <- inputData))
+      rlang::set_names(exs, list(raw_data_sym))
+    }
+
   })
 
   isValidData = function(df) {
-    has_cols = (
-      c('Case', 'Time', 'Event.Type') %in% colnames(df)
-      ) %>% all
+    has_time = 'Time' %in% colnames(df)
 
-    if(!has_cols)
+    if(!has_time)
       return(FALSE)
 
     is.timepoint(df$Time) | is.numeric(df$Time)
@@ -75,15 +115,20 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
 
 
   isValidRaw = reactive({
+    req_log('isValidRaw', quo(rawData()))
     if(!isInputDataSet())
       req(datapath())
 
-    isValidData(quickInspect())
+    isValidData(rawData())
   })
 
 
   sourceString = reactive({
-    req(name())
+    req_log('sourceString', quo(name()))
+
+    if(!isValidRaw())
+      req(dataTransform$ready())
+
     f_name = name()
     f_name_var = "f_name"
 
@@ -98,41 +143,58 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
     )
   })
 
-  currentCode = reactive({
-    if(!isInputDataSet()) {
-      req(datapath())
+  hasCol = function(col, mutate_cols) col %in% c(
+    colnames(rawData()),
+    mutate_cols
+  )
 
-      input = datapath()
-      fn = loadEventsWithRelativeAndDeltaTimeCode
+  currentCode = reactive({
+    if(isValidRaw()) {
+      pre_group_codes = rawDataCodes()
+      pre_group_sym = raw_data_sym
     } else {
-      input = sym('inputData')
-      fn = appendEventsWithRelativeAndDeltaTimeCode
+      run_data_transform = dataTransform$ready()
+      req(run_data_transform)
+
+      pre_group_codes = dataTransform$code()
+      pre_group_sym = mutated_data_sym
     }
 
-    run_data_transform = dataTransform$ready()
+    pre_group_data = runExpressionsLast(pre_group_codes, rawDataMask(),
+                                        location=location('currentCode'))
+    pre_group_cols = colnames(pre_group_data)
+    d_cols = colnames(pre_group_cols)
 
-    if(run_data_transform)
-      input %>%
-        fn(output_sym, cols = dataTransform$mutateCols())
-    else
-      input %>% fn(output_sym)
+    output_code = appendEventsWithRelativeAndDeltaTimeCode(pre_group_sym,
+                                                               output_sym,
+                                                               hasCol('Case', d_cols))
+
+    #output_code = expr(!!output_sym <- !!output_code_rhs)
+
+    c(
+      pre_group_codes,
+      rlang::set_names(list(output_code), list(output_sym))
+    )
   })
 
   dataTransform = callModule(dataTransformServer, 'dataTransform',
-                             quickInspect,
-                             pre_transform_data_sym, output_sym)
+                             rawDataCodes,
+                             rawDataMask,
+                             raw_data_sym, mutated_data_sym)
 
-  showTransformPopup = reactive({
-    dataTransform$popup(TRUE)
-  })
+
+  observe({
+    req_log('observe raw data', quo(rawData()))
+
+    if(!isValidRaw())
+      dataTransform$popup(TRUE)
+  });
 
 
   return(
-    list(name = name, data = data,
-         datapath = datapath,
-         sourceString = sourceString,
-         showTransformPopup = dataTransform$popup,
-         quickInspect = quickInspect,
-         isValidRaw = isValidRaw)
+    list(name = name,
+         mask = rawDataMask,
+         code = currentCode,
+         isDataReady = isDataReady)
     )
 }
