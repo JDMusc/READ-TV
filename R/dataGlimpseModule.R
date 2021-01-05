@@ -9,6 +9,6 @@ dataGlimpseServer = function(input, output, session, tbl) {
   output$dataGlimpse = renderPrint({
     req(tbl())
 
-    str(tbl())
+    tibble::glimpse(tbl())
   })
 }

@@ -41,6 +41,8 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
   })
 
   hasFile = reactive({
+    if(isInputDataSet()) return(FALSE)
+
     !is.null(eventDataF$fileInfo())
   })
 
@@ -50,6 +52,7 @@ eventsLoader = function(input, output, session, output_sym, eventsPath = NULL,
   })
 
   isDataReady = reactive({
+    log_info_el('isDataReady enter')
     ret = if(!(hasFile() | isInputDataSet())) FALSE
     else isValidRaw() | dataTransform$ready()
 
