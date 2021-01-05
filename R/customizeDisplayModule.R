@@ -174,7 +174,6 @@ customizeDisplayServer = function(input, output, session, data,
                              displayEmptyStrAsNone(validFacetColumns()),
                            selected = ret$facetOn)),
         column(2,
-               fluidRow(uiOutput(ns("facetCustomizeCheck"))),
                fluidRow(uiOutput(ns("facetPaginateCheck"))))
       ),
       fluidRow(uiOutput(ns("facetPaginateBucket"))),
