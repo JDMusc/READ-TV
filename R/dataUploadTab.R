@@ -24,7 +24,7 @@ dataUploadTabUI = function(id) {
 dataUploadTabServer = function(input, output, session,
                                eventsPath = NULL,
                                inputData = NULL,
-                               output_sym = sym('data2')) {
+                               output_sym = sym('data')) {
   ns = session$ns
   f = stringr::str_interp
 
@@ -77,7 +77,7 @@ dataUploadTabServer = function(input, output, session,
     req(isDataLoaded())
 
     runExpressionsLast(eventsInformation$code(), eventsInformation$mask(),
-                   location='du d')
+                   location=location('data'))
   })
 
 

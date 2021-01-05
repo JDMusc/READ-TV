@@ -71,7 +71,7 @@ expressionsToString = function(..., width = 50, do_style = TRUE) {
 }
 
 
-runExpressions = function(exs, mask, location = "",
+runExpressions = function(exs, mask, location,
 			  env = rlang::caller_env()) {
   log_utils('runExpressions')
   f = stringr::str_interp
@@ -86,7 +86,7 @@ runExpressions = function(exs, mask, location = "",
 }
 
 
-runExpressionsLast = function(exs, mask, location = "") {
+runExpressionsLast = function(exs, mask, location) {
   log_utils('runExpressionsLast')
   exs %>%
     runExpressions(mask, location) %>%
@@ -180,7 +180,7 @@ tvOpts = function(...)
 eval_tidy_verbose = function(expr, data = NULL, env = rlang::caller_env(), location = '',
                              stop_on_error = TRUE) {
   log_utils(stringr::str_interp('will evaluate ${location}'))
-  logger::log_info(expr_text(expr))
+  logger::log_info(expr_text(expr), namespace = logger_ns)
   ret = try(
     eval_tidy(expr, data, env),
     silent = TRUE
@@ -223,9 +223,12 @@ wrapInGroupBy = function(no_env_quo, df_sym = sym('df'), group_col = sym('Case')
 }
 
 
+logger_ns = 'logger.readtv'
+logger_format = '{pid}/{namespace} {time} {level}: {msg}'
+
 log_info_module_gen = function(module) {
   function(msg) {
-   logger::log_info(f('${module}, ${msg}'))
+   logger::log_info(f('${module}, ${msg}'), namespace = logger_ns)
   }
 }
 

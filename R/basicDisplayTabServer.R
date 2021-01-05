@@ -5,7 +5,7 @@ basicDisplayTabServer = function(input, output, session,
                                 fileName, isDataLoaded,
                                 isFilePassed,
                                 initPlotOpts = list(),
-                                input_sym = sym('data2'),
+                                input_sym = sym('data'),
                                 select_output_sym = sym('selected_data'),
                                 output_sym = sym('filtered_data')){
   ns = session$ns
@@ -14,8 +14,8 @@ basicDisplayTabServer = function(input, output, session,
 
   location = function(msg) f('basicDisplayTabServer ${msg}')
 
-  log_trace_bdt = log_info_module_gen('basicDisplayTabServer')
-  req_log = req_log_gen(log_trace_bdt)
+  log_info_bdt = log_info_module_gen('basicDisplayTabServer')
+  req_log = req_log_gen(log_info_bdt)
 
   #----Filter Data----
   data = reactive({
@@ -58,7 +58,7 @@ basicDisplayTabServer = function(input, output, session,
   })
 
   plotCode = reactive({
-    log_trace_bdt('plotCode')
+    log_info_bdt('plotCode')
     plot_data = plotInput()
 
     generateTimePlotCode(plot_data, plotOpts())
@@ -68,13 +68,13 @@ basicDisplayTabServer = function(input, output, session,
   plot_out = 'plot_data'
 
   makeDataMask = function(filtered_data) {
-    log_trace_bdt('makeDataMask')
+    log_info_bdt('makeDataMask')
     list(filtered_data) %>%
       set_names(nm = plot_in)
   }
 
   plotOpts = reactive({
-    log_trace_bdt('plotOpts')
+    log_info_bdt('plotOpts')
     cd = customizeDisplay
 
     if(dataFilter$filterOut())
@@ -110,13 +110,13 @@ basicDisplayTabServer = function(input, output, session,
 
 
   plotHeight = reactive({
-    log_trace_bdt('plotHeight')
+    log_info_bdt('plotHeight')
     if(is.null(customizeDisplay$plotHeight)) 400
     else customizeDisplay$plotHeight
   })
 
   output$eventPlotContainer = renderUI({
-    log_trace_bdt('output eventplotContainer')
+    log_info_bdt('output eventplotContainer')
     fluidPage(
       plotOutput(ns("eventPlot"),
                  height = plotHeight(),
@@ -156,19 +156,19 @@ basicDisplayTabServer = function(input, output, session,
 
   ##----Axis Settings: Facet----
   doFacet = reactive({
-    log_trace_bdt('do facet')
+    log_info_bdt('do facet')
     cd = customizeDisplay
     isDataLoaded() & is_str_set(cd$facetRowsPerPage)
   })
 
   facetPageN <- reactive({
-    log_trace_bdt('face page n')
+    log_info_bdt('facet page n')
     if(!doFacet()) -1
     else n_pages(timePlot())
   })
 
   output$facetPageControl = renderUI({
-    log_trace_bdt('output facetpagecontrol')
+    log_info_bdt('output facetpagecontrol')
     if(doFacet())
       facetPageUI(ns("facetPageControl"))
   })
@@ -178,7 +178,7 @@ basicDisplayTabServer = function(input, output, session,
                                 initPlotOpts$facetPage)
 
   observeEvent(facetPageControl$page, {
-    log_trace_bdt('observer facetPageControl$page')
+    log_info_bdt('observer facetPageControl$page')
     pg = facetPageControl$page
     if(!is.null(pg))
       customizeDisplay$facetPage = facetPageControl$page
@@ -187,13 +187,13 @@ basicDisplayTabServer = function(input, output, session,
 
   #----Event Stats----
   output$showEventStats = renderUI({
-    log_trace_bdt('output showeventstats')
+    log_info_bdt('output showeventstats')
     if(isDataLoaded())
       actionButton(inputId = ns("showEventStats"), "Basic Statistics")
   })
 
   observeEvent(input$showEventStats, {
-    log_trace_bdt('observe input$showEventStats')
+    log_info_bdt('observe input$showEventStats')
     callModule(showEventStats, "", data=filteredData)
   })
 
@@ -249,13 +249,13 @@ basicDisplayTabServer = function(input, output, session,
   })
 
   output$sourceCodeSubTab = renderUI({
-    log_trace_bdt('output scst')
+    log_info_bdt('output scst')
     actionButton(ns("showSourceBtn"), "Show Source")
   })
 
 
   observeEvent(input$showSourceBtn, {
-    log_trace_bdt('input ssb')
+    log_info_bdt('input ssb')
     showModal(
       modalDialog(title = "Source Code",
                   size = "l",
@@ -265,7 +265,7 @@ basicDisplayTabServer = function(input, output, session,
   })
 
   output$fullSourceWithPlot = renderText({
-    log_trace_bdt('output fswp')
+    log_info_bdt('output fswp')
     fullSourceWithPlotString()
   })
 

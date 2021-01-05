@@ -21,10 +21,20 @@
 #'
 #' #shiny::runApp(app, port = 80, host = '0.0.0.0')
 #'
-launchReadtv = function(data = NULL, eventsPath = NULL, plotOpts = list()) {
+launchReadtv = function(data = NULL, eventsPath = NULL, plotOpts = list(),
+                        log_threshold = logger::INFO) {
   if(!is.null(eventsPath) & !is.null(data))
     stop("do not specify both eventsPath and data, specificying neither is OK")
-  shiny::shinyApp(ui = genUi(),
-           server = genServerFn(eventsPath = eventsPath, data = data,
-                                initPlotOpts = plotOpts))
+
+  ui = genUi()
+  server = genServerFn(eventsPath = eventsPath, data = data, initPlotOpts = plotOpts)
+
+  logger::log_layout(
+    logger::layout_glue_generator(format = logger_format),
+    namespace = logger_ns
+  )
+
+  logger::log_threshold(log_threshold, namespace = logger_ns)
+
+  shiny::shinyApp(ui, server)
 }

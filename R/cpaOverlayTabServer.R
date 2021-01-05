@@ -37,7 +37,8 @@ cpaOverlayTabServer = function(input, output, session, uploadCode, uploadMask,
   })
 
   filteredData = reactive({
-    req(isDataLoaded())
+    req_log('filteredData', isDataLoaded())
+
     data() %>%
       list %>%
       set_expr_names(c(input_sym)) %>%
@@ -48,9 +49,10 @@ cpaOverlayTabServer = function(input, output, session, uploadCode, uploadMask,
   #----Plot----
   no_cpa_msg = "CPA input changed or CPA output not yet calculated.
       (Re)calculate CPA to see results."
+
   timePlot <- reactive({
-    req(isDataLoaded())
-    req(dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
+    req_log('timePlot', isDataLoaded())
+    req_log('timePlot', dataFilter$hasValidQuery() | !dataFilter$hasQueryInput())
 
     mask = list(data(), cpa$cpaMarkers()) %>%
       set_expr_names(c(input_sym, cpa_markers_sym))
@@ -62,14 +64,14 @@ cpaOverlayTabServer = function(input, output, session, uploadCode, uploadMask,
 
 
   currentTabWithPlotCode = reactive({
-    req(isDataLoaded())
+    req_log('currentTabWithPlotCode', isDataLoaded())
 
     append(currentTabCode(), plotCodes())
   })
 
 
   plotCodes = reactive({
-    req(data())
+    req_log('plotCodes', data())
 
     codes = list()
 
@@ -122,14 +124,16 @@ cpaOverlayTabServer = function(input, output, session, uploadCode, uploadMask,
   })
 
   output$eventPlot = renderPlot({
-    req(isDataLoaded())
+    req_log('eventPlot', isDataLoaded())
+
     timePlot()
   })
 
 
   #----Side Panel ----
   output$sidePanel = renderUI({
-    req(isDataLoaded())
+    req_log('sidePanel', isDataLoaded())
+
     tabsetPanel(
       tabPanel("Display",
                customizeDisplayUI(ns("customizeDisplay"))),

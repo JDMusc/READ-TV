@@ -4,7 +4,7 @@ mainDisplayServer = function(input, output, session, eventsPath = NULL,
   ns = session$ns
 
   #------------Data Upload--------
-  dataUploadOutputSym = sym('data2')
+  dataUploadOutputSym = sym('rtv_data')
   dataUploadTab = callModule(dataUploadTabServer, "dataUpload",
                              eventsPath, inputData, dataUploadOutputSym)
   uploadCode = dataUploadTab$code
