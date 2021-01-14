@@ -16,13 +16,10 @@ dataFilterServer = function(input, output, session, data,
 
   constraints = reactiveValues()
 
-  filteredDataCount = printWithCountGen("filtered data")
-
   #----Selected----
   hasCol = function(col) col %in% colnames(data())
   selectableCols = reactive({
     req_log('selectableCols', quo(data()))
-
 
     intersect(
       c('Case', 'Event.Type'),
@@ -33,26 +30,26 @@ dataFilterServer = function(input, output, session, data,
   output$selectRows = renderUI({
     req_log('output select rows', quo(data()))
 
-    fluidRow(
-      if(hasCol('Case')) {
+   fluidRow(
+     if(hasCol('Case')) {
         column(
           width = 2,
           multiSelectUI(ns("caseFilter"), "Case")
-          )
-        }
-      ,
-      if(hasCol('Event.Type')) {
-        column(
-          width = 2,
-          multiSelectUI(ns("eventTypeFilter"), "Event Type")
-          )
-        },
-      column(
-        width = 8,
-        customEventsQueryUI(ns("customQuery"))
-      )
-    )
-  })
+        )
+       }
+     ,
+     if(hasCol('Event.Type')) {
+       column(
+         width = 2,
+         multiSelectUI(ns("eventTypeFilter"), "Event Type")
+         )
+       },
+     column(
+       width = 8,
+       customEventsQueryUI(ns("customQuery"))
+       )
+     )
+   })
 
   selectedVals <- reactive({
     log_trace_dfs('selectedVals')
@@ -103,7 +100,7 @@ dataFilterServer = function(input, output, session, data,
     df
   })
 
-  updateChoicesCountDebug = printWithCountGen('update choices')
+
   observe({
     req_log('observe Data', quo(data()))
 
@@ -112,26 +109,29 @@ dataFilterServer = function(input, output, session, data,
 	  selected_vals = selectedVals()
 
 	  for(col in cols) {
-		  others = setdiff(cols, col)
-	  	  qry = generateSelectedQuery(
-	  	    in_pronoun, out_pronoun,
-	  	    selected_vals[others])
-
-	  	  df = eval_tidy_verbose(qry, data = createDataMask(d),
-	  	                 location = location('observe Data'))
-
-		  chs = columnValues(df, col)
-
 		  req(selectMods[[col]])
 		  req(selectMods[[col]]())
 
+		  others = setdiff(cols, col)
+
+		  qry = generateSelectedQuery(
+		    in_pronoun, out_pronoun,
+		    selected_vals[others])
+
+		  df = eval_tidy_verbose(qry, data = createDataMask(d),
+		                         location = location('observe Data'))
+
+		  chs = columnValues(df, col)
+
+
 		  selectMods[[col]]()$updateChoices(chs)
-	  }
-  })
+		  }
+	  })
 
 
   columnValues = function(df, col) {
     log_trace_dfs('columnValues')
+
     df %>%
       select(col) %>%
       dplyr::mutate_if(is.factor, as.character) %>%
@@ -143,15 +143,16 @@ dataFilterServer = function(input, output, session, data,
   observe({
     req_log('observe data 2', quo(data()))
 
-	  d = data()
+    d = data()
 
-	  if(hasCol('Case'))
-	    selectMods[["Case"]] = callModule(multiSelectServer, "caseFilter",
+    if(hasCol('Case'))
+      selectMods[["Case"]] = callModule(multiSelectServer, "caseFilter",
 	                                      columnValues(d, "Case"))
-	  if(hasCol('Event.Type'))
-	    selectMods[["Event.Type"]] = callModule(multiSelectServer, "eventTypeFilter",
-	                                            columnValues(d, "Event.Type"))
-  })
+
+    if(hasCol('Event.Type'))
+      selectMods[["Event.Type"]] = callModule(multiSelectServer, "eventTypeFilter",
+                                              columnValues(d, "Event.Type"))
+    })
 
 
   #----Custom Query----
@@ -161,6 +162,7 @@ dataFilterServer = function(input, output, session, data,
 
   filteredDataExprs = reactive({
     log_trace_dfs('filteredDataExprs')
+
     list(selectedQuery(), customQuery$filterQuery()) %>%
       set_expr_names(c(selected_pronoun, out_pronoun))
   })

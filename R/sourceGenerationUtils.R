@@ -7,17 +7,18 @@ generateSelectedQuery = function(in_pronoun_sym, out_pronoun_sym, selected_vals)
 }
 
 
-generateSelectedQueryRhs = function(in_pronoun_sym, selected_vals)
-  selected_vals %>%
-    purrr::discard(~ is_empty(.x) | ('All' %in% .x)) %>%
-    purrr::imap(~ expr(!!(sym(.y)) %in% !!.x)) %>%
-    {
-      if(is_empty(.))
-        return(in_pronoun_sym)
+generateSelectedQueryRhs = function(in_pronoun_sym, selected_vals) {
+  selected_cols = selected_vals %>%
+    purrr::discard(~ is_empty(.x) | ('All' %in% .x))
 
-      qry = purrr::reduce(., ~ expr(!!.x & !!.y))
-      expr(!!in_pronoun_sym %>% filter(!!qry))
-    }
+  selected_exs = selected_cols %>%
+    purrr::imap(~ expr(!!(sym(.y)) %in% !!.x))
+
+  if(is_empty(selected_exs)) return(in_pronoun_sym)
+
+  qry = purrr::reduce(selected_exs, ~ expr(!!.x & !!.y))
+  expr(!!in_pronoun_sym %>% filter(!!qry))
+}
 
 
 mappedExpr = function(in_pronoun_sym, qry, filter_out = FALSE) {
