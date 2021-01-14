@@ -29,6 +29,8 @@ basicDisplayTabServer = function(input, output, session,
                           filter_out_init = TRUE)
 
   output$dataFilter = renderUI({
+    log_info_bdt('output$dataFilter')
+
     if(isDataLoaded()) dataFilterUI(ns("dataFilter"))
   })
 
@@ -40,12 +42,10 @@ basicDisplayTabServer = function(input, output, session,
       set_expr_names(c(input_sym)) %>%
       runExpressions(currentTabCode(), ., location=location('filteredData')) %>%
       extract2(rtv.et(output_sym))
-  })
+    })
 
 
   #----Plot----
-  updateTimePlotCountDebug = printWithCountGen('time plot')
-
   timePlot <- reactive({
     req_log('timePlot', quo(isDataLoaded()))
 
@@ -55,26 +55,30 @@ basicDisplayTabServer = function(input, output, session,
       {runExpressions(currentTabWithPlotCode(), ., location=location('timePlot'))}
 
     mask$p
-  })
+    })
+
 
   plotCode = reactive({
     log_info_bdt('plotCode')
+
     plot_data = plotInput()
 
     generateTimePlotCode(plot_data, plotOpts())
-  })
+    })
 
   plot_in = as.character(output_sym)
   plot_out = 'plot_data'
 
   makeDataMask = function(filtered_data) {
     log_info_bdt('makeDataMask')
+
     list(filtered_data) %>%
       set_names(nm = plot_in)
-  }
+    }
 
   plotOpts = reactive({
     log_info_bdt('plotOpts')
+
     cd = customizeDisplay
 
     if(dataFilter$filterOut())
@@ -83,7 +87,7 @@ basicDisplayTabServer = function(input, output, session,
       cd$alpha = constants.alpha_col
 
     cd
-  })
+    })
 
   plotInput = reactive({
     fn_name = 'plotInput'
@@ -111,12 +115,15 @@ basicDisplayTabServer = function(input, output, session,
 
   plotHeight = reactive({
     log_info_bdt('plotHeight')
+
     if(is.null(customizeDisplay$plotHeight)) 400
     else customizeDisplay$plotHeight
   })
 
+
   output$eventPlotContainer = renderUI({
     log_info_bdt('output eventplotContainer')
+
     fluidPage(
       plotOutput(ns("eventPlot"),
                  height = plotHeight(),
@@ -126,14 +133,15 @@ basicDisplayTabServer = function(input, output, session,
                  dblclick = clickOpts(ns("event_plot_dblclick"))
                  ),
       uiOutput(ns("facetPageControl"))
-    )
-  })
+      )
+    })
 
 
   output$eventPlot = renderPlot({
     req_log('output eventplot', isDataLoaded())
+
     timePlot()
-  })
+    })
 
 
   #----Side Panel ----
@@ -147,8 +155,8 @@ basicDisplayTabServer = function(input, output, session,
                uiOutput(ns("showEventStats"), label = "Basic Statistics")),
       tabPanel("Download Data", dataDownloadUI(ns("dataDownload"))),
       tabPanel("Source Code", uiOutput(ns("sourceCodeSubTab")))
-    )
-  })
+      )
+    })
 
   #----Axis Settings----
   customizeDisplay = callModule(customizeDisplayServer, "customizeDisplay",
@@ -157,21 +165,24 @@ basicDisplayTabServer = function(input, output, session,
   ##----Axis Settings: Facet----
   doFacet = reactive({
     log_info_bdt('do facet')
+
     cd = customizeDisplay
     isDataLoaded() & is_str_set(cd$facetRowsPerPage)
   })
 
   facetPageN <- reactive({
     log_info_bdt('facet page n')
+
     if(!doFacet()) -1
     else n_pages(timePlot())
   })
 
   output$facetPageControl = renderUI({
     log_info_bdt('output facetpagecontrol')
+
     if(doFacet())
       facetPageUI(ns("facetPageControl"))
-  })
+    })
 
   facetPageControl = callModule(facetPageServer, "facetPageControl",
                                 facetPageN,
@@ -182,20 +193,22 @@ basicDisplayTabServer = function(input, output, session,
     pg = facetPageControl$page
     if(!is.null(pg))
       customizeDisplay$facetPage = facetPageControl$page
-  })
+    })
 
 
   #----Event Stats----
   output$showEventStats = renderUI({
     log_info_bdt('output showeventstats')
+
     if(isDataLoaded())
       actionButton(inputId = ns("showEventStats"), "Basic Statistics")
-  })
+    })
 
   observeEvent(input$showEventStats, {
     log_info_bdt('observe input$showEventStats')
+
     callModule(showEventStats, "", data=filteredData)
-  })
+    })
 
 
   #----Download Data----
@@ -206,11 +219,14 @@ basicDisplayTabServer = function(input, output, session,
 
 
   #----Source Code----
-  annotateSourceString = function(tab_code)
+  annotateSourceString = function(tab_code) {
+    log_info_bdt('annotateSourceString')
+
     expressionsToString(prevCode(),
                         "",
                         "#Basic Filter",
                         tab_code)
+  }
 
   fullSourceString = reactive({
     req_log('full source string', quo(isDataLoaded()))
@@ -250,32 +266,35 @@ basicDisplayTabServer = function(input, output, session,
 
   output$sourceCodeSubTab = renderUI({
     log_info_bdt('output scst')
+
     actionButton(ns("showSourceBtn"), "Show Source")
-  })
+    })
 
 
   observeEvent(input$showSourceBtn, {
     log_info_bdt('input ssb')
+
     showModal(
       modalDialog(title = "Source Code",
                   size = "l",
                   verbatimTextOutput(ns("fullSourceWithPlot"))
                   )
       )
-  })
+    })
 
   output$fullSourceWithPlot = renderText({
     log_info_bdt('output fswp')
+
     fullSourceWithPlotString()
-  })
+    })
 
 
   #----Return----
   list(
     customizeDisplay = customizeDisplay,
-    dataFilter = reactive({'blah'}),#dataFilter,
+    dataFilter = dataFilter,
     filteredData = filteredData,
     facetPageN = facetPageN,
     fullSourceString = fullSourceString
-  )
+    )
 }

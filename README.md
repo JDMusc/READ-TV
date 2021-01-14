@@ -7,11 +7,9 @@ Version 0.1
       - [Through R/R Studio](#through-rr-studio)
       - [Docker](#docker)
   - [Tutorial](#tutorial)
-      - [Data requirements](#data-requirements)
       - [Sample Data](#sample-data)
   - [More Information](#more-information)
-      - [Sample Data Exports](#sample-data-exports)
-      - [Sample Data File](#sample-data-file)
+      - [Data requirements](#data-requirements)
       - [Launch Application](#launch-application)
       - [CPA tab](#cpa-tab)
       - [Faceting](#faceting)
@@ -60,13 +58,6 @@ will not run if the host machine (your local computer) is Windows.
 
 ## Tutorial
 
-### Data requirements
-
-A data frame or RDS/CSV/TSV file where each row is an observation. If
-the data does not have columns for Case, Event.Type, or Time, then
-read-tv will open a pop-up that enables the user to map Case and
-Event.Type to another column (or mock value), and map Time to a column.
-
 ### Sample Data
 
 For this tutorial we will use 2 sample data sets:
@@ -88,6 +79,13 @@ The earthquake data can be downloaded at [this
 link](https://earthquake.usgs.gov/fdsnws/event/1/query.csv?starttime=2011-03-10%2000:00:00&endtime=2011-03-12%2023:59:59&maxlatitude=45.919&minlatitude=26.861&maxlongitude=149.414&minlongitude=129.023&minmagnitude=2.5&orderby=time).
 
 ## More Information
+
+### Data requirements
+
+A data frame or RDS/CSV/TSV file where each row is an observation. If
+the data does not have columns for Case, Event.Type, or Time, then
+read-tv will open a pop-up that enables the user to map Case and
+Event.Type to another column (or mock value), and map Time to a column.
 
 #### Sample Data Exports
 

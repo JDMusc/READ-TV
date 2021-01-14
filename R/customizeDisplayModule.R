@@ -60,12 +60,18 @@ displayEmptyStrAsNone = function(cols) {
 customizeDisplayServer = function(input, output, session, data,
                                   initPlotOpts = list()) {
   ns = session$ns
+  f = stringr::str_interp
+  ret = do.call(reactiveValues, generatePlotDefaults(initPlotOpts))
+
+  location = function(msg) f('customizeDisplayServer ${msg}')
+
+  log_info_cd = log_info_module_gen('customizeDisplayServer')
+  req_log = req_log_gen(log_info_cd)
+
 
   props = list(maxShapeN = 6, maxColorN = 21, maxFacetN = 500)
 
-  f = stringr::str_interp
-
-  ret = do.call(reactiveValues, generatePlotDefaults(initPlotOpts))
+  #----Valid Columns----
 
   validColumns = function(df, fn) df %>% dplyr::select_if(fn) %>% colnames
 
@@ -75,34 +81,15 @@ customizeDisplayServer = function(input, output, session, data,
   validCountColumns = function(df, n) df %>%
     validColumns(~ n_distinct(.x) <= n)
 
-  shouldUpdate = function(valid_choices, current_choice) {
-    if(length(valid_choices) == 0)
-      FALSE
-    else if(is.null(current_choice))
-      TRUE
-    else
-      current_choice %not in% valid_choices
-  }
-
-  observe({
-    updateRet = function(valids, col)
-      if(shouldUpdate(valids, ret[[col]]))
-        ret[[col]] = valids[1]
-
-    updateRet(validShapeColumns(), 'shape')
-
-    updateRet(validColorColumns(), 'color')
-  })
-
   validShapeColumns = reactive({
-    req(data())
+    req_log('validShapeColumns', quo(data()))
 
     append(empty_str, validCountColumns(data(), props$maxShapeN))
   })
 
 
   validYColumns = reactive({
-    req(data())
+    req_log('validYColumns', quo(data()))
 
     data() %>%
       numberLikeColumns %>%
@@ -110,7 +97,7 @@ customizeDisplayServer = function(input, output, session, data,
   })
 
   validXColumns = reactive({
-    req(data())
+    req_log('validXColumns', quo(data()))
 
     data() %>%
       validColumns(~ is.difftime(.x) |
@@ -121,7 +108,7 @@ customizeDisplayServer = function(input, output, session, data,
   })
 
   validColorColumns = reactive({
-    req(data())
+    req_log('validColorColumns', quo(data()))
 
     d = data()
     empty_str %>%
@@ -130,14 +117,42 @@ customizeDisplayServer = function(input, output, session, data,
   })
 
   validFacetColumns = reactive({
-    req(data())
+    req_log('validFacetColumns', quo(data()))
 
     data() %>%
       validCountColumns(props$maxFacetN) %>%
       append(empty_str, .)
   })
 
+  #----Update----
+  shouldUpdate = function(valid_choices, current_choice) {
+    log_info_cd('shouldUpdate')
+
+    if(length(valid_choices) == 0)
+      FALSE
+    else if(is.null(current_choice))
+      TRUE
+    else
+      current_choice %not in% valid_choices
+  }
+
+  observe({
+    log_info_cd('observe')
+
+    updateRet = function(valids, col)
+      if(shouldUpdate(valids, ret[[col]]))
+        ret[[col]] = valids[1]
+
+    updateRet(validShapeColumns(), 'shape')
+
+    updateRet(validColorColumns(), 'color')
+  })
+
+
+  #----Modal----
   observeEvent(input$customizeDisplay, {
+    log_info_cd('observe input$customizeDisplay')
+
     selectText = function(col, maxN, ext = "")
       f("${col} (Max  ${maxN} unique values)${ext}")
 
@@ -250,7 +265,11 @@ customizeDisplayServer = function(input, output, session, data,
                                  10, ret$facetRowsPerPage))
     })
 
+    #----Submit----
+
     observeEvent(input$modalSubmit, {
+      log_info_cd('observe input$modalSubmit')
+
       ret$x = input$x
       ret$y = input$y
       ret$plotHeight = input$plotHeight
@@ -279,5 +298,6 @@ customizeDisplayServer = function(input, output, session, data,
     }, ignoreInit = T)
   })
 
-  return(ret)
+  #----Return----
+  ret
 }
