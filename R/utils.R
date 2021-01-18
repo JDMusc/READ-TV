@@ -245,3 +245,6 @@ req_log_gen = function(log_fn) {
     log_fn(f('${msg}, post-req'))
   }
 }
+
+`%?%` = function(pred, if_t) list(pred, if_t)
+`%:%` = function(q_out, if_f) if(q_out[[1]]) q_out[[2]] else if_f

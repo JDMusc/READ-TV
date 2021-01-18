@@ -30,10 +30,7 @@ mappedExpr = function(in_pronoun_sym, qry, filter_out = FALSE) {
       in_pronoun_sym
   }
   else {
-    qry = if(has_query)
-      qry
-    else
-      TRUE
+    qry = has_query %?% qry %:% TRUE
 
     expr(!!in_pronoun_sym %>%
            mutate(`read-tv Filtered` = if_else(!!qry, 1.0, .2)))
