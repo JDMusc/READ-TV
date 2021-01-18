@@ -167,7 +167,14 @@ basicDisplayTabServer = function(input, output, session,
     log_info_bdt('do facet')
 
     cd = customizeDisplay
-    isDataLoaded() & is_str_set(cd$facetRowsPerPage)
+    isDataLoaded() & is_str_set(cd$facetOn)
+  })
+
+  doPaginate = reactive({
+    log_info_bdt('do paginate')
+
+    cd = customizeDisplay
+    isDataLoaded() & cd$isFacetPaginated
   })
 
   facetPageN <- reactive({
@@ -180,7 +187,7 @@ basicDisplayTabServer = function(input, output, session,
   output$facetPageControl = renderUI({
     log_info_bdt('output facetpagecontrol')
 
-    if(doFacet())
+    if(doFacet() & doPaginate())
       facetPageUI(ns("facetPageControl"))
     })
 
@@ -190,6 +197,7 @@ basicDisplayTabServer = function(input, output, session,
 
   observeEvent(facetPageControl$page, {
     log_info_bdt('observer facetPageControl$page')
+
     pg = facetPageControl$page
     if(!is.null(pg))
       customizeDisplay$facetPage = facetPageControl$page

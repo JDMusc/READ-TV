@@ -28,7 +28,6 @@ generatePlotDefaults = function(overrides = list()){
     facetOn = NULL,
     facetOrder = NULL,
     facetLabels = NULL,
-    isFacetCustomized = F,
     isFacetPaginated = F,
     facetRowsPerPage = NULL,
     facetPage = 1,
@@ -191,61 +190,17 @@ customizeDisplayServer = function(input, output, session, data,
         column(2,
                fluidRow(uiOutput(ns("facetPaginateCheck"))))
       ),
-      fluidRow(uiOutput(ns("facetPaginateBucket"))),
-      fluidRow(uiOutput(ns("facetCustomizeBucket")))
+      fluidRow(uiOutput(ns("facetPaginateBucket")))
     ))
 
     doFacet = reactive({
       is_str_set(input$facetOn)
     })
 
-    output$facetCustomizeCheck = renderUI({
-      if(doFacet())
-        checkboxInput(ns("customizeFacet"),
-                      "Customize", value = ret$isFacetCustomized)
-    })
-
     output$facetPaginateCheck = renderUI({
       if(doFacet())
         checkboxInput(ns("paginateFacet"),
                       "Paginate", value = ret$isFacetPaginated)
-    })
-
-    showFacetCustomizeBucket = reactive({
-      cf = input$customizeFacet
-      if(is.null(cf))
-        FALSE
-      else
-        doFacet() & cf
-    })
-
-    output$facetCustomizeBucket = renderUI({
-      if(!showFacetCustomizeBucket())
-        return()
-
-      makeTextInput = function(id, label = id, value = as.character(label))
-        textInput(ns(as.character(id)),
-                  label, value = value, placeholder = value)
-
-      if(ret$facetOn != input$facetOn)
-        facet_values = data() %>%
-          extract2(input$facetOn) %>%
-          unique %>%
-          purrr::map(makeTextInput)
-      else
-        facet_values = 1:length(ret$facetOrder) %>%
-          purrr::map(~ makeTextInput(ret$facetOrder[[.x]],
-                                     label = ret$facetLabels[.x])
-          )
-
-      div(bucket_list(
-        header = "Customize Facet",
-        add_rank_list(
-          text = "Facet Order & Display Values",
-          input_id = ns("facet_list"),
-          labels = facet_values
-        )
-      ))
     })
 
     showFacetPaginateBucket = reactive({
@@ -280,17 +235,9 @@ customizeDisplayServer = function(input, output, session, data,
       ret$doStemPlot = input$doStemPlot
 
       ret$facetOn = input$facetOn
-      if(showFacetCustomizeBucket()) {
-        ret$isFacetCustomized = TRUE
-        ret$facetOrder = input$facet_list
 
-        input$facet_list %>%
-          purrr::map(~ as.character(input[[.x]])) %>%
-          {ret$facetLabels = as.array(.)}
-      }
-
-      if(showFacetPaginateBucket()) {
-        ret$isFacetPaginated = TRUE
+      ret$isFacetPaginated = showFacetPaginateBucket()
+      if(ret$isFacetPaginated) {
         ret$facetRowsPerPage = input$facetRowsPerPage
       }
 

@@ -69,5 +69,5 @@ facetPageServer = function(input, output, session, nPages,
   #----Return----
   ret = reactiveValues()
 
-  return(ret)
+  ret
 }

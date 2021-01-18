@@ -158,7 +158,7 @@ cpaOverlayTabServer = function(input, output, session, uploadCode, uploadMask,
 
   ##----Axis Settings: Facet----
   doFacet = reactive({
-    isDataLoaded() & is_str_set(customizeDisplay$facetRowsPerPage)
+    isDataLoaded() & is_str_set(customizeDisplay$facetOn)
   })
 
   facetPageN <- reactive({
