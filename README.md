@@ -7,7 +7,6 @@ Version 0.1
       - [Through R/R Studio](#through-rr-studio)
       - [Docker](#docker)
   - [Tutorial](#tutorial)
-      - [Sample Data](#sample-data)
   - [More Information](#more-information)
       - [Data requirements](#data-requirements)
       - [Launch Application](#launch-application)
@@ -58,25 +57,8 @@ will not run if the host machine (your local computer) is Windows.
 
 ## Tutorial
 
-### Sample Data
-
-For this tutorial we will use 2 sample data sets:
-
-1.  **PHI-free (no private health information) surgical disruptions
-    data.**
-      - The motivating example for read-tv.
-      - Workflow disruptions were manually observed and recorded for 41
-        surgeries, such as a cell phone ring or misheard command.  
-      - We analyzed workflow disruptions cascades, or periods of time
-        with high disruption rates.  
-2.  **The Great Japan Earthquake data publicly available from USGS.**
-      - Though read-tv was designed for medical data, earthquakes are an
-        informative use-case example of irregularly spaced event data.  
-      - This also highlights read-tv’s capabilities for working with
-        different types of data sets.
-
-The earthquake data can be downloaded at [this
-link](https://earthquake.usgs.gov/fdsnws/event/1/query.csv?starttime=2011-03-10%2000:00:00&endtime=2011-03-12%2023:59:59&maxlatitude=45.919&minlatitude=26.861&maxlongitude=149.414&minlongitude=129.023&minmagnitude=2.5&orderby=time).
+There is a [tutorial
+README](https://github.com/JDMusc/READ-TV/blob/master/tutorial_readme.md).
 
 ## More Information
 

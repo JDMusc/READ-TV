@@ -4,7 +4,12 @@
 \alias{launchReadtv}
 \title{Launch or create READ-TV shiny application}
 \usage{
-launchReadtv(data = NULL, eventsPath = NULL, plotOpts = list())
+launchReadtv(
+  data = NULL,
+  eventsPath = NULL,
+  plotOpts = list(),
+  log_threshold = logger::INFO
+)
 }
 \arguments{
 \item{data}{A data frame. If \code{data} does not have columns for \code{Time}, \code{Case}, and \code{Event.Type}, then a pop-up will display to map these columns.}
